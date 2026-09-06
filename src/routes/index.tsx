@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, Handshake, Home, KeyRound, Search, ShieldCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import heroImage from "@/assets/site-hero.jpg";
+import { HeroVideo } from "@/components/site/HeroVideo";
 import { PropertyGrid } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PropertyMapSection } from "@/components/site/PropertyMapSection";
