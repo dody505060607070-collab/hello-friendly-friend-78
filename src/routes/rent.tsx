@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { PropertyGrid } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { PropertyMapSection } from "@/components/site/PropertyMapSection";
 import { publicPropertiesQuery } from "@/lib/site-data";
 
 export const Route = createFileRoute("/rent")({
@@ -93,6 +94,12 @@ function RentPage() {
           emptyText="لا توجد عقارات إيجار معروضة حالياً."
         />
       </section>
+
+      <PropertyMapSection
+        properties={filtered}
+        title="خريطة عقارات الإيجار"
+        description="النقاط الحمراء للإيجار والصفراء للبيع — اضغط على النقطة لعرض تفاصيل العقار."
+      />
     </SiteLayout>
   );
 }

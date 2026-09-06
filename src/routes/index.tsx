@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import heroImage from "@/assets/site-hero.jpg";
 import { PropertyGrid } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { PropertyMapSection } from "@/components/site/PropertyMapSection";
 import { publicPropertiesQuery, publicServicesQuery } from "@/lib/site-data";
 
 export const Route = createFileRoute("/")({
@@ -225,6 +226,8 @@ function HomePage() {
           })}
         </div>
       </section>
+
+      <PropertyMapSection properties={all.data} />
 
       <section className="bg-primary py-14 text-primary-foreground">
         <div className="mx-auto flex max-w-4xl flex-col items-center gap-5 px-4 text-center">
