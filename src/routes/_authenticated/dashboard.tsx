@@ -18,7 +18,7 @@ import { useCurrentUser } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { requestStatusLabels, taskStatusLabels } from "@/lib/labels";
 
-export const Route = createFileRoute("/_authenticated/")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "لوحة التحكم | الرشودي للعقارات" },
