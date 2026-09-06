@@ -30,13 +30,17 @@ export function HeroVideo() {
         muted
         playsInline
         preload="auto"
+        onTimeUpdate={(e) => {
+          const el = e.currentTarget;
+          if (el.duration && el.currentTime >= el.duration - 0.25) setEnded(true);
+        }}
         onEnded={() => {
           setEnded(true);
           const el = videoRef.current;
           // Freeze on the final frame instead of resetting.
           if (el) el.pause();
         }}
-        className="h-[62vh] min-h-[380px] w-full object-cover md:h-[78vh]"
+        className="h-[62vh] min-h-[380px] w-full object-cover md:h-[72vh]"
       />
 
       <div
