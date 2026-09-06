@@ -211,14 +211,23 @@ function TasksPage() {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
+        <div className="flex flex-wrap items-center gap-2">
+        <Link
+          to="/task-form"
+          search={{ id: "" }}
           className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
         >
           <Plus className="size-4" />
           إضافة مهمة
+        </Link>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
+        >
+          إضافة سريعة
         </button>
+        </div>
       </div>
 
       <Pills
