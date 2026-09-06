@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as RentRouteImport } from './routes/rent'
 import { Route as AuthenticatedActivitiesRouteImport } from './routes/_authenticated/activities'
 import { Route as AuthenticatedActivityLogRouteImport } from './routes/_authenticated/activity-log'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
@@ -50,6 +51,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RentRoute = RentRouteImport.update({
+  id: '/rent',
+  path: '/rent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedActivitiesRoute = AuthenticatedActivitiesRouteImport.update({
@@ -190,6 +196,7 @@ const AuthenticatedTasksPhotographyRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/rent': typeof RentRoute
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/clients': typeof AuthenticatedClientsRoute
@@ -219,6 +226,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/rent': typeof RentRoute
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/clients': typeof AuthenticatedClientsRoute
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/rent': typeof RentRoute
   '/_authenticated/activities': typeof AuthenticatedActivitiesRoute
   '/_authenticated/activity-log': typeof AuthenticatedActivityLogRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
@@ -281,6 +290,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/rent'
     | '/activities'
     | '/activity-log'
     | '/clients'
@@ -310,6 +320,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/rent'
     | '/activities'
     | '/activity-log'
     | '/clients'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/rent'
     | '/_authenticated/activities'
     | '/_authenticated/activity-log'
     | '/_authenticated/clients'
@@ -371,6 +383,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  RentRoute: typeof RentRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -394,6 +407,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rent': {
+      id: '/rent'
+      path: '/rent'
+      fullPath: '/rent'
+      preLoaderRoute: typeof RentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/activities': {
@@ -646,6 +666,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  RentRoute: RentRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
