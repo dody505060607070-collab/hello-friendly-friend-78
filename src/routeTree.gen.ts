@@ -9,14 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ListPropertyRouteImport } from './routes/list-property'
+import { Route as RentRouteImport } from './routes/rent'
+import { Route as SaleRouteImport } from './routes/sale'
 import { Route as AuthenticatedActivitiesRouteImport } from './routes/_authenticated/activities'
 import { Route as AuthenticatedActivityLogRouteImport } from './routes/_authenticated/activity-log'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedContractImportsRouteImport } from './routes/_authenticated/contract-imports'
 import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
 import { Route as AuthenticatedErrorLogRouteImport } from './routes/_authenticated/error-log'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
@@ -34,11 +40,22 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSubmissionsRouteImport } from './routes/_authenticated/submissions'
 import { Route as AuthenticatedSupplyRequestsRouteImport } from './routes/_authenticated/supply-requests'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
+import { Route as PropertiesCodeRouteImport } from './routes/properties.$code'
 import { Route as AuthenticatedTasksNormalRouteImport } from './routes/_authenticated/tasks.normal'
 import { Route as AuthenticatedTasksPhotographyRouteImport } from './routes/_authenticated/tasks.photography'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -46,10 +63,25 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ListPropertyRoute = ListPropertyRouteImport.update({
+  id: '/list-property',
+  path: '/list-property',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RentRoute = RentRouteImport.update({
+  id: '/rent',
+  path: '/rent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SaleRoute = SaleRouteImport.update({
+  id: '/sale',
+  path: '/sale',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedActivitiesRoute = AuthenticatedActivitiesRouteImport.update({
   id: '/activities',
@@ -76,6 +108,11 @@ const AuthenticatedContractImportsRoute =
 const AuthenticatedContractsRoute = AuthenticatedContractsRouteImport.update({
   id: '/contracts',
   path: '/contracts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
@@ -168,6 +205,11 @@ const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
   path: '/tasks',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const PropertiesCodeRoute = PropertiesCodeRouteImport.update({
+  id: '/properties/$code',
+  path: '/properties/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedTasksNormalRoute =
   AuthenticatedTasksNormalRouteImport.update({
     id: '/normal',
@@ -182,13 +224,19 @@ const AuthenticatedTasksPhotographyRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedIndexRoute
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/contact': typeof ContactRoute
+  '/list-property': typeof ListPropertyRoute
+  '/rent': typeof RentRoute
+  '/sale': typeof SaleRoute
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/contract-imports': typeof AuthenticatedContractImportsRoute
   '/contracts': typeof AuthenticatedContractsRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/error-log': typeof AuthenticatedErrorLogRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
@@ -206,16 +254,24 @@ export interface FileRoutesByFullPath {
   '/submissions': typeof AuthenticatedSubmissionsRoute
   '/supply-requests': typeof AuthenticatedSupplyRequestsRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
+  '/properties/$code': typeof PropertiesCodeRoute
   '/tasks/normal': typeof AuthenticatedTasksNormalRoute
   '/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/contact': typeof ContactRoute
+  '/list-property': typeof ListPropertyRoute
+  '/rent': typeof RentRoute
+  '/sale': typeof SaleRoute
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/contract-imports': typeof AuthenticatedContractImportsRoute
   '/contracts': typeof AuthenticatedContractsRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/error-log': typeof AuthenticatedErrorLogRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
@@ -233,19 +289,26 @@ export interface FileRoutesByTo {
   '/submissions': typeof AuthenticatedSubmissionsRoute
   '/supply-requests': typeof AuthenticatedSupplyRequestsRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
-  '/': typeof AuthenticatedIndexRoute
+  '/properties/$code': typeof PropertiesCodeRoute
   '/tasks/normal': typeof AuthenticatedTasksNormalRoute
   '/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/contact': typeof ContactRoute
+  '/list-property': typeof ListPropertyRoute
+  '/rent': typeof RentRoute
+  '/sale': typeof SaleRoute
   '/_authenticated/activities': typeof AuthenticatedActivitiesRoute
   '/_authenticated/activity-log': typeof AuthenticatedActivityLogRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/contract-imports': typeof AuthenticatedContractImportsRoute
   '/_authenticated/contracts': typeof AuthenticatedContractsRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
   '/_authenticated/error-log': typeof AuthenticatedErrorLogRoute
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
@@ -263,7 +326,7 @@ export interface FileRoutesById {
   '/_authenticated/submissions': typeof AuthenticatedSubmissionsRoute
   '/_authenticated/supply-requests': typeof AuthenticatedSupplyRequestsRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
-  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/properties/$code': typeof PropertiesCodeRoute
   '/_authenticated/tasks/normal': typeof AuthenticatedTasksNormalRoute
   '/_authenticated/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
@@ -271,12 +334,18 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/auth'
+    | '/contact'
+    | '/list-property'
+    | '/rent'
+    | '/sale'
     | '/activities'
     | '/activity-log'
     | '/clients'
     | '/contract-imports'
     | '/contracts'
+    | '/dashboard'
     | '/employees'
     | '/error-log'
     | '/invoices'
@@ -294,16 +363,24 @@ export interface FileRouteTypes {
     | '/submissions'
     | '/supply-requests'
     | '/tasks'
+    | '/properties/$code'
     | '/tasks/normal'
     | '/tasks/photography'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
+    | '/about'
     | '/auth'
+    | '/contact'
+    | '/list-property'
+    | '/rent'
+    | '/sale'
     | '/activities'
     | '/activity-log'
     | '/clients'
     | '/contract-imports'
     | '/contracts'
+    | '/dashboard'
     | '/employees'
     | '/error-log'
     | '/invoices'
@@ -321,18 +398,25 @@ export interface FileRouteTypes {
     | '/submissions'
     | '/supply-requests'
     | '/tasks'
-    | '/'
+    | '/properties/$code'
     | '/tasks/normal'
     | '/tasks/photography'
   id:
     | '__root__'
+    | '/'
     | '/_authenticated'
+    | '/about'
     | '/auth'
+    | '/contact'
+    | '/list-property'
+    | '/rent'
+    | '/sale'
     | '/_authenticated/activities'
     | '/_authenticated/activity-log'
     | '/_authenticated/clients'
     | '/_authenticated/contract-imports'
     | '/_authenticated/contracts'
+    | '/_authenticated/dashboard'
     | '/_authenticated/employees'
     | '/_authenticated/error-log'
     | '/_authenticated/invoices'
@@ -350,23 +434,44 @@ export interface FileRouteTypes {
     | '/_authenticated/submissions'
     | '/_authenticated/supply-requests'
     | '/_authenticated/tasks'
-    | '/_authenticated/'
+    | '/properties/$code'
     | '/_authenticated/tasks/normal'
     | '/_authenticated/tasks/photography'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
+  ContactRoute: typeof ContactRoute
+  ListPropertyRoute: typeof ListPropertyRoute
+  RentRoute: typeof RentRoute
+  SaleRoute: typeof SaleRoute
+  PropertiesCodeRoute: typeof PropertiesCodeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -376,12 +481,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/': {
-      id: '/_authenticated/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/list-property': {
+      id: '/list-property'
+      path: '/list-property'
+      fullPath: '/list-property'
+      preLoaderRoute: typeof ListPropertyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rent': {
+      id: '/rent'
+      path: '/rent'
+      fullPath: '/rent'
+      preLoaderRoute: typeof RentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sale': {
+      id: '/sale'
+      path: '/sale'
+      fullPath: '/sale'
+      preLoaderRoute: typeof SaleRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/activities': {
       id: '/_authenticated/activities'
@@ -416,6 +542,13 @@ declare module '@tanstack/react-router' {
       path: '/contracts'
       fullPath: '/contracts'
       preLoaderRoute: typeof AuthenticatedContractsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/employees': {
@@ -537,6 +670,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTasksRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/properties/$code': {
+      id: '/properties/$code'
+      path: '/properties/$code'
+      fullPath: '/properties/$code'
+      preLoaderRoute: typeof PropertiesCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/tasks/normal': {
       id: '/_authenticated/tasks/normal'
       path: '/normal'
@@ -573,6 +713,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedContractImportsRoute: typeof AuthenticatedContractImportsRoute
   AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
   AuthenticatedErrorLogRoute: typeof AuthenticatedErrorLogRoute
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
@@ -590,7 +731,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSubmissionsRoute: typeof AuthenticatedSubmissionsRoute
   AuthenticatedSupplyRequestsRoute: typeof AuthenticatedSupplyRequestsRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -599,6 +739,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedContractImportsRoute: AuthenticatedContractImportsRoute,
   AuthenticatedContractsRoute: AuthenticatedContractsRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
   AuthenticatedErrorLogRoute: AuthenticatedErrorLogRoute,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
@@ -616,15 +757,21 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSubmissionsRoute: AuthenticatedSubmissionsRoute,
   AuthenticatedSupplyRequestsRoute: AuthenticatedSupplyRequestsRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
+  ContactRoute: ContactRoute,
+  ListPropertyRoute: ListPropertyRoute,
+  RentRoute: RentRoute,
+  SaleRoute: SaleRoute,
+  PropertiesCodeRoute: PropertiesCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
