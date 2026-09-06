@@ -1,14 +1,19 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, ChevronDown, ChevronLeft } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Bell, ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import logo from "@/assets/logo.png";
 import { navGroups } from "@/data/nav";
+import { signOut, useCurrentUser } from "@/hooks/useAuth";
+import { navCountsQuery } from "@/lib/counts";
 import { cn } from "@/lib/utils";
 
-function SidebarNav() {
+function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [closed, setClosed] = useState<string[]>([]);
+  const { can } = useCurrentUser();
+  const { data: counts } = useQuery(navCountsQuery);
 
   const toggle = (label: string) =>
     setClosed((prev) =>
@@ -18,6 +23,8 @@ function SidebarNav() {
   return (
     <nav className="flex flex-col gap-5 px-4 py-6">
       {navGroups.map((group, gi) => {
+        const items = group.items.filter((item) => !item.module || can(item.module, "view"));
+        if (items.length === 0) return null;
         const isOpen = !group.label || !closed.includes(group.label);
         const Icon = group.icon;
         return (
@@ -43,12 +50,14 @@ function SidebarNav() {
 
             {isOpen ? (
               <ul className="space-y-0.5">
-                {group.items.map((item) => {
+                {items.map((item) => {
                   const active = pathname === item.to;
+                  const badge = item.countKey ? counts?.[item.countKey] : undefined;
                   return (
                     <li key={item.to}>
                       <Link
                         to={item.to}
+                        onClick={onNavigate}
                         className={cn(
                           "group flex items-center justify-between rounded-lg py-2 pe-2 ps-3 text-[13.5px] transition-colors",
                           active
@@ -57,9 +66,9 @@ function SidebarNav() {
                         )}
                       >
                         <span className="flex items-center gap-2">
-                          {item.badge ? (
+                          {badge ? (
                             <span className="rounded-md bg-warning/15 px-1.5 py-0.5 text-[11px] font-bold text-warning-foreground">
-                              {item.badge}
+                              {badge}
                             </span>
                           ) : null}
                         </span>
@@ -91,24 +100,44 @@ function SidebarNav() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const { profile, isSuperAdmin } = useCurrentUser();
+  const initial = profile?.full_name?.trim().charAt(0) ?? "؟";
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate({ to: "/auth" });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             className="grid size-9 place-items-center rounded-full bg-primary text-[13px] font-bold text-primary-foreground"
             aria-label="الحساب"
+            title={profile?.full_name ?? ""}
           >
-            A
+            {initial}
           </button>
           <button
             type="button"
+            onClick={handleSignOut}
+            className="grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            aria-label="تسجيل الخروج"
+            title="تسجيل الخروج"
+          >
+            <LogOut className="size-[18px]" />
+          </button>
+          <Link
+            to="/notifications"
             className="grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             aria-label="الإشعارات"
           >
             <Bell className="size-[18px]" />
-          </button>
+          </Link>
         </div>
 
         <Link to="/" className="absolute left-1/2 -translate-x-1/2">
@@ -117,13 +146,27 @@ export function AppShell({ children }: { children: ReactNode }) {
             alt="الرشودي للعقارات"
             width={1152}
             height={576}
-            className="h-11 w-auto"
+            className="h-10 w-auto md:h-11"
           />
         </Link>
 
         <div className="flex items-center gap-3">
-          <span className="text-[15px] font-bold text-foreground">الرشودي للعقارات</span>
-          <ChevronLeft className="size-5 text-muted-foreground" />
+          <div className="hidden text-end md:block">
+            <p className="text-[14px] font-bold leading-tight text-foreground">
+              {profile?.full_name ?? "—"}
+            </p>
+            <p className="text-[11.5px] text-muted-foreground">
+              {isSuperAdmin ? "مدير عام" : (profile?.job_title ?? "موظف")}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="grid size-9 place-items-center rounded-lg border border-border text-muted-foreground lg:hidden"
+            aria-label="القائمة"
+          >
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
         </div>
       </header>
 
@@ -131,6 +174,20 @@ export function AppShell({ children }: { children: ReactNode }) {
         <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-[268px] shrink-0 overflow-y-auto border-s border-sidebar-border bg-sidebar lg:block">
           <SidebarNav />
         </aside>
+
+        {open ? (
+          <div className="fixed inset-0 top-16 z-20 lg:hidden">
+            <button
+              type="button"
+              aria-label="إغلاق القائمة"
+              className="absolute inset-0 bg-foreground/30"
+              onClick={() => setOpen(false)}
+            />
+            <div className="absolute inset-y-0 end-0 w-[280px] overflow-y-auto bg-sidebar shadow-xl">
+              <SidebarNav onNavigate={() => setOpen(false)} />
+            </div>
+          </div>
+        ) : null}
 
         <main className="min-w-0 flex-1 px-4 py-6 md:px-8">
           <div className="mx-auto max-w-6xl space-y-6">{children}</div>

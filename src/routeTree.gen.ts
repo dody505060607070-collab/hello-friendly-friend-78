@@ -9,348 +9,622 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ContractsRouteImport } from './routes/contracts'
-import { Route as EmployeesRouteImport } from './routes/employees'
-import { Route as ErrorLogRouteImport } from './routes/error-log'
-import { Route as InvoicesRouteImport } from './routes/invoices'
-import { Route as OwnersRouteImport } from './routes/owners'
-import { Route as PartnersRouteImport } from './routes/partners'
-import { Route as PropertiesRouteImport } from './routes/properties'
-import { Route as RemindersRouteImport } from './routes/reminders'
-import { Route as ReservationsRouteImport } from './routes/reservations'
-import { Route as ServicesRouteImport } from './routes/services'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as SubmissionsRouteImport } from './routes/submissions'
-import { Route as SupplyRequestsRouteImport } from './routes/supply-requests'
-import { Route as TasksRouteImport } from './routes/tasks'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedActivitiesRouteImport } from './routes/_authenticated/activities'
+import { Route as AuthenticatedActivityLogRouteImport } from './routes/_authenticated/activity-log'
+import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedContractImportsRouteImport } from './routes/_authenticated/contract-imports'
+import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
+import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
+import { Route as AuthenticatedErrorLogRouteImport } from './routes/_authenticated/error-log'
+import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated/opportunities'
+import { Route as AuthenticatedOwnersRouteImport } from './routes/_authenticated/owners'
+import { Route as AuthenticatedPartnersRouteImport } from './routes/_authenticated/partners'
+import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
+import { Route as AuthenticatedRemindersRouteImport } from './routes/_authenticated/reminders'
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedReservationsRouteImport } from './routes/_authenticated/reservations'
+import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/roles'
+import { Route as AuthenticatedServicesRouteImport } from './routes/_authenticated/services'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedSubmissionsRouteImport } from './routes/_authenticated/submissions'
+import { Route as AuthenticatedSupplyRequestsRouteImport } from './routes/_authenticated/supply-requests'
+import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
+import { Route as AuthenticatedTasksNormalRouteImport } from './routes/_authenticated/tasks.normal'
+import { Route as AuthenticatedTasksPhotographyRouteImport } from './routes/_authenticated/tasks.photography'
 
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ContractsRoute = ContractsRouteImport.update({
+const AuthenticatedActivitiesRoute = AuthenticatedActivitiesRouteImport.update({
+  id: '/activities',
+  path: '/activities',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedActivityLogRoute =
+  AuthenticatedActivityLogRouteImport.update({
+    id: '/activity-log',
+    path: '/activity-log',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedContractImportsRoute =
+  AuthenticatedContractImportsRouteImport.update({
+    id: '/contract-imports',
+    path: '/contract-imports',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedContractsRoute = AuthenticatedContractsRouteImport.update({
   id: '/contracts',
   path: '/contracts',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const EmployeesRoute = EmployeesRouteImport.update({
+const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
   id: '/employees',
   path: '/employees',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ErrorLogRoute = ErrorLogRouteImport.update({
+const AuthenticatedErrorLogRoute = AuthenticatedErrorLogRouteImport.update({
   id: '/error-log',
   path: '/error-log',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const InvoicesRoute = InvoicesRouteImport.update({
+const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
   id: '/invoices',
   path: '/invoices',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const OwnersRoute = OwnersRouteImport.update({
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOpportunitiesRoute =
+  AuthenticatedOpportunitiesRouteImport.update({
+    id: '/opportunities',
+    path: '/opportunities',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnersRoute = AuthenticatedOwnersRouteImport.update({
   id: '/owners',
   path: '/owners',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const PartnersRoute = PartnersRouteImport.update({
+const AuthenticatedPartnersRoute = AuthenticatedPartnersRouteImport.update({
   id: '/partners',
   path: '/partners',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const PropertiesRoute = PropertiesRouteImport.update({
+const AuthenticatedPropertiesRoute = AuthenticatedPropertiesRouteImport.update({
   id: '/properties',
   path: '/properties',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const RemindersRoute = RemindersRouteImport.update({
+const AuthenticatedRemindersRoute = AuthenticatedRemindersRouteImport.update({
   id: '/reminders',
   path: '/reminders',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ReservationsRoute = ReservationsRouteImport.update({
-  id: '/reservations',
-  path: '/reservations',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ServicesRoute = ServicesRouteImport.update({
+const AuthenticatedReservationsRoute =
+  AuthenticatedReservationsRouteImport.update({
+    id: '/reservations',
+    path: '/reservations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRolesRoute = AuthenticatedRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedServicesRoute = AuthenticatedServicesRouteImport.update({
   id: '/services',
   path: '/services',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const SettingsRoute = SettingsRouteImport.update({
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const SubmissionsRoute = SubmissionsRouteImport.update({
-  id: '/submissions',
-  path: '/submissions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SupplyRequestsRoute = SupplyRequestsRouteImport.update({
-  id: '/supply-requests',
-  path: '/supply-requests',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TasksRoute = TasksRouteImport.update({
+const AuthenticatedSubmissionsRoute =
+  AuthenticatedSubmissionsRouteImport.update({
+    id: '/submissions',
+    path: '/submissions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSupplyRequestsRoute =
+  AuthenticatedSupplyRequestsRouteImport.update({
+    id: '/supply-requests',
+    path: '/supply-requests',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTasksNormalRoute =
+  AuthenticatedTasksNormalRouteImport.update({
+    id: '/normal',
+    path: '/normal',
+    getParentRoute: () => AuthenticatedTasksRoute,
+  } as any)
+const AuthenticatedTasksPhotographyRoute =
+  AuthenticatedTasksPhotographyRouteImport.update({
+    id: '/photography',
+    path: '/photography',
+    getParentRoute: () => AuthenticatedTasksRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/contracts': typeof ContractsRoute
-  '/employees': typeof EmployeesRoute
-  '/error-log': typeof ErrorLogRoute
-  '/invoices': typeof InvoicesRoute
-  '/owners': typeof OwnersRoute
-  '/partners': typeof PartnersRoute
-  '/properties': typeof PropertiesRoute
-  '/reminders': typeof RemindersRoute
-  '/reservations': typeof ReservationsRoute
-  '/services': typeof ServicesRoute
-  '/settings': typeof SettingsRoute
-  '/submissions': typeof SubmissionsRoute
-  '/supply-requests': typeof SupplyRequestsRoute
-  '/tasks': typeof TasksRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/auth': typeof AuthRoute
+  '/activities': typeof AuthenticatedActivitiesRoute
+  '/activity-log': typeof AuthenticatedActivityLogRoute
+  '/clients': typeof AuthenticatedClientsRoute
+  '/contract-imports': typeof AuthenticatedContractImportsRoute
+  '/contracts': typeof AuthenticatedContractsRoute
+  '/employees': typeof AuthenticatedEmployeesRoute
+  '/error-log': typeof AuthenticatedErrorLogRoute
+  '/invoices': typeof AuthenticatedInvoicesRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
+  '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/owners': typeof AuthenticatedOwnersRoute
+  '/partners': typeof AuthenticatedPartnersRoute
+  '/properties': typeof AuthenticatedPropertiesRoute
+  '/reminders': typeof AuthenticatedRemindersRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/reservations': typeof AuthenticatedReservationsRoute
+  '/roles': typeof AuthenticatedRolesRoute
+  '/services': typeof AuthenticatedServicesRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/submissions': typeof AuthenticatedSubmissionsRoute
+  '/supply-requests': typeof AuthenticatedSupplyRequestsRoute
+  '/tasks': typeof AuthenticatedTasksRouteWithChildren
+  '/tasks/normal': typeof AuthenticatedTasksNormalRoute
+  '/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/contracts': typeof ContractsRoute
-  '/employees': typeof EmployeesRoute
-  '/error-log': typeof ErrorLogRoute
-  '/invoices': typeof InvoicesRoute
-  '/owners': typeof OwnersRoute
-  '/partners': typeof PartnersRoute
-  '/properties': typeof PropertiesRoute
-  '/reminders': typeof RemindersRoute
-  '/reservations': typeof ReservationsRoute
-  '/services': typeof ServicesRoute
-  '/settings': typeof SettingsRoute
-  '/submissions': typeof SubmissionsRoute
-  '/supply-requests': typeof SupplyRequestsRoute
-  '/tasks': typeof TasksRoute
+  '/auth': typeof AuthRoute
+  '/activities': typeof AuthenticatedActivitiesRoute
+  '/activity-log': typeof AuthenticatedActivityLogRoute
+  '/clients': typeof AuthenticatedClientsRoute
+  '/contract-imports': typeof AuthenticatedContractImportsRoute
+  '/contracts': typeof AuthenticatedContractsRoute
+  '/employees': typeof AuthenticatedEmployeesRoute
+  '/error-log': typeof AuthenticatedErrorLogRoute
+  '/invoices': typeof AuthenticatedInvoicesRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
+  '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/owners': typeof AuthenticatedOwnersRoute
+  '/partners': typeof AuthenticatedPartnersRoute
+  '/properties': typeof AuthenticatedPropertiesRoute
+  '/reminders': typeof AuthenticatedRemindersRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/reservations': typeof AuthenticatedReservationsRoute
+  '/roles': typeof AuthenticatedRolesRoute
+  '/services': typeof AuthenticatedServicesRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/submissions': typeof AuthenticatedSubmissionsRoute
+  '/supply-requests': typeof AuthenticatedSupplyRequestsRoute
+  '/tasks': typeof AuthenticatedTasksRouteWithChildren
+  '/': typeof AuthenticatedIndexRoute
+  '/tasks/normal': typeof AuthenticatedTasksNormalRoute
+  '/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/contracts': typeof ContractsRoute
-  '/employees': typeof EmployeesRoute
-  '/error-log': typeof ErrorLogRoute
-  '/invoices': typeof InvoicesRoute
-  '/owners': typeof OwnersRoute
-  '/partners': typeof PartnersRoute
-  '/properties': typeof PropertiesRoute
-  '/reminders': typeof RemindersRoute
-  '/reservations': typeof ReservationsRoute
-  '/services': typeof ServicesRoute
-  '/settings': typeof SettingsRoute
-  '/submissions': typeof SubmissionsRoute
-  '/supply-requests': typeof SupplyRequestsRoute
-  '/tasks': typeof TasksRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/activities': typeof AuthenticatedActivitiesRoute
+  '/_authenticated/activity-log': typeof AuthenticatedActivityLogRoute
+  '/_authenticated/clients': typeof AuthenticatedClientsRoute
+  '/_authenticated/contract-imports': typeof AuthenticatedContractImportsRoute
+  '/_authenticated/contracts': typeof AuthenticatedContractsRoute
+  '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
+  '/_authenticated/error-log': typeof AuthenticatedErrorLogRoute
+  '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/_authenticated/owners': typeof AuthenticatedOwnersRoute
+  '/_authenticated/partners': typeof AuthenticatedPartnersRoute
+  '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
+  '/_authenticated/reminders': typeof AuthenticatedRemindersRoute
+  '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/reservations': typeof AuthenticatedReservationsRoute
+  '/_authenticated/roles': typeof AuthenticatedRolesRoute
+  '/_authenticated/services': typeof AuthenticatedServicesRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/submissions': typeof AuthenticatedSubmissionsRoute
+  '/_authenticated/supply-requests': typeof AuthenticatedSupplyRequestsRoute
+  '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/tasks/normal': typeof AuthenticatedTasksNormalRoute
+  '/_authenticated/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
+    | '/activities'
+    | '/activity-log'
+    | '/clients'
+    | '/contract-imports'
     | '/contracts'
     | '/employees'
     | '/error-log'
     | '/invoices'
+    | '/notifications'
+    | '/opportunities'
     | '/owners'
     | '/partners'
     | '/properties'
     | '/reminders'
+    | '/reports'
     | '/reservations'
+    | '/roles'
     | '/services'
     | '/settings'
     | '/submissions'
     | '/supply-requests'
     | '/tasks'
+    | '/tasks/normal'
+    | '/tasks/photography'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
+    | '/auth'
+    | '/activities'
+    | '/activity-log'
+    | '/clients'
+    | '/contract-imports'
     | '/contracts'
     | '/employees'
     | '/error-log'
     | '/invoices'
+    | '/notifications'
+    | '/opportunities'
     | '/owners'
     | '/partners'
     | '/properties'
     | '/reminders'
+    | '/reports'
     | '/reservations'
+    | '/roles'
     | '/services'
     | '/settings'
     | '/submissions'
     | '/supply-requests'
     | '/tasks'
+    | '/'
+    | '/tasks/normal'
+    | '/tasks/photography'
   id:
     | '__root__'
-    | '/'
-    | '/contracts'
-    | '/employees'
-    | '/error-log'
-    | '/invoices'
-    | '/owners'
-    | '/partners'
-    | '/properties'
-    | '/reminders'
-    | '/reservations'
-    | '/services'
-    | '/settings'
-    | '/submissions'
-    | '/supply-requests'
-    | '/tasks'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/activities'
+    | '/_authenticated/activity-log'
+    | '/_authenticated/clients'
+    | '/_authenticated/contract-imports'
+    | '/_authenticated/contracts'
+    | '/_authenticated/employees'
+    | '/_authenticated/error-log'
+    | '/_authenticated/invoices'
+    | '/_authenticated/notifications'
+    | '/_authenticated/opportunities'
+    | '/_authenticated/owners'
+    | '/_authenticated/partners'
+    | '/_authenticated/properties'
+    | '/_authenticated/reminders'
+    | '/_authenticated/reports'
+    | '/_authenticated/reservations'
+    | '/_authenticated/roles'
+    | '/_authenticated/services'
+    | '/_authenticated/settings'
+    | '/_authenticated/submissions'
+    | '/_authenticated/supply-requests'
+    | '/_authenticated/tasks'
+    | '/_authenticated/'
+    | '/_authenticated/tasks/normal'
+    | '/_authenticated/tasks/photography'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ContractsRoute: typeof ContractsRoute
-  EmployeesRoute: typeof EmployeesRoute
-  ErrorLogRoute: typeof ErrorLogRoute
-  InvoicesRoute: typeof InvoicesRoute
-  OwnersRoute: typeof OwnersRoute
-  PartnersRoute: typeof PartnersRoute
-  PropertiesRoute: typeof PropertiesRoute
-  RemindersRoute: typeof RemindersRoute
-  ReservationsRoute: typeof ReservationsRoute
-  ServicesRoute: typeof ServicesRoute
-  SettingsRoute: typeof SettingsRoute
-  SubmissionsRoute: typeof SubmissionsRoute
-  SupplyRequestsRoute: typeof SupplyRequestsRoute
-  TasksRoute: typeof TasksRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/contracts': {
-      id: '/contracts'
+    '/_authenticated/activities': {
+      id: '/_authenticated/activities'
+      path: '/activities'
+      fullPath: '/activities'
+      preLoaderRoute: typeof AuthenticatedActivitiesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/activity-log': {
+      id: '/_authenticated/activity-log'
+      path: '/activity-log'
+      fullPath: '/activity-log'
+      preLoaderRoute: typeof AuthenticatedActivityLogRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clients': {
+      id: '/_authenticated/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof AuthenticatedClientsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contract-imports': {
+      id: '/_authenticated/contract-imports'
+      path: '/contract-imports'
+      fullPath: '/contract-imports'
+      preLoaderRoute: typeof AuthenticatedContractImportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contracts': {
+      id: '/_authenticated/contracts'
       path: '/contracts'
       fullPath: '/contracts'
-      preLoaderRoute: typeof ContractsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedContractsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/employees': {
-      id: '/employees'
+    '/_authenticated/employees': {
+      id: '/_authenticated/employees'
       path: '/employees'
       fullPath: '/employees'
-      preLoaderRoute: typeof EmployeesRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedEmployeesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/error-log': {
-      id: '/error-log'
+    '/_authenticated/error-log': {
+      id: '/_authenticated/error-log'
       path: '/error-log'
       fullPath: '/error-log'
-      preLoaderRoute: typeof ErrorLogRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedErrorLogRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/invoices': {
-      id: '/invoices'
+    '/_authenticated/invoices': {
+      id: '/_authenticated/invoices'
       path: '/invoices'
       fullPath: '/invoices'
-      preLoaderRoute: typeof InvoicesRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedInvoicesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/owners': {
-      id: '/owners'
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/opportunities': {
+      id: '/_authenticated/opportunities'
+      path: '/opportunities'
+      fullPath: '/opportunities'
+      preLoaderRoute: typeof AuthenticatedOpportunitiesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owners': {
+      id: '/_authenticated/owners'
       path: '/owners'
       fullPath: '/owners'
-      preLoaderRoute: typeof OwnersRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedOwnersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/partners': {
-      id: '/partners'
+    '/_authenticated/partners': {
+      id: '/_authenticated/partners'
       path: '/partners'
       fullPath: '/partners'
-      preLoaderRoute: typeof PartnersRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedPartnersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/properties': {
-      id: '/properties'
+    '/_authenticated/properties': {
+      id: '/_authenticated/properties'
       path: '/properties'
       fullPath: '/properties'
-      preLoaderRoute: typeof PropertiesRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedPropertiesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/reminders': {
-      id: '/reminders'
+    '/_authenticated/reminders': {
+      id: '/_authenticated/reminders'
       path: '/reminders'
       fullPath: '/reminders'
-      preLoaderRoute: typeof RemindersRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedRemindersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/reservations': {
-      id: '/reservations'
+    '/_authenticated/reports': {
+      id: '/_authenticated/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reservations': {
+      id: '/_authenticated/reservations'
       path: '/reservations'
       fullPath: '/reservations'
-      preLoaderRoute: typeof ReservationsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedReservationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/services': {
-      id: '/services'
+    '/_authenticated/roles': {
+      id: '/_authenticated/roles'
+      path: '/roles'
+      fullPath: '/roles'
+      preLoaderRoute: typeof AuthenticatedRolesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/services': {
+      id: '/_authenticated/services'
       path: '/services'
       fullPath: '/services'
-      preLoaderRoute: typeof ServicesRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedServicesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/settings': {
-      id: '/settings'
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
       path: '/settings'
       fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/submissions': {
-      id: '/submissions'
+    '/_authenticated/submissions': {
+      id: '/_authenticated/submissions'
       path: '/submissions'
       fullPath: '/submissions'
-      preLoaderRoute: typeof SubmissionsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedSubmissionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/supply-requests': {
-      id: '/supply-requests'
+    '/_authenticated/supply-requests': {
+      id: '/_authenticated/supply-requests'
       path: '/supply-requests'
       fullPath: '/supply-requests'
-      preLoaderRoute: typeof SupplyRequestsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedSupplyRequestsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/tasks': {
-      id: '/tasks'
+    '/_authenticated/tasks': {
+      id: '/_authenticated/tasks'
       path: '/tasks'
       fullPath: '/tasks'
-      preLoaderRoute: typeof TasksRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedTasksRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tasks/normal': {
+      id: '/_authenticated/tasks/normal'
+      path: '/normal'
+      fullPath: '/tasks/normal'
+      preLoaderRoute: typeof AuthenticatedTasksNormalRouteImport
+      parentRoute: typeof AuthenticatedTasksRoute
+    }
+    '/_authenticated/tasks/photography': {
+      id: '/_authenticated/tasks/photography'
+      path: '/photography'
+      fullPath: '/tasks/photography'
+      preLoaderRoute: typeof AuthenticatedTasksPhotographyRouteImport
+      parentRoute: typeof AuthenticatedTasksRoute
     }
   }
 }
 
+interface AuthenticatedTasksRouteChildren {
+  AuthenticatedTasksNormalRoute: typeof AuthenticatedTasksNormalRoute
+  AuthenticatedTasksPhotographyRoute: typeof AuthenticatedTasksPhotographyRoute
+}
+
+const AuthenticatedTasksRouteChildren: AuthenticatedTasksRouteChildren = {
+  AuthenticatedTasksNormalRoute: AuthenticatedTasksNormalRoute,
+  AuthenticatedTasksPhotographyRoute: AuthenticatedTasksPhotographyRoute,
+}
+
+const AuthenticatedTasksRouteWithChildren =
+  AuthenticatedTasksRoute._addFileChildren(AuthenticatedTasksRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedActivitiesRoute: typeof AuthenticatedActivitiesRoute
+  AuthenticatedActivityLogRoute: typeof AuthenticatedActivityLogRoute
+  AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
+  AuthenticatedContractImportsRoute: typeof AuthenticatedContractImportsRoute
+  AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
+  AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
+  AuthenticatedErrorLogRoute: typeof AuthenticatedErrorLogRoute
+  AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
+  AuthenticatedOwnersRoute: typeof AuthenticatedOwnersRoute
+  AuthenticatedPartnersRoute: typeof AuthenticatedPartnersRoute
+  AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
+  AuthenticatedRemindersRoute: typeof AuthenticatedRemindersRoute
+  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedReservationsRoute: typeof AuthenticatedReservationsRoute
+  AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
+  AuthenticatedServicesRoute: typeof AuthenticatedServicesRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSubmissionsRoute: typeof AuthenticatedSubmissionsRoute
+  AuthenticatedSupplyRequestsRoute: typeof AuthenticatedSupplyRequestsRoute
+  AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedActivitiesRoute: AuthenticatedActivitiesRoute,
+  AuthenticatedActivityLogRoute: AuthenticatedActivityLogRoute,
+  AuthenticatedClientsRoute: AuthenticatedClientsRoute,
+  AuthenticatedContractImportsRoute: AuthenticatedContractImportsRoute,
+  AuthenticatedContractsRoute: AuthenticatedContractsRoute,
+  AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
+  AuthenticatedErrorLogRoute: AuthenticatedErrorLogRoute,
+  AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
+  AuthenticatedOwnersRoute: AuthenticatedOwnersRoute,
+  AuthenticatedPartnersRoute: AuthenticatedPartnersRoute,
+  AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
+  AuthenticatedRemindersRoute: AuthenticatedRemindersRoute,
+  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedReservationsRoute: AuthenticatedReservationsRoute,
+  AuthenticatedRolesRoute: AuthenticatedRolesRoute,
+  AuthenticatedServicesRoute: AuthenticatedServicesRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSubmissionsRoute: AuthenticatedSubmissionsRoute,
+  AuthenticatedSupplyRequestsRoute: AuthenticatedSupplyRequestsRoute,
+  AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  ContractsRoute: ContractsRoute,
-  EmployeesRoute: EmployeesRoute,
-  ErrorLogRoute: ErrorLogRoute,
-  InvoicesRoute: InvoicesRoute,
-  OwnersRoute: OwnersRoute,
-  PartnersRoute: PartnersRoute,
-  PropertiesRoute: PropertiesRoute,
-  RemindersRoute: RemindersRoute,
-  ReservationsRoute: ReservationsRoute,
-  ServicesRoute: ServicesRoute,
-  SettingsRoute: SettingsRoute,
-  SubmissionsRoute: SubmissionsRoute,
-  SupplyRequestsRoute: SupplyRequestsRoute,
-  TasksRoute: TasksRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
