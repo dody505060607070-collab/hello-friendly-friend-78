@@ -99,3 +99,23 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
     return { extractionJson, raw: text };
   });
 
+
+const PUBLIC_PROMPT = `أنت "مساعد مثراء" — مساعد ذكي على الموقع العام لشركة مثراء العقارية في بريدة، السعودية.
+مهمتك مساعدة الزوار: شرح أقسام الموقع (الإيجار، البيع، من نحن، تواصل معنا، اعرض/اطلب عقارك)، توضيح خطوات عرض عقار أو طلب عقار، والإجابة عن أسئلة عامة عن العقارات في بريدة.
+أجب بالعربية الفصحى المبسطة بإجابات قصيرة ومهذبة. لا تذكر بيانات داخلية أو أسعار غير مؤكدة، وإن لزم التفاصيل اطلب من الزائر التواصل عبر صفحة «تواصل معنا» أو الواتساب.`;
+
+export const askPublicAi = createServerFn({ method: "POST" })
+  .inputValidator((input: { messages: { role: "user" | "assistant"; content: string }[] }) => input)
+  .handler(async ({ data }) => {
+    const items: Item[] = [
+      { role: "system", content: [{ type: "input_text", text: PUBLIC_PROMPT }] },
+    ];
+    for (const m of data.messages.slice(-12)) {
+      items.push({
+        role: m.role,
+        content: [{ type: "input_text", text: m.content.slice(0, 2000) }],
+      });
+    }
+    const text = await callGateway(items);
+    return { text };
+  });
