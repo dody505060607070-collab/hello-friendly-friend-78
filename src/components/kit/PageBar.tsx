@@ -26,9 +26,7 @@ export function PageBar({
         {crumbs.map((crumb, i) => (
           <span key={crumb} className="flex items-center gap-1.5">
             {i > 0 ? <ChevronLeft className="size-3.5" /> : null}
-            <span className={i === crumbs.length - 1 ? "font-semibold text-primary" : undefined}>
-              {crumb}
-            </span>
+            <span className={i === 0 ? "font-semibold text-primary" : undefined}>{crumb}</span>
           </span>
         ))}
       </nav>
