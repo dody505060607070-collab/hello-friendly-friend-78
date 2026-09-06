@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PropertiesRouteImport } from './routes/properties'
+import { Route as ReservationsRouteImport } from './routes/reservations'
 import { Route as SubmissionsRouteImport } from './routes/submissions'
+import { Route as SupplyRequestsRouteImport } from './routes/supply-requests'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -23,40 +25,66 @@ const PropertiesRoute = PropertiesRouteImport.update({
   path: '/properties',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReservationsRoute = ReservationsRouteImport.update({
+  id: '/reservations',
+  path: '/reservations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SubmissionsRoute = SubmissionsRouteImport.update({
   id: '/submissions',
   path: '/submissions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupplyRequestsRoute = SupplyRequestsRouteImport.update({
+  id: '/supply-requests',
+  path: '/supply-requests',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/properties': typeof PropertiesRoute
+  '/reservations': typeof ReservationsRoute
   '/submissions': typeof SubmissionsRoute
+  '/supply-requests': typeof SupplyRequestsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/properties': typeof PropertiesRoute
+  '/reservations': typeof ReservationsRoute
   '/submissions': typeof SubmissionsRoute
+  '/supply-requests': typeof SupplyRequestsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/properties': typeof PropertiesRoute
+  '/reservations': typeof ReservationsRoute
   '/submissions': typeof SubmissionsRoute
+  '/supply-requests': typeof SupplyRequestsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/properties' | '/submissions'
+  fullPaths:
+    '/' | '/properties' | '/reservations' | '/submissions' | '/supply-requests'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/properties' | '/submissions'
-  id: '__root__' | '/' | '/properties' | '/submissions'
+  to:
+    '/' | '/properties' | '/reservations' | '/submissions' | '/supply-requests'
+  id:
+    | '__root__'
+    | '/'
+    | '/properties'
+    | '/reservations'
+    | '/submissions'
+    | '/supply-requests'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PropertiesRoute: typeof PropertiesRoute
+  ReservationsRoute: typeof ReservationsRoute
   SubmissionsRoute: typeof SubmissionsRoute
+  SupplyRequestsRoute: typeof SupplyRequestsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,11 +103,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PropertiesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reservations': {
+      id: '/reservations'
+      path: '/reservations'
+      fullPath: '/reservations'
+      preLoaderRoute: typeof ReservationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/submissions': {
       id: '/submissions'
       path: '/submissions'
       fullPath: '/submissions'
       preLoaderRoute: typeof SubmissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/supply-requests': {
+      id: '/supply-requests'
+      path: '/supply-requests'
+      fullPath: '/supply-requests'
+      preLoaderRoute: typeof SupplyRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -88,7 +130,9 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PropertiesRoute: PropertiesRoute,
+  ReservationsRoute: ReservationsRoute,
   SubmissionsRoute: SubmissionsRoute,
+  SupplyRequestsRoute: SupplyRequestsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
