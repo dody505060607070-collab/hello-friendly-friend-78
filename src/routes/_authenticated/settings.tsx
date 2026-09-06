@@ -529,7 +529,7 @@ function AreasPanel() {
     keys.forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
 
   const mutate = useMutation({
-    mutationFn: async (op: { table: "cities" | "districts" | "property_types"; run: () => Promise<{ error: unknown }> }) => {
+    mutationFn: async (op: { table: "cities" | "districts" | "property_types"; run: () => PromiseLike<{ error: unknown }> }) => {
       const { error } = await op.run();
       if (error) throw error;
       return op.table;
