@@ -5,13 +5,17 @@ import {
   CircleCheck,
   Settings,
   ShieldCheck,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
 export type NavItem = {
   label: string;
   to: string;
-  badge?: number;
+  /** مفتاح العدّاد القادم من قاعدة البيانات */
+  countKey?: string;
+  /** القسم المطلوب لعرض العنصر */
+  module?: string;
 };
 
 export type NavGroup = {
@@ -29,42 +33,91 @@ export const navGroups: NavGroup[] = [
     label: "إدارة العقارات",
     icon: Factory,
     items: [
-      { label: "العقارات", to: "/properties" },
-      { label: "طلبات التقديم", to: "/submissions" },
-      { label: "طلبات توفير عقار", to: "/supply-requests", badge: 97 },
-      { label: "إدارة الحجوزات", to: "/reservations" },
+      { label: "العقارات", to: "/properties", countKey: "properties", module: "properties" },
+      { label: "طلبات عرض عقار", to: "/submissions", countKey: "listingRequests", module: "requests" },
+      { label: "طلبات توفير عقار", to: "/supply-requests", countKey: "supplyRequests", module: "requests" },
+      { label: "إدارة الحجوزات", to: "/reservations", countKey: "reservations", module: "reservations" },
     ],
   },
   {
     label: "إدارة الإيجارات",
     icon: Building2,
     items: [
-      { label: "الملاك", to: "/owners", badge: 24 },
-      { label: "إدارة العقود", to: "/contracts", badge: 23 },
-      { label: "الفواتير", to: "/invoices", badge: 2 },
-      { label: "إدارة التذكيرات", to: "/reminders", badge: 1 },
+      { label: "الملاك", to: "/owners", countKey: "owners", module: "owners" },
+      { label: "إدارة العقود", to: "/contracts", countKey: "contracts", module: "contracts" },
+      { label: "استيراد PDF", to: "/contract-imports", countKey: "imports", module: "contracts" },
+      { label: "الفواتير", to: "/invoices", countKey: "invoices", module: "invoices" },
+      { label: "إدارة التذكيرات", to: "/reminders", countKey: "followups", module: "reminders" },
     ],
   },
   {
     label: "المهام",
     icon: CircleCheck,
-    items: [{ label: "المهام", to: "/tasks", badge: 7 }],
+    items: [
+      { label: "كل المهام", to: "/tasks", countKey: "tasks", module: "tasks" },
+      { label: "مهام عادية", to: "/tasks/normal", module: "tasks" },
+      { label: "مهام تصوير", to: "/tasks/photography", module: "tasks" },
+    ],
+  },
+  {
+    label: "CRM",
+    icon: Users,
+    items: [
+      { label: "العملاء", to: "/clients", countKey: "contacts", module: "contacts" },
+      { label: "الفرص", to: "/opportunities", countKey: "opportunities", module: "crm" },
+      { label: "المتابعات والأنشطة", to: "/activities", module: "crm" },
+      { label: "التقارير", to: "/reports", module: "crm" },
+    ],
   },
   {
     label: "إعدادات الموقع",
     icon: Settings,
     items: [
-      { label: "إعدادات الموقع", to: "/settings" },
-      { label: "الشركاء", to: "/partners" },
-      { label: "الخدمات", to: "/services" },
+      { label: "إعدادات الموقع", to: "/settings", module: "settings" },
+      { label: "الشركاء", to: "/partners", module: "settings" },
+      { label: "الخدمات", to: "/services", module: "settings" },
     ],
   },
   {
     label: "الإدارة",
     icon: ShieldCheck,
     items: [
-      { label: "الموظفين", to: "/employees" },
-      { label: "سجل الأخطاء", to: "/error-log" },
+      { label: "الموظفون", to: "/employees", module: "employees" },
+      { label: "الأدوار والصلاحيات", to: "/roles", module: "employees" },
+      { label: "سجل الأنشطة", to: "/activity-log", module: "logs" },
+      { label: "سجل الأخطاء", to: "/error-log", module: "logs" },
     ],
   },
 ];
+
+/** كل الأقسام والإجراءات المتاحة للصلاحيات */
+export const permissionModules: { key: string; label: string; actions: string[] }[] = [
+  { key: "properties", label: "العقارات", actions: ["view", "add", "edit", "delete"] },
+  { key: "requests", label: "الطلبات", actions: ["view", "edit"] },
+  { key: "reservations", label: "الحجوزات", actions: ["view", "book", "delete"] },
+  { key: "owners", label: "الملاك والوحدات", actions: ["view", "edit"] },
+  { key: "contracts", label: "العقود", actions: ["view", "add", "edit", "delete", "approve"] },
+  { key: "payments", label: "التحصيل", actions: ["collect"] },
+  { key: "invoices", label: "الفواتير", actions: ["view", "edit", "export"] },
+  { key: "reminders", label: "التذكيرات", actions: ["view", "edit", "send"] },
+  { key: "tasks", label: "المهام", actions: ["view", "add", "edit", "delete", "approve"] },
+  { key: "contacts", label: "العملاء", actions: ["view", "add", "edit", "delete"] },
+  { key: "crm", label: "CRM", actions: ["view", "edit"] },
+  { key: "chat", label: "المحادثات الداخلية", actions: ["view"] },
+  { key: "settings", label: "الإعدادات", actions: ["view", "edit"] },
+  { key: "employees", label: "الموظفون", actions: ["view", "manage"] },
+  { key: "logs", label: "السجلات", actions: ["view"] },
+];
+
+export const actionLabels: Record<string, string> = {
+  view: "عرض",
+  add: "إضافة",
+  edit: "تعديل",
+  delete: "حذف / أرشفة",
+  approve: "اعتماد",
+  export: "تصدير",
+  collect: "تحصيل",
+  send: "إرسال تذكير",
+  book: "حجز وتمديد",
+  manage: "إدارة موظفين",
+};
