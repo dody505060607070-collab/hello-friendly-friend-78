@@ -37,6 +37,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSubmissionsRouteImport } from './routes/_authenticated/submissions'
 import { Route as AuthenticatedSupplyRequestsRouteImport } from './routes/_authenticated/supply-requests'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
+import { Route as PropertiesCodeRouteImport } from './routes/properties.$code'
 import { Route as AuthenticatedTasksNormalRouteImport } from './routes/_authenticated/tasks.normal'
 import { Route as AuthenticatedTasksPhotographyRouteImport } from './routes/_authenticated/tasks.photography'
 
@@ -186,6 +187,11 @@ const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
   path: '/tasks',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const PropertiesCodeRoute = PropertiesCodeRouteImport.update({
+  id: '/properties/$code',
+  path: '/properties/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedTasksNormalRoute =
   AuthenticatedTasksNormalRouteImport.update({
     id: '/normal',
@@ -227,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/submissions': typeof AuthenticatedSubmissionsRoute
   '/supply-requests': typeof AuthenticatedSupplyRequestsRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
+  '/properties/$code': typeof PropertiesCodeRoute
   '/tasks/normal': typeof AuthenticatedTasksNormalRoute
   '/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
@@ -258,6 +265,7 @@ export interface FileRoutesByTo {
   '/submissions': typeof AuthenticatedSubmissionsRoute
   '/supply-requests': typeof AuthenticatedSupplyRequestsRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
+  '/properties/$code': typeof PropertiesCodeRoute
   '/tasks/normal': typeof AuthenticatedTasksNormalRoute
   '/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
@@ -291,6 +299,7 @@ export interface FileRoutesById {
   '/_authenticated/submissions': typeof AuthenticatedSubmissionsRoute
   '/_authenticated/supply-requests': typeof AuthenticatedSupplyRequestsRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
+  '/properties/$code': typeof PropertiesCodeRoute
   '/_authenticated/tasks/normal': typeof AuthenticatedTasksNormalRoute
   '/_authenticated/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
@@ -324,6 +333,7 @@ export interface FileRouteTypes {
     | '/submissions'
     | '/supply-requests'
     | '/tasks'
+    | '/properties/$code'
     | '/tasks/normal'
     | '/tasks/photography'
   fileRoutesByTo: FileRoutesByTo
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/submissions'
     | '/supply-requests'
     | '/tasks'
+    | '/properties/$code'
     | '/tasks/normal'
     | '/tasks/photography'
   id:
@@ -387,6 +398,7 @@ export interface FileRouteTypes {
     | '/_authenticated/submissions'
     | '/_authenticated/supply-requests'
     | '/_authenticated/tasks'
+    | '/properties/$code'
     | '/_authenticated/tasks/normal'
     | '/_authenticated/tasks/photography'
   fileRoutesById: FileRoutesById
@@ -397,6 +409,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   RentRoute: typeof RentRoute
   SaleRoute: typeof SaleRoute
+  PropertiesCodeRoute: typeof PropertiesCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -597,6 +610,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTasksRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/properties/$code': {
+      id: '/properties/$code'
+      path: '/properties/$code'
+      fullPath: '/properties/$code'
+      preLoaderRoute: typeof PropertiesCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/tasks/normal': {
       id: '/_authenticated/tasks/normal'
       path: '/normal'
@@ -688,6 +708,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   RentRoute: RentRoute,
   SaleRoute: SaleRoute,
+  PropertiesCodeRoute: PropertiesCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
