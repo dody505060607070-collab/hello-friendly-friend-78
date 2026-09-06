@@ -10,33 +10,219 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ContractsRouteImport } from './routes/contracts'
+import { Route as EmployeesRouteImport } from './routes/employees'
+import { Route as ErrorLogRouteImport } from './routes/error-log'
+import { Route as InvoicesRouteImport } from './routes/invoices'
+import { Route as OwnersRouteImport } from './routes/owners'
+import { Route as PartnersRouteImport } from './routes/partners'
+import { Route as PropertiesRouteImport } from './routes/properties'
+import { Route as RemindersRouteImport } from './routes/reminders'
+import { Route as ReservationsRouteImport } from './routes/reservations'
+import { Route as ServicesRouteImport } from './routes/services'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SubmissionsRouteImport } from './routes/submissions'
+import { Route as SupplyRequestsRouteImport } from './routes/supply-requests'
+import { Route as TasksRouteImport } from './routes/tasks'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContractsRoute = ContractsRouteImport.update({
+  id: '/contracts',
+  path: '/contracts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmployeesRoute = EmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ErrorLogRoute = ErrorLogRouteImport.update({
+  id: '/error-log',
+  path: '/error-log',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvoicesRoute = InvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnersRoute = OwnersRouteImport.update({
+  id: '/owners',
+  path: '/owners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnersRoute = PartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PropertiesRoute = PropertiesRouteImport.update({
+  id: '/properties',
+  path: '/properties',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RemindersRoute = RemindersRouteImport.update({
+  id: '/reminders',
+  path: '/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReservationsRoute = ReservationsRouteImport.update({
+  id: '/reservations',
+  path: '/reservations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServicesRoute = ServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubmissionsRoute = SubmissionsRouteImport.update({
+  id: '/submissions',
+  path: '/submissions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupplyRequestsRoute = SupplyRequestsRouteImport.update({
+  id: '/supply-requests',
+  path: '/supply-requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TasksRoute = TasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/contracts': typeof ContractsRoute
+  '/employees': typeof EmployeesRoute
+  '/error-log': typeof ErrorLogRoute
+  '/invoices': typeof InvoicesRoute
+  '/owners': typeof OwnersRoute
+  '/partners': typeof PartnersRoute
+  '/properties': typeof PropertiesRoute
+  '/reminders': typeof RemindersRoute
+  '/reservations': typeof ReservationsRoute
+  '/services': typeof ServicesRoute
+  '/settings': typeof SettingsRoute
+  '/submissions': typeof SubmissionsRoute
+  '/supply-requests': typeof SupplyRequestsRoute
+  '/tasks': typeof TasksRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/contracts': typeof ContractsRoute
+  '/employees': typeof EmployeesRoute
+  '/error-log': typeof ErrorLogRoute
+  '/invoices': typeof InvoicesRoute
+  '/owners': typeof OwnersRoute
+  '/partners': typeof PartnersRoute
+  '/properties': typeof PropertiesRoute
+  '/reminders': typeof RemindersRoute
+  '/reservations': typeof ReservationsRoute
+  '/services': typeof ServicesRoute
+  '/settings': typeof SettingsRoute
+  '/submissions': typeof SubmissionsRoute
+  '/supply-requests': typeof SupplyRequestsRoute
+  '/tasks': typeof TasksRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/contracts': typeof ContractsRoute
+  '/employees': typeof EmployeesRoute
+  '/error-log': typeof ErrorLogRoute
+  '/invoices': typeof InvoicesRoute
+  '/owners': typeof OwnersRoute
+  '/partners': typeof PartnersRoute
+  '/properties': typeof PropertiesRoute
+  '/reminders': typeof RemindersRoute
+  '/reservations': typeof ReservationsRoute
+  '/services': typeof ServicesRoute
+  '/settings': typeof SettingsRoute
+  '/submissions': typeof SubmissionsRoute
+  '/supply-requests': typeof SupplyRequestsRoute
+  '/tasks': typeof TasksRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/contracts'
+    | '/employees'
+    | '/error-log'
+    | '/invoices'
+    | '/owners'
+    | '/partners'
+    | '/properties'
+    | '/reminders'
+    | '/reservations'
+    | '/services'
+    | '/settings'
+    | '/submissions'
+    | '/supply-requests'
+    | '/tasks'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/contracts'
+    | '/employees'
+    | '/error-log'
+    | '/invoices'
+    | '/owners'
+    | '/partners'
+    | '/properties'
+    | '/reminders'
+    | '/reservations'
+    | '/services'
+    | '/settings'
+    | '/submissions'
+    | '/supply-requests'
+    | '/tasks'
+  id:
+    | '__root__'
+    | '/'
+    | '/contracts'
+    | '/employees'
+    | '/error-log'
+    | '/invoices'
+    | '/owners'
+    | '/partners'
+    | '/properties'
+    | '/reminders'
+    | '/reservations'
+    | '/services'
+    | '/settings'
+    | '/submissions'
+    | '/supply-requests'
+    | '/tasks'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ContractsRoute: typeof ContractsRoute
+  EmployeesRoute: typeof EmployeesRoute
+  ErrorLogRoute: typeof ErrorLogRoute
+  InvoicesRoute: typeof InvoicesRoute
+  OwnersRoute: typeof OwnersRoute
+  PartnersRoute: typeof PartnersRoute
+  PropertiesRoute: typeof PropertiesRoute
+  RemindersRoute: typeof RemindersRoute
+  ReservationsRoute: typeof ReservationsRoute
+  ServicesRoute: typeof ServicesRoute
+  SettingsRoute: typeof SettingsRoute
+  SubmissionsRoute: typeof SubmissionsRoute
+  SupplyRequestsRoute: typeof SupplyRequestsRoute
+  TasksRoute: typeof TasksRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +234,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contracts': {
+      id: '/contracts'
+      path: '/contracts'
+      fullPath: '/contracts'
+      preLoaderRoute: typeof ContractsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/employees': {
+      id: '/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof EmployeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/error-log': {
+      id: '/error-log'
+      path: '/error-log'
+      fullPath: '/error-log'
+      preLoaderRoute: typeof ErrorLogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invoices': {
+      id: '/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof InvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owners': {
+      id: '/owners'
+      path: '/owners'
+      fullPath: '/owners'
+      preLoaderRoute: typeof OwnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partners': {
+      id: '/partners'
+      path: '/partners'
+      fullPath: '/partners'
+      preLoaderRoute: typeof PartnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/properties': {
+      id: '/properties'
+      path: '/properties'
+      fullPath: '/properties'
+      preLoaderRoute: typeof PropertiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reminders': {
+      id: '/reminders'
+      path: '/reminders'
+      fullPath: '/reminders'
+      preLoaderRoute: typeof RemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reservations': {
+      id: '/reservations'
+      path: '/reservations'
+      fullPath: '/reservations'
+      preLoaderRoute: typeof ReservationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/services': {
+      id: '/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/submissions': {
+      id: '/submissions'
+      path: '/submissions'
+      fullPath: '/submissions'
+      preLoaderRoute: typeof SubmissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/supply-requests': {
+      id: '/supply-requests'
+      path: '/supply-requests'
+      fullPath: '/supply-requests'
+      preLoaderRoute: typeof SupplyRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tasks': {
+      id: '/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof TasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ContractsRoute: ContractsRoute,
+  EmployeesRoute: EmployeesRoute,
+  ErrorLogRoute: ErrorLogRoute,
+  InvoicesRoute: InvoicesRoute,
+  OwnersRoute: OwnersRoute,
+  PartnersRoute: PartnersRoute,
+  PropertiesRoute: PropertiesRoute,
+  RemindersRoute: RemindersRoute,
+  ReservationsRoute: ReservationsRoute,
+  ServicesRoute: ServicesRoute,
+  SettingsRoute: SettingsRoute,
+  SubmissionsRoute: SubmissionsRoute,
+  SupplyRequestsRoute: SupplyRequestsRoute,
+  TasksRoute: TasksRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
