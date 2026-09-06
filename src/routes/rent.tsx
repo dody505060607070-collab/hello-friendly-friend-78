@@ -28,7 +28,7 @@ export const Route = createFileRoute("/rent")({
 });
 
 function RentPage() {
-  const { data, isLoading, error } = useQuery(publicPropertiesQuery("rent", 60));
+  const { data, isLoading, error } = useQuery(publicPropertiesQuery("rent", 200));
   const [district, setDistrict] = useState("");
   const [type, setType] = useState("");
 

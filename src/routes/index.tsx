@@ -43,7 +43,7 @@ function HomePage() {
   const rent = useQuery(publicPropertiesQuery("rent", 6));
   const sale = useQuery(publicPropertiesQuery("sale", 6));
   const services = useQuery(publicServicesQuery);
-  const all = useQuery(publicPropertiesQuery(undefined, 60));
+  const all = useQuery(publicPropertiesQuery(undefined, 200));
 
   const [purpose, setPurpose] = useState("");
   const [type, setType] = useState("");
