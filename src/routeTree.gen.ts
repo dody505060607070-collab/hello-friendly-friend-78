@@ -19,6 +19,7 @@ import { Route as RentRouteImport } from './routes/rent'
 import { Route as SaleRouteImport } from './routes/sale'
 import { Route as AuthenticatedActivitiesRouteImport } from './routes/_authenticated/activities'
 import { Route as AuthenticatedActivityLogRouteImport } from './routes/_authenticated/activity-log'
+import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedContractImportsRouteImport } from './routes/_authenticated/contract-imports'
 import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
@@ -96,6 +97,11 @@ const AuthenticatedActivityLogRoute =
     path: '/activity-log',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAiRoute = AuthenticatedAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
@@ -245,6 +251,7 @@ export interface FileRoutesByFullPath {
   '/sale': typeof SaleRoute
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
+  '/ai': typeof AuthenticatedAiRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/contract-imports': typeof AuthenticatedContractImportsRoute
   '/contracts': typeof AuthenticatedContractsRoute
@@ -282,6 +289,7 @@ export interface FileRoutesByTo {
   '/sale': typeof SaleRoute
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
+  '/ai': typeof AuthenticatedAiRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/contract-imports': typeof AuthenticatedContractImportsRoute
   '/contracts': typeof AuthenticatedContractsRoute
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/sale': typeof SaleRoute
   '/_authenticated/activities': typeof AuthenticatedActivitiesRoute
   '/_authenticated/activity-log': typeof AuthenticatedActivityLogRoute
+  '/_authenticated/ai': typeof AuthenticatedAiRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/contract-imports': typeof AuthenticatedContractImportsRoute
   '/_authenticated/contracts': typeof AuthenticatedContractsRoute
@@ -360,6 +369,7 @@ export interface FileRouteTypes {
     | '/sale'
     | '/activities'
     | '/activity-log'
+    | '/ai'
     | '/clients'
     | '/contract-imports'
     | '/contracts'
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/sale'
     | '/activities'
     | '/activity-log'
+    | '/ai'
     | '/clients'
     | '/contract-imports'
     | '/contracts'
@@ -435,6 +446,7 @@ export interface FileRouteTypes {
     | '/sale'
     | '/_authenticated/activities'
     | '/_authenticated/activity-log'
+    | '/_authenticated/ai'
     | '/_authenticated/clients'
     | '/_authenticated/contract-imports'
     | '/_authenticated/contracts'
@@ -545,6 +557,13 @@ declare module '@tanstack/react-router' {
       path: '/activity-log'
       fullPath: '/activity-log'
       preLoaderRoute: typeof AuthenticatedActivityLogRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ai': {
+      id: '/_authenticated/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AuthenticatedAiRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/clients': {
@@ -748,6 +767,7 @@ const AuthenticatedTasksRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivitiesRoute: typeof AuthenticatedActivitiesRoute
   AuthenticatedActivityLogRoute: typeof AuthenticatedActivityLogRoute
+  AuthenticatedAiRoute: typeof AuthenticatedAiRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedContractImportsRoute: typeof AuthenticatedContractImportsRoute
   AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
@@ -776,6 +796,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivitiesRoute: AuthenticatedActivitiesRoute,
   AuthenticatedActivityLogRoute: AuthenticatedActivityLogRoute,
+  AuthenticatedAiRoute: AuthenticatedAiRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedContractImportsRoute: AuthenticatedContractImportsRoute,
   AuthenticatedContractsRoute: AuthenticatedContractsRoute,
