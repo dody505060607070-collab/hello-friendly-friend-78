@@ -59,30 +59,24 @@ function CrmPage() {
   const totals = useQuery({
     queryKey: ["crm", "totals"],
     queryFn: async () => {
-      const head = async (table: string, apply?: (q: never) => never) => {
-        let q = supabase.from(table as "contacts").select("*", { count: "exact", head: true });
-        if (apply) q = apply(q as never);
-        const { count, error } = await q;
-        if (error) throw error;
-        return count ?? 0;
-      };
       const [contacts, leads, activities, openDeals] = await Promise.all([
-        head("contacts"),
-        head("contacts", ((q: ReturnType<typeof supabase.from>) =>
-          (q as never as { contains: (a: string, b: string[]) => never }).contains("roles", [
-            "lead",
-          ])) as never),
-        head("crm_activities"),
-        head("opportunities", ((q: ReturnType<typeof supabase.from>) =>
-          (q as never as { not: (a: string, b: string, c: string) => never }).not(
-            "stage",
-            "in",
-            '("won","lost")',
-          )) as never),
+        supabase.from("contacts").select("*", { count: "exact", head: true }),
+        supabase.from("contacts").select("*", { count: "exact", head: true }).contains("roles", ["lead"]),
+        supabase.from("crm_activities").select("*", { count: "exact", head: true }),
+        supabase
+          .from("opportunities")
+          .select("*", { count: "exact", head: true })
+          .not("stage", "in", '("won","lost")'),
       ]);
-      return { contacts, leads, activities, openDeals };
+      return {
+        contacts: contacts.count ?? 0,
+        leads: leads.count ?? 0,
+        activities: activities.count ?? 0,
+        openDeals: openDeals.count ?? 0,
+      };
     },
   });
+
 
   const rows = opportunities.data ?? [];
   const stageCounts = pipeline.map((stage) => ({
