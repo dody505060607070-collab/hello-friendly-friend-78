@@ -15,8 +15,10 @@ import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as OwnersRouteImport } from './routes/owners'
 import { Route as PropertiesRouteImport } from './routes/properties'
 import { Route as ReservationsRouteImport } from './routes/reservations'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SubmissionsRouteImport } from './routes/submissions'
 import { Route as SupplyRequestsRouteImport } from './routes/supply-requests'
+import { Route as TasksRouteImport } from './routes/tasks'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -48,6 +50,11 @@ const ReservationsRoute = ReservationsRouteImport.update({
   path: '/reservations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SubmissionsRoute = SubmissionsRouteImport.update({
   id: '/submissions',
   path: '/submissions',
@@ -58,6 +65,11 @@ const SupplyRequestsRoute = SupplyRequestsRouteImport.update({
   path: '/supply-requests',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TasksRoute = TasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -66,8 +78,10 @@ export interface FileRoutesByFullPath {
   '/owners': typeof OwnersRoute
   '/properties': typeof PropertiesRoute
   '/reservations': typeof ReservationsRoute
+  '/settings': typeof SettingsRoute
   '/submissions': typeof SubmissionsRoute
   '/supply-requests': typeof SupplyRequestsRoute
+  '/tasks': typeof TasksRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -76,8 +90,10 @@ export interface FileRoutesByTo {
   '/owners': typeof OwnersRoute
   '/properties': typeof PropertiesRoute
   '/reservations': typeof ReservationsRoute
+  '/settings': typeof SettingsRoute
   '/submissions': typeof SubmissionsRoute
   '/supply-requests': typeof SupplyRequestsRoute
+  '/tasks': typeof TasksRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,8 +103,10 @@ export interface FileRoutesById {
   '/owners': typeof OwnersRoute
   '/properties': typeof PropertiesRoute
   '/reservations': typeof ReservationsRoute
+  '/settings': typeof SettingsRoute
   '/submissions': typeof SubmissionsRoute
   '/supply-requests': typeof SupplyRequestsRoute
+  '/tasks': typeof TasksRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -99,8 +117,10 @@ export interface FileRouteTypes {
     | '/owners'
     | '/properties'
     | '/reservations'
+    | '/settings'
     | '/submissions'
     | '/supply-requests'
+    | '/tasks'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -109,8 +129,10 @@ export interface FileRouteTypes {
     | '/owners'
     | '/properties'
     | '/reservations'
+    | '/settings'
     | '/submissions'
     | '/supply-requests'
+    | '/tasks'
   id:
     | '__root__'
     | '/'
@@ -119,8 +141,10 @@ export interface FileRouteTypes {
     | '/owners'
     | '/properties'
     | '/reservations'
+    | '/settings'
     | '/submissions'
     | '/supply-requests'
+    | '/tasks'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -130,8 +154,10 @@ export interface RootRouteChildren {
   OwnersRoute: typeof OwnersRoute
   PropertiesRoute: typeof PropertiesRoute
   ReservationsRoute: typeof ReservationsRoute
+  SettingsRoute: typeof SettingsRoute
   SubmissionsRoute: typeof SubmissionsRoute
   SupplyRequestsRoute: typeof SupplyRequestsRoute
+  TasksRoute: typeof TasksRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -178,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReservationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/submissions': {
       id: '/submissions'
       path: '/submissions'
@@ -192,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SupplyRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tasks': {
+      id: '/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof TasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -202,8 +242,10 @@ const rootRouteChildren: RootRouteChildren = {
   OwnersRoute: OwnersRoute,
   PropertiesRoute: PropertiesRoute,
   ReservationsRoute: ReservationsRoute,
+  SettingsRoute: SettingsRoute,
   SubmissionsRoute: SubmissionsRoute,
   SupplyRequestsRoute: SupplyRequestsRoute,
+  TasksRoute: TasksRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
