@@ -11,10 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ContractsRouteImport } from './routes/contracts'
+import { Route as EmployeesRouteImport } from './routes/employees'
+import { Route as ErrorLogRouteImport } from './routes/error-log'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as OwnersRouteImport } from './routes/owners'
+import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as PropertiesRouteImport } from './routes/properties'
+import { Route as RemindersRouteImport } from './routes/reminders'
 import { Route as ReservationsRouteImport } from './routes/reservations'
+import { Route as ServicesRouteImport } from './routes/services'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SubmissionsRouteImport } from './routes/submissions'
 import { Route as SupplyRequestsRouteImport } from './routes/supply-requests'
@@ -30,6 +35,16 @@ const ContractsRoute = ContractsRouteImport.update({
   path: '/contracts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmployeesRoute = EmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ErrorLogRoute = ErrorLogRouteImport.update({
+  id: '/error-log',
+  path: '/error-log',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InvoicesRoute = InvoicesRouteImport.update({
   id: '/invoices',
   path: '/invoices',
@@ -40,14 +55,29 @@ const OwnersRoute = OwnersRouteImport.update({
   path: '/owners',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PartnersRoute = PartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PropertiesRoute = PropertiesRouteImport.update({
   id: '/properties',
   path: '/properties',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RemindersRoute = RemindersRouteImport.update({
+  id: '/reminders',
+  path: '/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReservationsRoute = ReservationsRouteImport.update({
   id: '/reservations',
   path: '/reservations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServicesRoute = ServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -74,10 +104,15 @@ const TasksRoute = TasksRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/contracts': typeof ContractsRoute
+  '/employees': typeof EmployeesRoute
+  '/error-log': typeof ErrorLogRoute
   '/invoices': typeof InvoicesRoute
   '/owners': typeof OwnersRoute
+  '/partners': typeof PartnersRoute
   '/properties': typeof PropertiesRoute
+  '/reminders': typeof RemindersRoute
   '/reservations': typeof ReservationsRoute
+  '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/submissions': typeof SubmissionsRoute
   '/supply-requests': typeof SupplyRequestsRoute
@@ -86,10 +121,15 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contracts': typeof ContractsRoute
+  '/employees': typeof EmployeesRoute
+  '/error-log': typeof ErrorLogRoute
   '/invoices': typeof InvoicesRoute
   '/owners': typeof OwnersRoute
+  '/partners': typeof PartnersRoute
   '/properties': typeof PropertiesRoute
+  '/reminders': typeof RemindersRoute
   '/reservations': typeof ReservationsRoute
+  '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/submissions': typeof SubmissionsRoute
   '/supply-requests': typeof SupplyRequestsRoute
@@ -99,10 +139,15 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/contracts': typeof ContractsRoute
+  '/employees': typeof EmployeesRoute
+  '/error-log': typeof ErrorLogRoute
   '/invoices': typeof InvoicesRoute
   '/owners': typeof OwnersRoute
+  '/partners': typeof PartnersRoute
   '/properties': typeof PropertiesRoute
+  '/reminders': typeof RemindersRoute
   '/reservations': typeof ReservationsRoute
+  '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/submissions': typeof SubmissionsRoute
   '/supply-requests': typeof SupplyRequestsRoute
@@ -113,10 +158,15 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/contracts'
+    | '/employees'
+    | '/error-log'
     | '/invoices'
     | '/owners'
+    | '/partners'
     | '/properties'
+    | '/reminders'
     | '/reservations'
+    | '/services'
     | '/settings'
     | '/submissions'
     | '/supply-requests'
@@ -125,10 +175,15 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/contracts'
+    | '/employees'
+    | '/error-log'
     | '/invoices'
     | '/owners'
+    | '/partners'
     | '/properties'
+    | '/reminders'
     | '/reservations'
+    | '/services'
     | '/settings'
     | '/submissions'
     | '/supply-requests'
@@ -137,10 +192,15 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/contracts'
+    | '/employees'
+    | '/error-log'
     | '/invoices'
     | '/owners'
+    | '/partners'
     | '/properties'
+    | '/reminders'
     | '/reservations'
+    | '/services'
     | '/settings'
     | '/submissions'
     | '/supply-requests'
@@ -150,10 +210,15 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ContractsRoute: typeof ContractsRoute
+  EmployeesRoute: typeof EmployeesRoute
+  ErrorLogRoute: typeof ErrorLogRoute
   InvoicesRoute: typeof InvoicesRoute
   OwnersRoute: typeof OwnersRoute
+  PartnersRoute: typeof PartnersRoute
   PropertiesRoute: typeof PropertiesRoute
+  RemindersRoute: typeof RemindersRoute
   ReservationsRoute: typeof ReservationsRoute
+  ServicesRoute: typeof ServicesRoute
   SettingsRoute: typeof SettingsRoute
   SubmissionsRoute: typeof SubmissionsRoute
   SupplyRequestsRoute: typeof SupplyRequestsRoute
@@ -176,6 +241,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContractsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/employees': {
+      id: '/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof EmployeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/error-log': {
+      id: '/error-log'
+      path: '/error-log'
+      fullPath: '/error-log'
+      preLoaderRoute: typeof ErrorLogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/invoices': {
       id: '/invoices'
       path: '/invoices'
@@ -190,6 +269,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/partners': {
+      id: '/partners'
+      path: '/partners'
+      fullPath: '/partners'
+      preLoaderRoute: typeof PartnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/properties': {
       id: '/properties'
       path: '/properties'
@@ -197,11 +283,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PropertiesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reminders': {
+      id: '/reminders'
+      path: '/reminders'
+      fullPath: '/reminders'
+      preLoaderRoute: typeof RemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reservations': {
       id: '/reservations'
       path: '/reservations'
       fullPath: '/reservations'
       preLoaderRoute: typeof ReservationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/services': {
+      id: '/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof ServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -238,10 +338,15 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ContractsRoute: ContractsRoute,
+  EmployeesRoute: EmployeesRoute,
+  ErrorLogRoute: ErrorLogRoute,
   InvoicesRoute: InvoicesRoute,
   OwnersRoute: OwnersRoute,
+  PartnersRoute: PartnersRoute,
   PropertiesRoute: PropertiesRoute,
+  RemindersRoute: RemindersRoute,
   ReservationsRoute: ReservationsRoute,
+  ServicesRoute: ServicesRoute,
   SettingsRoute: SettingsRoute,
   SubmissionsRoute: SubmissionsRoute,
   SupplyRequestsRoute: SupplyRequestsRoute,
