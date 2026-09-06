@@ -88,11 +88,14 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
     ]);
 
     const match = text.match(/\{[\s\S]*\}/);
-    let extraction: Record<string, unknown> = {};
-    try {
-      extraction = match ? (JSON.parse(match[0]) as Record<string, unknown>) : {};
-    } catch {
-      extraction = {};
+    let extractionJson = "{}";
+    if (match) {
+      try {
+        extractionJson = JSON.stringify(JSON.parse(match[0]));
+      } catch {
+        extractionJson = "{}";
+      }
     }
-    return { extraction, raw: text };
+    return { extractionJson, raw: text };
   });
+
