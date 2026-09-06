@@ -3,7 +3,6 @@ import { Eye, Inbox, MapPin, Search } from "lucide-react";
 
 import { Chip } from "@/components/kit/Chip";
 import { DataTable, type Column } from "@/components/kit/DataTable";
-import { PageBar } from "@/components/kit/PageBar";
 import { PageHero } from "@/components/kit/PageHero";
 import { Pills } from "@/components/kit/Pills";
 import { submissions } from "@/data/records";
