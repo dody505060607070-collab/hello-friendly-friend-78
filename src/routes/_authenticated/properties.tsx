@@ -68,10 +68,9 @@ function PropertiesPage() {
 
   const flags = useMutation({
     mutationFn: async (input: { id: string; field: "is_visible" | "is_featured"; value: boolean }) => {
-      const { error: err } = await supabase
-        .from("properties")
-        .update({ [input.field]: input.value })
-        .eq("id", input.id);
+      const patch =
+        input.field === "is_visible" ? { is_visible: input.value } : { is_featured: input.value };
+      const { error: err } = await supabase.from("properties").update(patch).eq("id", input.id);
       if (err) throw err;
     },
     onSuccess: () => {
