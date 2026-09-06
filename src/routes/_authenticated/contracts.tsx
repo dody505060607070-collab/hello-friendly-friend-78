@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { FileText } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { FileText, Plus, Upload } from "lucide-react";
 
 import { Chip } from "@/components/kit/Chip";
 import { LiveTable, formatCurrency, formatDate } from "@/components/kit/LiveTable";
@@ -43,6 +43,24 @@ function ContractsPage() {
         subtitle="جميع العقود المسجلة أو المستوردة من ملفات PDF، مع أطرافها وقيمها ودفعاتها."
         icon={FileText}
       />
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          <Plus className="size-4" />
+          عقد جديد
+        </button>
+        <Link
+          to="/contract-imports"
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
+        >
+          <Upload className="size-4" />
+          استيراد عقد PDF
+        </Link>
+      </div>
+
 
       <LiveTable<Row>
         table="contracts"
