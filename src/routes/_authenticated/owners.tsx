@@ -1,18 +1,33 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Users } from "lucide-react";
+import { Loader2, Pencil, Plus, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { Chip } from "@/components/kit/Chip";
-import { LiveTable, formatDate } from "@/components/kit/LiveTable";
+import { DataTable } from "@/components/kit/DataTable";
+import { EmptyState, formatDate, useTableRows } from "@/components/kit/LiveTable";
+import {
+  Field,
+  GhostButton,
+  Modal,
+  PrimaryButton,
+  inputClass,
+  textareaClass,
+} from "@/components/kit/Modal";
 import { PageHero } from "@/components/kit/PageHero";
-import { contactRoleLabels } from "@/lib/labels";
+import { Toggle } from "@/components/kit/Toggle";
+import { supabase } from "@/integrations/supabase/client";
 
 type Row = {
   id: string;
   full_name: string;
   phone: string | null;
-  whatsapp: string | null;
+  whatsapp: string | null
   email: string | null;
   national_id: string | null;
+  address: string | null;
+  notes: string | null;
   roles: string[] | null;
   is_active: boolean;
   created_at: string;
@@ -22,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/owners")({
   head: () => ({
     meta: [
       { title: "الملاك | مثراء العقارية" },
-      { name: "description", content: "سجل الملاك وبيانات التواصل والعقارات المرتبطة بهم." },
+      { name: "description", content: "سجل الملاك وبيانات التواصل والعقارات والعقود المرتبطة بهم." },
       { property: "og:title", content: "الملاك | مثراء العقارية" },
       { property: "og:description", content: "سجل الملاك وبيانات التواصل والعقارات المرتبطة." },
       { property: "og:type", content: "website" },
@@ -32,51 +47,328 @@ export const Route = createFileRoute("/_authenticated/owners")({
   component: OwnersPage,
 });
 
+const SELECT =
+  "id, full_name, phone, whatsapp, email, national_id, address, notes, roles, is_active, created_at";
+
+type FormState = {
+  full_name: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  national_id: string;
+  address: string;
+  notes: string;
+  is_active: boolean;
+};
+
+const emptyForm: FormState = {
+  full_name: "",
+  phone: "",
+  whatsapp: "",
+  email: "",
+  national_id: "",
+  address: "",
+  notes: "",
+  is_active: true,
+};
+
 function OwnersPage() {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [form, setForm] = useState<FormState>(emptyForm);
+
+  const { data, isLoading } = useTableRows<Row>({
+    table: "contacts",
+    select: SELECT,
+    filter: (q) => q.contains("roles", ["owner"]),
+    orderBy: { column: "created_at" },
+    queryKey: ["contacts", "owners"],
+  });
+
+  const links = useQuery({
+    queryKey: ["owner-links"],
+    queryFn: async () => {
+      const [props, contracts] = await Promise.all([
+        supabase.from("properties").select("owner_id"),
+        supabase.from("contracts").select("owner_id, status"),
+      ]);
+      if (props.error) throw props.error;
+      if (contracts.error) throw contracts.error;
+      const properties: Record<string, number> = {};
+      for (const row of props.data ?? [])
+        if (row.owner_id) properties[row.owner_id] = (properties[row.owner_id] ?? 0) + 1;
+      const active: Record<string, number> = {};
+      for (const row of contracts.data ?? [])
+        if (row.owner_id && row.status === "active")
+          active[row.owner_id] = (active[row.owner_id] ?? 0) + 1;
+      return { properties, active };
+    },
+  });
+
+  const rows = data ?? [];
+  const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm);
+    setOpen(true);
+  };
+
+  const openEdit = (row: Row) => {
+    setEditing(row);
+    setForm({
+      full_name: row.full_name ?? "",
+      phone: row.phone ?? "",
+      whatsapp: row.whatsapp ?? "",
+      email: row.email ?? "",
+      national_id: row.national_id ?? "",
+      address: row.address ?? "",
+      notes: row.notes ?? "",
+      is_active: row.is_active,
+    });
+    setOpen(true);
+  };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!form.full_name.trim()) throw new Error("اسم المالك مطلوب");
+      const base = {
+        full_name: form.full_name.trim(),
+        phone: form.phone.trim() || null,
+        whatsapp: form.whatsapp.trim() || null,
+        email: form.email.trim() || null,
+        national_id: form.national_id.trim() || null,
+        address: form.address.trim() || null,
+        notes: form.notes.trim() || null,
+        is_active: form.is_active,
+      };
+      if (editing) {
+        const roles = Array.from(new Set([...(editing.roles ?? []), "owner"]));
+        const { error } = await supabase
+          .from("contacts")
+          .update({ ...base, roles })
+          .eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("contacts")
+          .insert({ ...base, kind: "individual", roles: ["owner"] });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
+      toast.success(editing ? "تم تحديث بيانات المالك" : "تم إضافة المالك");
+      setOpen(false);
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: async (input: { id: string; value: boolean }) => {
+      const { error } = await supabase
+        .from("contacts")
+        .update({ is_active: input.value })
+        .eq("id", input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      toast.success("تم تحديث الحالة");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التحديث"),
+  });
+
+  const stats = useMemo(
+    () => ({
+      all: rows.length,
+      active: rows.filter((r) => r.is_active).length,
+      withProperties: rows.filter((r) => (links.data?.properties[r.id] ?? 0) > 0).length,
+    }),
+    [rows, links.data],
+  );
+
   return (
     <>
       <PageHero
         title="الملاك"
-        subtitle="بيانات الملاك المسجلين، وتُستخدم في العقود والمباني والوحدات."
+        subtitle="بيانات الملاك المسجلين وعقاراتهم وعقودهم السارية — تُستخدم في العقود والفواتير والتذكيرات."
         icon={Users}
-      />
-
-      <LiveTable<Row>
-        table="contacts"
-        select="id, full_name, phone, whatsapp, email, national_id, roles, is_active, created_at"
-        filter={(q) => q.contains("roles", ["owner"])}
-        orderBy={{ column: "created_at" }}
-        queryKey={["contacts", "owners"]}
-        searchPlaceholder="بحث بالاسم أو الجوال"
-        emptyText="لا يوجد ملاك مسجلون"
-        emptyHint="أضِف مالكًا جديدًا أو حوّل أحد مقدمي الطلبات إلى مالك."
-        columns={[
-          { header: "المالك", cell: (r) => r.full_name, className: "font-semibold" },
-          { header: "الجوال", cell: (r) => <span dir="ltr">{r.phone ?? "—"}</span> },
-          { header: "واتساب", cell: (r) => <span dir="ltr">{r.whatsapp ?? "—"}</span> },
-          { header: "البريد", cell: (r) => <span dir="ltr">{r.email ?? "—"}</span> },
-          { header: "الهوية", cell: (r) => <span dir="ltr">{r.national_id ?? "—"}</span> },
-          {
-            header: "الأدوار",
-            cell: (r) => (
-              <span className="flex flex-wrap gap-1">
-                {(r.roles ?? []).map((role) => (
-                  <Chip key={role} tone="primary">
-                    {contactRoleLabels[role] ?? role}
-                  </Chip>
-                ))}
-              </span>
-            ),
-          },
-          {
-            header: "الحالة",
-            cell: (r) => (
-              <Chip tone={r.is_active ? "success" : "neutral"}>{r.is_active ? "نشط" : "موقوف"}</Chip>
-            ),
-          },
-          { header: "أُضيف", cell: (r) => formatDate(r.created_at) },
+        stats={[
+          { value: String(stats.all), label: "إجمالي الملاك" },
+          { value: String(stats.active), label: "مالك نشط" },
+          { value: String(stats.withProperties), label: "لديه عقارات" },
         ]}
       />
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={openCreate}
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground hover:opacity-90"
+        >
+          <Plus className="size-4" />
+          إضافة مالك
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="surface-card grid place-items-center px-6 py-16">
+          <Loader2 className="size-6 animate-spin text-primary" />
+        </div>
+      ) : (
+        <DataTable<Row>
+          rows={rows}
+          selectable
+          showColumnsButton
+          draggableRows
+          dragLabel="مالك"
+          searchPlaceholder="بحث بالاسم أو الجوال أو الهوية"
+          emptyState={
+            <EmptyState
+              text="لا يوجد ملاك مسجلون"
+              hint="أضِف مالكًا جديدًا أو حوّل أحد مقدمي الطلبات إلى مالك."
+            />
+          }
+          columns={[
+            {
+              header: "المالك",
+              sortable: true,
+              value: (r) => r.full_name,
+              cell: (r) => r.full_name,
+              className: "font-semibold",
+            },
+            { header: "الجوال", cell: (r) => <span dir="ltr">{r.phone ?? "—"}</span> },
+            { header: "واتساب", cell: (r) => <span dir="ltr">{r.whatsapp ?? "—"}</span> },
+            { header: "الهوية", cell: (r) => <span dir="ltr">{r.national_id ?? "—"}</span> },
+            {
+              header: "العقارات",
+              sortable: true,
+              value: (r) => links.data?.properties[r.id] ?? 0,
+              cell: (r) => String(links.data?.properties[r.id] ?? 0),
+            },
+            {
+              header: "عقود سارية",
+              sortable: true,
+              value: (r) => links.data?.active[r.id] ?? 0,
+              cell: (r) => (
+                <Chip tone={(links.data?.active[r.id] ?? 0) > 0 ? "success" : "neutral"}>
+                  {links.data?.active[r.id] ?? 0}
+                </Chip>
+              ),
+            },
+            {
+              header: "نشط",
+              cell: (r) => (
+                <Toggle
+                  label={`تفعيل ${r.full_name}`}
+                  checked={r.is_active}
+                  disabled={toggleActive.isPending}
+                  onChange={(value) => toggleActive.mutate({ id: r.id, value })}
+                />
+              ),
+            },
+            {
+              header: "أُضيف",
+              sortable: true,
+              value: (r) => r.created_at,
+              cell: (r) => formatDate(r.created_at),
+            },
+            {
+              header: "إجراءات",
+              cell: (r) => (
+                <button
+                  type="button"
+                  onClick={() => openEdit(r)}
+                  className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-primary"
+                >
+                  <Pencil className="size-4" />
+                  تعديل
+                </button>
+              ),
+            },
+          ]}
+        />
+      )}
+
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        wide
+        title={editing ? "تعديل بيانات المالك" : "إضافة مالك جديد"}
+        subtitle="المالك المسجَّل هنا يمكن ربطه بالعقارات والمباني والعقود."
+        footer={
+          <>
+            <PrimaryButton onClick={() => save.mutate()} disabled={save.isPending}>
+              {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              حفظ
+            </PrimaryButton>
+            <GhostButton onClick={() => setOpen(false)}>إلغاء</GhostButton>
+          </>
+        }
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="الاسم الكامل" className="sm:col-span-2">
+            <input
+              className={inputClass}
+              value={form.full_name}
+              onChange={(e) => set({ full_name: e.target.value })}
+            />
+          </Field>
+          <Field label="الجوال">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.phone}
+              onChange={(e) => set({ phone: e.target.value })}
+            />
+          </Field>
+          <Field label="واتساب">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.whatsapp}
+              onChange={(e) => set({ whatsapp: e.target.value })}
+            />
+          </Field>
+          <Field label="البريد الإلكتروني">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.email}
+              onChange={(e) => set({ email: e.target.value })}
+            />
+          </Field>
+          <Field label="رقم الهوية">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.national_id}
+              onChange={(e) => set({ national_id: e.target.value })}
+            />
+          </Field>
+          <Field label="العنوان" className="sm:col-span-2">
+            <input
+              className={inputClass}
+              value={form.address}
+              onChange={(e) => set({ address: e.target.value })}
+            />
+          </Field>
+          <Field label="ملاحظات" className="sm:col-span-2">
+            <textarea
+              className={textareaClass}
+              value={form.notes}
+              onChange={(e) => set({ notes: e.target.value })}
+            />
+          </Field>
+          <span className="flex items-center gap-2 text-[12.5px] font-semibold sm:col-span-2">
+            <Toggle label="مالك نشط" checked={form.is_active} onChange={(v) => set({ is_active: v })} />
+            مالك نشط
+          </span>
+        </div>
+      </Modal>
     </>
   );
 }

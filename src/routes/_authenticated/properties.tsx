@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, ChevronLeft, Loader2, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -247,14 +247,23 @@ function PropertiesPage() {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-        >
-          <Plus className="size-4" />
-          إضافة عقار
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/property-form"
+            search={{ id: "" }}
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            <Plus className="size-4" />
+            إضافة عقار
+          </Link>
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
+          >
+            إضافة سريعة
+          </button>
+        </div>
 
         <nav className="flex items-center gap-1 text-[12.5px] text-muted-foreground">
           <span className="font-semibold text-foreground">العقارات</span>
@@ -372,13 +381,20 @@ function PropertiesPage() {
               header: "إجراءات",
               cell: (r) => (
                 <span className="inline-flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => openEdit(r)}
+                  <Link
+                    to="/property-form"
+                    search={{ id: r.id }}
                     className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-primary"
                   >
                     <Pencil className="size-4" />
                     تعديل
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => openEdit(r)}
+                    className="text-[12.5px] font-semibold text-muted-foreground"
+                  >
+                    سريع
                   </button>
                   <button
                     type="button"

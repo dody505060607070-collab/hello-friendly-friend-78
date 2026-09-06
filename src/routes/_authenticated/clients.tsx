@@ -1,20 +1,44 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Contact } from "lucide-react";
+import { Contact, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { Chip } from "@/components/kit/Chip";
-import { LiveTable, formatCurrency, formatDate } from "@/components/kit/LiveTable";
+import { DataTable } from "@/components/kit/DataTable";
+import { EmptyState, formatCurrency, formatDate, useTableRows } from "@/components/kit/LiveTable";
+import {
+  Field,
+  GhostButton,
+  Modal,
+  PrimaryButton,
+  inputClass,
+  textareaClass,
+} from "@/components/kit/Modal";
 import { PageHero } from "@/components/kit/PageHero";
+import { Pills } from "@/components/kit/Pills";
+import { Toggle } from "@/components/kit/Toggle";
+import { supabase } from "@/integrations/supabase/client";
 import { contactRoleLabels } from "@/lib/labels";
+import { cn } from "@/lib/utils";
 
 type Row = {
   id: string;
   full_name: string;
+  kind: string;
   phone: string | null;
+  phone_alt: string | null;
+  whatsapp: string | null;
   email: string | null;
+  national_id: string | null;
+  address: string | null;
   roles: string[] | null;
   source: string | null;
   budget_min: number | null;
   budget_max: number | null;
+  preferred_districts: string[] | null;
+  interested_property_type: string | null;
+  notes: string | null;
   is_active: boolean;
   created_at: string;
 };
@@ -23,9 +47,9 @@ export const Route = createFileRoute("/_authenticated/clients")({
   head: () => ({
     meta: [
       { title: "العملاء | مثراء العقارية" },
-      { name: "description", content: "قاعدة العملاء والوسطاء وبيانات التواصل والميزانيات." },
+      { name: "description", content: "قاعدة العملاء والوسطاء وبيانات التواصل والميزانيات والمتابعة." },
       { property: "og:title", content: "العملاء | مثراء العقارية" },
-      { property: "og:description", content: "قاعدة العملاء والوسطاء وبيانات التواصل والميزانيات." },
+      { property: "og:description", content: "إدارة كاملة لبيانات العملاء وأدوارهم وتفضيلاتهم." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -33,56 +57,529 @@ export const Route = createFileRoute("/_authenticated/clients")({
   component: ClientsPage,
 });
 
+const SELECT =
+  "id, full_name, kind, phone, phone_alt, whatsapp, email, national_id, address, roles, source, budget_min, budget_max, preferred_districts, interested_property_type, notes, is_active, created_at";
+
+const allRoles = ["owner", "tenant", "buyer", "broker", "lead"];
+
+type FormState = {
+  full_name: string;
+  kind: string;
+  phone: string;
+  phone_alt: string;
+  whatsapp: string;
+  email: string;
+  national_id: string;
+  address: string;
+  roles: string[];
+  source: string;
+  budget_min: string;
+  budget_max: string;
+  preferred_districts: string;
+  interested_property_type: string;
+  notes: string;
+  is_active: boolean;
+};
+
+const emptyForm: FormState = {
+  full_name: "",
+  kind: "individual",
+  phone: "",
+  phone_alt: "",
+  whatsapp: "",
+  email: "",
+  national_id: "",
+  address: "",
+  roles: ["lead"],
+  source: "",
+  budget_min: "",
+  budget_max: "",
+  preferred_districts: "",
+  interested_property_type: "",
+  notes: "",
+  is_active: true,
+};
+
 function ClientsPage() {
+  const queryClient = useQueryClient();
+  const [tab, setTab] = useState("all");
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [detail, setDetail] = useState<Row | null>(null);
+  const [form, setForm] = useState<FormState>(emptyForm);
+
+  const { data, isLoading } = useTableRows<Row>({
+    table: "contacts",
+    select: SELECT,
+    orderBy: { column: "created_at" },
+    queryKey: ["contacts", "all"],
+  });
+
+  const rows = data ?? [];
+  const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm);
+    setOpen(true);
+  };
+
+  const openEdit = (row: Row) => {
+    setEditing(row);
+    setForm({
+      full_name: row.full_name ?? "",
+      kind: row.kind ?? "individual",
+      phone: row.phone ?? "",
+      phone_alt: row.phone_alt ?? "",
+      whatsapp: row.whatsapp ?? "",
+      email: row.email ?? "",
+      national_id: row.national_id ?? "",
+      address: row.address ?? "",
+      roles: row.roles ?? [],
+      source: row.source ?? "",
+      budget_min: row.budget_min != null ? String(row.budget_min) : "",
+      budget_max: row.budget_max != null ? String(row.budget_max) : "",
+      preferred_districts: (row.preferred_districts ?? []).join(", "),
+      interested_property_type: row.interested_property_type ?? "",
+      notes: row.notes ?? "",
+      is_active: row.is_active,
+    });
+    setOpen(true);
+  };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!form.full_name.trim()) throw new Error("اسم العميل مطلوب");
+      const payload = {
+        full_name: form.full_name.trim(),
+        kind: form.kind,
+        phone: form.phone.trim() || null,
+        phone_alt: form.phone_alt.trim() || null,
+        whatsapp: form.whatsapp.trim() || null,
+        email: form.email.trim() || null,
+        national_id: form.national_id.trim() || null,
+        address: form.address.trim() || null,
+        roles: form.roles.length ? form.roles : ["lead"],
+        source: form.source.trim() || null,
+        budget_min: form.budget_min ? Number(form.budget_min) : null,
+        budget_max: form.budget_max ? Number(form.budget_max) : null,
+        preferred_districts: form.preferred_districts
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean),
+        interested_property_type: form.interested_property_type.trim() || null,
+        notes: form.notes.trim() || null,
+        is_active: form.is_active,
+      };
+      if (editing) {
+        const { error } = await supabase.from("contacts").update(payload).eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("contacts").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
+      toast.success(editing ? "تم تحديث بيانات العميل" : "تم إضافة العميل");
+      setOpen(false);
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("contacts").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      toast.success("تم حذف العميل");
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error
+          ? "لا يمكن حذف عميل مرتبط بعقود أو فواتير — أوقفه بدلًا من ذلك."
+          : "تعذّر الحذف",
+      ),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: async (input: { id: string; value: boolean }) => {
+      const { error } = await supabase
+        .from("contacts")
+        .update({ is_active: input.value })
+        .eq("id", input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      toast.success("تم تحديث حالة العميل");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التحديث"),
+  });
+
+  const counts = useMemo(
+    () => ({
+      all: rows.length,
+      lead: rows.filter((r) => (r.roles ?? []).includes("lead")).length,
+      buyer: rows.filter((r) => (r.roles ?? []).includes("buyer")).length,
+      tenant: rows.filter((r) => (r.roles ?? []).includes("tenant")).length,
+      broker: rows.filter((r) => (r.roles ?? []).includes("broker")).length,
+    }),
+    [rows],
+  );
+
+  const filtered = tab === "all" ? rows : rows.filter((r) => (r.roles ?? []).includes(tab));
+
   return (
     <>
       <PageHero
         title="العملاء"
-        subtitle="كل جهات الاتصال: ملاك، مستأجرون، مشترون، وسطاء وعملاء محتملون."
+        subtitle="كل جهات الاتصال في مكان واحد: ملاك، مستأجرون، مشترون، وسطاء وعملاء محتملون — مع ميزانياتهم وتفضيلاتهم."
         icon={Contact}
-      />
-
-      <LiveTable<Row>
-        table="contacts"
-        select="id, full_name, phone, email, roles, source, budget_min, budget_max, is_active, created_at"
-        orderBy={{ column: "created_at" }}
-        queryKey={["contacts", "all"]}
-        searchPlaceholder="بحث بالاسم أو الجوال"
-        emptyText="لا يوجد عملاء مسجلون"
-        emptyHint="أضِف عميلًا أو حوّل طلبًا واردًا إلى عميل ليظهر هنا."
-        columns={[
-          { header: "العميل", cell: (r) => r.full_name, className: "font-semibold" },
-          { header: "الجوال", cell: (r) => <span dir="ltr">{r.phone ?? "—"}</span> },
-          { header: "البريد", cell: (r) => <span dir="ltr">{r.email ?? "—"}</span> },
-          {
-            header: "الأدوار",
-            cell: (r) => (
-              <span className="flex flex-wrap gap-1">
-                {(r.roles ?? []).map((role) => (
-                  <Chip key={role} tone="primary">
-                    {contactRoleLabels[role] ?? role}
-                  </Chip>
-                ))}
-              </span>
-            ),
-          },
-          { header: "المصدر", cell: (r) => r.source ?? "—" },
-          {
-            header: "الميزانية",
-            cell: (r) =>
-              r.budget_min || r.budget_max
-                ? `${formatCurrency(r.budget_min)} — ${formatCurrency(r.budget_max)}`
-                : "—",
-          },
-          {
-            header: "الحالة",
-            cell: (r) => (
-              <Chip tone={r.is_active ? "success" : "neutral"}>{r.is_active ? "نشط" : "موقوف"}</Chip>
-            ),
-          },
-          { header: "أُضيف", cell: (r) => formatDate(r.created_at) },
+        stats={[
+          { value: String(counts.all), label: "إجمالي العملاء" },
+          { value: String(counts.lead), label: "عميل محتمل" },
+          { value: String(rows.filter((r) => r.is_active).length), label: "نشط" },
         ]}
       />
+
+      <div className="surface-card px-5 py-4 text-[12.5px] leading-6 text-muted-foreground">
+        <strong className="text-foreground">كيف يعمل هذا القسم؟</strong> كل عميل تسجّله هنا يصبح
+        متاحًا في بقية النظام: تربطه بعقار أو عقد، تنشئ له فرصة في قسم «الفرص»، وتسجّل كل مكالمة أو
+        زيارة في «المتابعات والأنشطة». الميزانية والأحياء المفضّلة تساعد الفريق على ترشيح العقارات
+        المناسبة له بسرعة.
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={openCreate}
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground hover:opacity-90"
+        >
+          <Plus className="size-4" />
+          إضافة عميل
+        </button>
+      </div>
+
+      <Pills
+        variant="card"
+        defaultKey="all"
+        onChange={setTab}
+        items={[
+          { key: "all", label: "الكل", count: counts.all },
+          { key: "lead", label: "عملاء محتملون", count: counts.lead },
+          { key: "buyer", label: "مشترون", count: counts.buyer },
+          { key: "tenant", label: "مستأجرون", count: counts.tenant },
+          { key: "broker", label: "وسطاء", count: counts.broker },
+        ]}
+      />
+
+      {isLoading ? (
+        <div className="surface-card grid place-items-center gap-2 px-6 py-16">
+          <Loader2 className="size-6 animate-spin text-primary" />
+        </div>
+      ) : (
+        <DataTable<Row>
+          rows={filtered}
+          selectable
+          showColumnsButton
+          draggableRows
+          dragLabel="عميل"
+          searchPlaceholder="بحث بالاسم أو الجوال أو البريد"
+          emptyState={
+            <EmptyState
+              text="لا يوجد عملاء مسجلون"
+              hint="أضِف عميلًا أو حوّل أحد طلبات التقديم إلى عميل ليظهر هنا."
+            />
+          }
+          columns={[
+            {
+              header: "العميل",
+              sortable: true,
+              value: (r) => r.full_name,
+              cell: (r) => (
+                <button
+                  type="button"
+                  onClick={() => setDetail(r)}
+                  className="font-semibold text-primary"
+                >
+                  {r.full_name}
+                </button>
+              ),
+            },
+            { header: "الجوال", cell: (r) => <span dir="ltr">{r.phone ?? "—"}</span> },
+            { header: "واتساب", cell: (r) => <span dir="ltr">{r.whatsapp ?? "—"}</span> },
+            { header: "البريد", cell: (r) => <span dir="ltr">{r.email ?? "—"}</span> },
+            {
+              header: "الأدوار",
+              cell: (r) => (
+                <span className="flex flex-wrap gap-1">
+                  {(r.roles ?? []).map((role) => (
+                    <Chip key={role} tone="primary">
+                      {contactRoleLabels[role] ?? role}
+                    </Chip>
+                  ))}
+                </span>
+              ),
+            },
+            { header: "المصدر", cell: (r) => r.source ?? "—" },
+            {
+              header: "الميزانية",
+              sortable: true,
+              value: (r) => r.budget_max ?? 0,
+              cell: (r) =>
+                r.budget_min || r.budget_max
+                  ? `${formatCurrency(r.budget_min)} — ${formatCurrency(r.budget_max)}`
+                  : "—",
+            },
+            {
+              header: "نشط",
+              cell: (r) => (
+                <Toggle
+                  label={`تفعيل ${r.full_name}`}
+                  checked={r.is_active}
+                  disabled={toggleActive.isPending}
+                  onChange={(value) => toggleActive.mutate({ id: r.id, value })}
+                />
+              ),
+            },
+            {
+              header: "أُضيف",
+              sortable: true,
+              value: (r) => r.created_at,
+              cell: (r) => formatDate(r.created_at),
+            },
+            {
+              header: "إجراءات",
+              cell: (r) => (
+                <span className="inline-flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(r)}
+                    className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-primary"
+                  >
+                    <Pencil className="size-4" />
+                    تعديل
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm(`حذف العميل "${r.full_name}"؟`)) remove.mutate(r.id);
+                    }}
+                    className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-destructive"
+                  >
+                    <Trash2 className="size-4" />
+                    حذف
+                  </button>
+                </span>
+              ),
+            },
+          ]}
+        />
+      )}
+
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        wide
+        title={editing ? "تعديل بيانات العميل" : "إضافة عميل جديد"}
+        subtitle="الأدوار تحدد مكان ظهور العميل: المالك يظهر في قسم الملاك، والمستأجر في العقود."
+        footer={
+          <>
+            <PrimaryButton onClick={() => save.mutate()} disabled={save.isPending}>
+              {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              حفظ
+            </PrimaryButton>
+            <GhostButton onClick={() => setOpen(false)}>إلغاء</GhostButton>
+          </>
+        }
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="الاسم الكامل" className="sm:col-span-2">
+            <input
+              className={inputClass}
+              value={form.full_name}
+              onChange={(e) => set({ full_name: e.target.value })}
+            />
+          </Field>
+          <Field label="النوع">
+            <select
+              className={inputClass}
+              value={form.kind}
+              onChange={(e) => set({ kind: e.target.value })}
+            >
+              <option value="individual">فرد</option>
+              <option value="company">شركة / مؤسسة</option>
+            </select>
+          </Field>
+          <Field label="المصدر" hint="كيف وصل إلينا؟ (الموقع، واتساب، إحالة…)">
+            <input
+              className={inputClass}
+              value={form.source}
+              onChange={(e) => set({ source: e.target.value })}
+            />
+          </Field>
+          <Field label="الجوال">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.phone}
+              onChange={(e) => set({ phone: e.target.value })}
+            />
+          </Field>
+          <Field label="جوال بديل">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.phone_alt}
+              onChange={(e) => set({ phone_alt: e.target.value })}
+            />
+          </Field>
+          <Field label="واتساب">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.whatsapp}
+              onChange={(e) => set({ whatsapp: e.target.value })}
+            />
+          </Field>
+          <Field label="البريد الإلكتروني">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.email}
+              onChange={(e) => set({ email: e.target.value })}
+            />
+          </Field>
+          <Field label="رقم الهوية">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.national_id}
+              onChange={(e) => set({ national_id: e.target.value })}
+            />
+          </Field>
+          <Field label="العنوان">
+            <input
+              className={inputClass}
+              value={form.address}
+              onChange={(e) => set({ address: e.target.value })}
+            />
+          </Field>
+          <Field label="الميزانية من">
+            <input
+              className={inputClass}
+              dir="ltr"
+              inputMode="numeric"
+              value={form.budget_min}
+              onChange={(e) => set({ budget_min: e.target.value })}
+            />
+          </Field>
+          <Field label="الميزانية إلى">
+            <input
+              className={inputClass}
+              dir="ltr"
+              inputMode="numeric"
+              value={form.budget_max}
+              onChange={(e) => set({ budget_max: e.target.value })}
+            />
+          </Field>
+          <Field label="نوع العقار المطلوب">
+            <input
+              className={inputClass}
+              value={form.interested_property_type}
+              onChange={(e) => set({ interested_property_type: e.target.value })}
+            />
+          </Field>
+          <Field label="الأحياء المفضّلة" hint="افصل بينها بفاصلة">
+            <input
+              className={inputClass}
+              value={form.preferred_districts}
+              onChange={(e) => set({ preferred_districts: e.target.value })}
+            />
+          </Field>
+          <Field label="الأدوار" className="sm:col-span-2">
+            <div className="flex flex-wrap gap-2">
+              {allRoles.map((role) => {
+                const active = form.roles.includes(role);
+                return (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() =>
+                      set({
+                        roles: active
+                          ? form.roles.filter((x) => x !== role)
+                          : [...form.roles, role],
+                      })
+                    }
+                    className={cn(
+                      "rounded-lg border px-3.5 py-2 text-[12.5px] font-semibold transition-colors",
+                      active ? "border-primary bg-accent/50" : "border-border hover:bg-muted",
+                    )}
+                  >
+                    {contactRoleLabels[role] ?? role}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+          <Field label="ملاحظات" className="sm:col-span-2">
+            <textarea
+              className={textareaClass}
+              value={form.notes}
+              onChange={(e) => set({ notes: e.target.value })}
+            />
+          </Field>
+          <span className="flex items-center gap-2 text-[12.5px] font-semibold sm:col-span-2">
+            <Toggle
+              label="عميل نشط"
+              checked={form.is_active}
+              onChange={(v) => set({ is_active: v })}
+            />
+            عميل نشط
+          </span>
+        </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        title={detail?.full_name ?? ""}
+        subtitle="ملف العميل الكامل"
+      >
+        {detail ? (
+          <dl className="grid gap-3 text-[13px] sm:grid-cols-2">
+            {[
+              ["الجوال", detail.phone],
+              ["جوال بديل", detail.phone_alt],
+              ["واتساب", detail.whatsapp],
+              ["البريد", detail.email],
+              ["الهوية", detail.national_id],
+              ["العنوان", detail.address],
+              ["المصدر", detail.source],
+              ["نوع العقار المطلوب", detail.interested_property_type],
+              [
+                "الميزانية",
+                detail.budget_min || detail.budget_max
+                  ? `${formatCurrency(detail.budget_min)} — ${formatCurrency(detail.budget_max)}`
+                  : null,
+              ],
+              ["الأحياء المفضّلة", (detail.preferred_districts ?? []).join("، ")],
+              ["ملاحظات", detail.notes],
+              ["أُضيف", formatDate(detail.created_at)],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-lg border border-border px-3 py-2">
+                <dt className="text-[11.5px] text-muted-foreground">{label}</dt>
+                <dd className="mt-0.5 font-semibold">{value || "—"}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+      </Modal>
     </>
   );
 }
