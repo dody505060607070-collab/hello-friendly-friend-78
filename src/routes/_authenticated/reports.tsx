@@ -9,9 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
     meta: [
-      { title: "التقارير | الرشودي للعقارات" },
+      { title: "التقارير | مثراء العقارية" },
       { name: "description", content: "مؤشرات التحصيل والعقود والفرص محسوبة من قاعدة البيانات." },
-      { property: "og:title", content: "التقارير | الرشودي للعقارات" },
+      { property: "og:title", content: "التقارير | مثراء العقارية" },
       { property: "og:description", content: "مؤشرات التحصيل والعقود والفرص من بيانات النظام." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -6,9 +6,9 @@ import { TaskList } from "@/components/tasks/TaskList";
 export const Route = createFileRoute("/_authenticated/tasks/photography")({
   head: () => ({
     meta: [
-      { title: "مهام التصوير | الرشودي للعقارات" },
+      { title: "مهام التصوير | مثراء العقارية" },
       { name: "description", content: "مهام تصوير العقارات ومراجعة الصور واعتمادها قبل النشر." },
-      { property: "og:title", content: "مهام التصوير | الرشودي للعقارات" },
+      { property: "og:title", content: "مهام التصوير | مثراء العقارية" },
       { property: "og:description", content: "مهام تصوير العقارات ومراجعة الصور واعتمادها." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

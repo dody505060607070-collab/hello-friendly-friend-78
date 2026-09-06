@@ -3,7 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Bell, ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
-import logo from "@/assets/logo.png";
+import logoAsset from "@/assets/mithra-logo.png.asset.json";
 import { navGroups } from "@/data/nav";
 import { signOut, useCurrentUser } from "@/hooks/useAuth";
 import { navCountsQuery } from "@/lib/counts";
@@ -142,8 +142,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <Link to="/dashboard" className="absolute left-1/2 -translate-x-1/2">
           <img
-            src={logo}
-            alt="الرشودي للعقارات"
+            src={logoAsset.url}
+            alt="مثراء العقارية"
             width={1152}
             height={576}
             className="h-10 w-auto md:h-11"

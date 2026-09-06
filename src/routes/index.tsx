@@ -12,13 +12,13 @@ import { publicPropertiesQuery, publicServicesQuery } from "@/lib/site-data";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "الرشودي للعقارات | عقارات بريدة للإيجار والبيع" },
+      { title: "مثراء العقارية | عقارات بريدة للإيجار والبيع" },
       {
         name: "description",
         content:
-          "الرشودي للعقارات في بريدة: شقق وفلل ومعارض للإيجار والبيع، خبرة محلية تفوق 8 سنوات وخدمة سريعة عبر واتساب.",
+          "مثراء العقارية في بريدة: شقق وفلل ومعارض للإيجار والبيع، خبرة محلية تفوق 8 سنوات وخدمة سريعة عبر واتساب.",
       },
-      { property: "og:title", content: "الرشودي للعقارات | عقارات بريدة للإيجار والبيع" },
+      { property: "og:title", content: "مثراء العقارية | عقارات بريدة للإيجار والبيع" },
       {
         property: "og:description",
         content: "خبرة محلية في سوق عقارات بريدة: إيجار، بيع، إدارة أملاك ومتابعة عقود.",
@@ -75,7 +75,7 @@ function HomePage() {
       <section className="relative isolate">
         <img
           src={heroImage}
-          alt="عقارات الرشودي في بريدة"
+          alt="عقارات مثراء في بريدة"
           width={1920}
           height={1088}
           className="absolute inset-0 -z-10 size-full object-cover"

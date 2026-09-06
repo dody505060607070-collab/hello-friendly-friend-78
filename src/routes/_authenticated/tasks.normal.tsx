@@ -6,9 +6,9 @@ import { TaskList } from "@/components/tasks/TaskList";
 export const Route = createFileRoute("/_authenticated/tasks/normal")({
   head: () => ({
     meta: [
-      { title: "المهام العادية | الرشودي للعقارات" },
-      { name: "description", content: "المهام الإدارية والتشغيلية المسندة لفريق الرشودي." },
-      { property: "og:title", content: "المهام العادية | الرشودي للعقارات" },
+      { title: "المهام العادية | مثراء العقارية" },
+      { name: "description", content: "المهام الإدارية والتشغيلية المسندة لفريق مثراء." },
+      { property: "og:title", content: "المهام العادية | مثراء العقارية" },
       { property: "og:description", content: "المهام الإدارية والتشغيلية المسندة للفريق." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -26,9 +26,9 @@ const typeLabels: Record<string, string> = {
 export const Route = createFileRoute("/_authenticated/activities")({
   head: () => ({
     meta: [
-      { title: "المتابعات والأنشطة | الرشودي للعقارات" },
+      { title: "المتابعات والأنشطة | مثراء العقارية" },
       { name: "description", content: "سجل المكالمات والمعاينات والمتابعات مع العملاء." },
-      { property: "og:title", content: "المتابعات والأنشطة | الرشودي للعقارات" },
+      { property: "og:title", content: "المتابعات والأنشطة | مثراء العقارية" },
       { property: "og:description", content: "سجل المكالمات والمعاينات والمتابعات مع العملاء." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

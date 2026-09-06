@@ -21,9 +21,9 @@ type Row = {
 export const Route = createFileRoute("/_authenticated/reminders")({
   head: () => ({
     meta: [
-      { title: "إدارة التذكيرات | الرشودي للعقارات" },
+      { title: "إدارة التذكيرات | مثراء العقارية" },
       { name: "description", content: "تذكيرات السداد والمتابعات المجدولة وحالة إرسال الرسائل." },
-      { property: "og:title", content: "إدارة التذكيرات | الرشودي للعقارات" },
+      { property: "og:title", content: "إدارة التذكيرات | مثراء العقارية" },
       { property: "og:description", content: "تذكيرات السداد والمتابعات المجدولة وحالة الإرسال." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

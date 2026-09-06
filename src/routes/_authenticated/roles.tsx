@@ -14,9 +14,9 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/roles")({
   head: () => ({
     meta: [
-      { title: "الأدوار والصلاحيات | الرشودي للعقارات" },
+      { title: "الأدوار والصلاحيات | مثراء العقارية" },
       { name: "description", content: "تحديد صلاحيات كل موظف على مستوى كل قسم وإجراء." },
-      { property: "og:title", content: "الأدوار والصلاحيات | الرشودي للعقارات" },
+      { property: "og:title", content: "الأدوار والصلاحيات | مثراء العقارية" },
       { property: "og:description", content: "تحديد صلاحيات كل موظف على مستوى كل قسم وإجراء." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -21,9 +21,9 @@ type Row = {
 export const Route = createFileRoute("/_authenticated/contract-imports")({
   head: () => ({
     meta: [
-      { title: "استيراد عقود PDF | الرشودي للعقارات" },
+      { title: "استيراد عقود PDF | مثراء العقارية" },
       { name: "description", content: "استيراد ملفات العقود، استخراج البيانات ومراجعتها قبل الاعتماد." },
-      { property: "og:title", content: "استيراد عقود PDF | الرشودي للعقارات" },
+      { property: "og:title", content: "استيراد عقود PDF | مثراء العقارية" },
       { property: "og:description", content: "استخراج بيانات العقود من ملفات PDF ومراجعتها." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -21,9 +21,9 @@ type Row = {
 export const Route = createFileRoute("/_authenticated/reservations")({
   head: () => ({
     meta: [
-      { title: "إدارة الحجوزات | الرشودي للعقارات" },
+      { title: "إدارة الحجوزات | مثراء العقارية" },
       { name: "description", content: "حجوزات الموظفين للعقارات مع مدة الحجز والتمديد والانتهاء." },
-      { property: "og:title", content: "إدارة الحجوزات | الرشودي للعقارات" },
+      { property: "og:title", content: "إدارة الحجوزات | مثراء العقارية" },
       { property: "og:description", content: "حجوزات الموظفين للعقارات ومدة الحجز والتمديد." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

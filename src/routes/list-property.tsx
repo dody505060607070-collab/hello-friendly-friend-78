@@ -12,16 +12,16 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/list-property")({
   head: () => ({
     meta: [
-      { title: "اعرض أو اطلب عقارك | الرشودي للعقارات" },
+      { title: "اعرض أو اطلب عقارك | مثراء العقارية" },
       {
         name: "description",
         content:
           "أرسل بيانات عقارك لعرضه للإيجار أو البيع في بريدة، أو اطلب عقاراً بمواصفات محددة وسيتواصل معك فريقنا.",
       },
-      { property: "og:title", content: "اعرض أو اطلب عقارك | الرشودي للعقارات" },
+      { property: "og:title", content: "اعرض أو اطلب عقارك | مثراء العقارية" },
       {
         property: "og:description",
-        content: "نموذج عرض العقار أو طلب عقار في بريدة مع متابعة مباشرة من فريق الرشودي.",
+        content: "نموذج عرض العقار أو طلب عقار في بريدة مع متابعة مباشرة من فريق مثراء.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -115,7 +115,7 @@ function ListPropertyPage() {
         <div className="mx-auto max-w-6xl px-4 text-center">
           <h1 className="text-3xl font-extrabold">اعرض | اطلب عقارك</h1>
           <p className="mt-3 text-[14px] opacity-90">
-            يصل طلبك مباشرة إلى فريق الرشودي ويُسجَّل في نظام المتابعة الداخلي.
+            يصل طلبك مباشرة إلى فريق مثراء ويُسجَّل في نظام المتابعة الداخلي.
           </p>
         </div>
       </section>
