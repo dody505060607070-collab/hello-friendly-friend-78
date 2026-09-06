@@ -21,7 +21,6 @@ import { Route as AuthenticatedActivitiesRouteImport } from './routes/_authentic
 import { Route as AuthenticatedActivityLogRouteImport } from './routes/_authenticated/activity-log'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
-import { Route as AuthenticatedContractImportsRouteImport } from './routes/_authenticated/contract-imports'
 import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -40,12 +39,8 @@ import { Route as AuthenticatedReservationsRouteImport } from './routes/_authent
 import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/roles'
 import { Route as AuthenticatedServicesRouteImport } from './routes/_authenticated/services'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedSubmissionsRouteImport } from './routes/_authenticated/submissions'
-import { Route as AuthenticatedSupplyRequestsRouteImport } from './routes/_authenticated/supply-requests'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as PropertiesCodeRouteImport } from './routes/properties.$code'
-import { Route as AuthenticatedTasksNormalRouteImport } from './routes/_authenticated/tasks.normal'
-import { Route as AuthenticatedTasksPhotographyRouteImport } from './routes/_authenticated/tasks.photography'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -107,12 +102,6 @@ const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedContractImportsRoute =
-  AuthenticatedContractImportsRouteImport.update({
-    id: '/contract-imports',
-    path: '/contract-imports',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedContractsRoute = AuthenticatedContractsRouteImport.update({
   id: '/contracts',
   path: '/contracts',
@@ -206,18 +195,6 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSubmissionsRoute =
-  AuthenticatedSubmissionsRouteImport.update({
-    id: '/submissions',
-    path: '/submissions',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSupplyRequestsRoute =
-  AuthenticatedSupplyRequestsRouteImport.update({
-    id: '/supply-requests',
-    path: '/supply-requests',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
@@ -228,18 +205,6 @@ const PropertiesCodeRoute = PropertiesCodeRouteImport.update({
   path: '/properties/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedTasksNormalRoute =
-  AuthenticatedTasksNormalRouteImport.update({
-    id: '/normal',
-    path: '/normal',
-    getParentRoute: () => AuthenticatedTasksRoute,
-  } as any)
-const AuthenticatedTasksPhotographyRoute =
-  AuthenticatedTasksPhotographyRouteImport.update({
-    id: '/photography',
-    path: '/photography',
-    getParentRoute: () => AuthenticatedTasksRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -253,7 +218,6 @@ export interface FileRoutesByFullPath {
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/ai': typeof AuthenticatedAiRoute
   '/clients': typeof AuthenticatedClientsRoute
-  '/contract-imports': typeof AuthenticatedContractImportsRoute
   '/contracts': typeof AuthenticatedContractsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -272,12 +236,8 @@ export interface FileRoutesByFullPath {
   '/roles': typeof AuthenticatedRolesRoute
   '/services': typeof AuthenticatedServicesRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/submissions': typeof AuthenticatedSubmissionsRoute
-  '/supply-requests': typeof AuthenticatedSupplyRequestsRoute
-  '/tasks': typeof AuthenticatedTasksRouteWithChildren
+  '/tasks': typeof AuthenticatedTasksRoute
   '/properties/$code': typeof PropertiesCodeRoute
-  '/tasks/normal': typeof AuthenticatedTasksNormalRoute
-  '/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -291,7 +251,6 @@ export interface FileRoutesByTo {
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/ai': typeof AuthenticatedAiRoute
   '/clients': typeof AuthenticatedClientsRoute
-  '/contract-imports': typeof AuthenticatedContractImportsRoute
   '/contracts': typeof AuthenticatedContractsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -310,12 +269,8 @@ export interface FileRoutesByTo {
   '/roles': typeof AuthenticatedRolesRoute
   '/services': typeof AuthenticatedServicesRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/submissions': typeof AuthenticatedSubmissionsRoute
-  '/supply-requests': typeof AuthenticatedSupplyRequestsRoute
-  '/tasks': typeof AuthenticatedTasksRouteWithChildren
+  '/tasks': typeof AuthenticatedTasksRoute
   '/properties/$code': typeof PropertiesCodeRoute
-  '/tasks/normal': typeof AuthenticatedTasksNormalRoute
-  '/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -331,7 +286,6 @@ export interface FileRoutesById {
   '/_authenticated/activity-log': typeof AuthenticatedActivityLogRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
-  '/_authenticated/contract-imports': typeof AuthenticatedContractImportsRoute
   '/_authenticated/contracts': typeof AuthenticatedContractsRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -350,12 +304,8 @@ export interface FileRoutesById {
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
   '/_authenticated/services': typeof AuthenticatedServicesRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/_authenticated/submissions': typeof AuthenticatedSubmissionsRoute
-  '/_authenticated/supply-requests': typeof AuthenticatedSupplyRequestsRoute
-  '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
+  '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/properties/$code': typeof PropertiesCodeRoute
-  '/_authenticated/tasks/normal': typeof AuthenticatedTasksNormalRoute
-  '/_authenticated/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -371,7 +321,6 @@ export interface FileRouteTypes {
     | '/activity-log'
     | '/ai'
     | '/clients'
-    | '/contract-imports'
     | '/contracts'
     | '/crm'
     | '/dashboard'
@@ -390,12 +339,8 @@ export interface FileRouteTypes {
     | '/roles'
     | '/services'
     | '/settings'
-    | '/submissions'
-    | '/supply-requests'
     | '/tasks'
     | '/properties/$code'
-    | '/tasks/normal'
-    | '/tasks/photography'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -409,7 +354,6 @@ export interface FileRouteTypes {
     | '/activity-log'
     | '/ai'
     | '/clients'
-    | '/contract-imports'
     | '/contracts'
     | '/crm'
     | '/dashboard'
@@ -428,12 +372,8 @@ export interface FileRouteTypes {
     | '/roles'
     | '/services'
     | '/settings'
-    | '/submissions'
-    | '/supply-requests'
     | '/tasks'
     | '/properties/$code'
-    | '/tasks/normal'
-    | '/tasks/photography'
   id:
     | '__root__'
     | '/'
@@ -448,7 +388,6 @@ export interface FileRouteTypes {
     | '/_authenticated/activity-log'
     | '/_authenticated/ai'
     | '/_authenticated/clients'
-    | '/_authenticated/contract-imports'
     | '/_authenticated/contracts'
     | '/_authenticated/crm'
     | '/_authenticated/dashboard'
@@ -467,12 +406,8 @@ export interface FileRouteTypes {
     | '/_authenticated/roles'
     | '/_authenticated/services'
     | '/_authenticated/settings'
-    | '/_authenticated/submissions'
-    | '/_authenticated/supply-requests'
     | '/_authenticated/tasks'
     | '/properties/$code'
-    | '/_authenticated/tasks/normal'
-    | '/_authenticated/tasks/photography'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -571,13 +506,6 @@ declare module '@tanstack/react-router' {
       path: '/clients'
       fullPath: '/clients'
       preLoaderRoute: typeof AuthenticatedClientsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/contract-imports': {
-      id: '/_authenticated/contract-imports'
-      path: '/contract-imports'
-      fullPath: '/contract-imports'
-      preLoaderRoute: typeof AuthenticatedContractImportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/contracts': {
@@ -706,20 +634,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/submissions': {
-      id: '/_authenticated/submissions'
-      path: '/submissions'
-      fullPath: '/submissions'
-      preLoaderRoute: typeof AuthenticatedSubmissionsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/supply-requests': {
-      id: '/_authenticated/supply-requests'
-      path: '/supply-requests'
-      fullPath: '/supply-requests'
-      preLoaderRoute: typeof AuthenticatedSupplyRequestsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/tasks': {
       id: '/_authenticated/tasks'
       path: '/tasks'
@@ -734,42 +648,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PropertiesCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/tasks/normal': {
-      id: '/_authenticated/tasks/normal'
-      path: '/normal'
-      fullPath: '/tasks/normal'
-      preLoaderRoute: typeof AuthenticatedTasksNormalRouteImport
-      parentRoute: typeof AuthenticatedTasksRoute
-    }
-    '/_authenticated/tasks/photography': {
-      id: '/_authenticated/tasks/photography'
-      path: '/photography'
-      fullPath: '/tasks/photography'
-      preLoaderRoute: typeof AuthenticatedTasksPhotographyRouteImport
-      parentRoute: typeof AuthenticatedTasksRoute
-    }
   }
 }
-
-interface AuthenticatedTasksRouteChildren {
-  AuthenticatedTasksNormalRoute: typeof AuthenticatedTasksNormalRoute
-  AuthenticatedTasksPhotographyRoute: typeof AuthenticatedTasksPhotographyRoute
-}
-
-const AuthenticatedTasksRouteChildren: AuthenticatedTasksRouteChildren = {
-  AuthenticatedTasksNormalRoute: AuthenticatedTasksNormalRoute,
-  AuthenticatedTasksPhotographyRoute: AuthenticatedTasksPhotographyRoute,
-}
-
-const AuthenticatedTasksRouteWithChildren =
-  AuthenticatedTasksRoute._addFileChildren(AuthenticatedTasksRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivitiesRoute: typeof AuthenticatedActivitiesRoute
   AuthenticatedActivityLogRoute: typeof AuthenticatedActivityLogRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
-  AuthenticatedContractImportsRoute: typeof AuthenticatedContractImportsRoute
   AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -788,9 +674,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
   AuthenticatedServicesRoute: typeof AuthenticatedServicesRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedSubmissionsRoute: typeof AuthenticatedSubmissionsRoute
-  AuthenticatedSupplyRequestsRoute: typeof AuthenticatedSupplyRequestsRoute
-  AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
+  AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -798,7 +682,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivityLogRoute: AuthenticatedActivityLogRoute,
   AuthenticatedAiRoute: AuthenticatedAiRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
-  AuthenticatedContractImportsRoute: AuthenticatedContractImportsRoute,
   AuthenticatedContractsRoute: AuthenticatedContractsRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
@@ -817,9 +700,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
   AuthenticatedServicesRoute: AuthenticatedServicesRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedSubmissionsRoute: AuthenticatedSubmissionsRoute,
-  AuthenticatedSupplyRequestsRoute: AuthenticatedSupplyRequestsRoute,
-  AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
+  AuthenticatedTasksRoute: AuthenticatedTasksRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
