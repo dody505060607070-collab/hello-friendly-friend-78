@@ -108,7 +108,7 @@ function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto -mt-10 max-w-5xl px-4">
+      <section className="relative z-10 mx-auto -mt-10 max-w-5xl px-4">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-float">
           <div className="grid gap-3 md:grid-cols-4">
             <select
