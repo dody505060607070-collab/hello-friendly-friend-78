@@ -15,13 +15,15 @@ export type PublicProperty = {
   description: string | null;
   is_featured: boolean;
   map_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
   whatsapp_number: string | null;
   created_at: string;
   property_images: { url: string; is_cover: boolean; sort_order: number }[];
 };
 
 const PROPERTY_FIELDS =
-  "id, code, name, purpose, property_type, city, district, price_text, price_value, description, is_featured, map_url, whatsapp_number, created_at, property_images(url, is_cover, sort_order)";
+  "id, code, name, purpose, property_type, city, district, price_text, price_value, description, is_featured, map_url, latitude, longitude, whatsapp_number, created_at, property_images(url, is_cover, sort_order)";
 
 export const DEFAULT_WHATSAPP = "966550818020";
 export const COMPANY_PHONE = "0550818020";

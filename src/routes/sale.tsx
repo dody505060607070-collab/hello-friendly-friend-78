@@ -27,7 +27,7 @@ export const Route = createFileRoute("/sale")({
 });
 
 function SalePage() {
-  const { data, isLoading, error } = useQuery(publicPropertiesQuery("sale", 60));
+  const { data, isLoading, error } = useQuery(publicPropertiesQuery("sale", 200));
   const [district, setDistrict] = useState("");
   const [type, setType] = useState("");
 
