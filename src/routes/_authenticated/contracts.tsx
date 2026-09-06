@@ -1,10 +1,25 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, Plus, Upload } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { FileText, FileUp, Loader2, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { Chip } from "@/components/kit/Chip";
-import { LiveTable, formatCurrency, formatDate } from "@/components/kit/LiveTable";
+import { DataTable } from "@/components/kit/DataTable";
+import { EmptyState, formatCurrency, formatDate, useTableRows } from "@/components/kit/LiveTable";
+import {
+  Field,
+  GhostButton,
+  Modal,
+  PrimaryButton,
+  inputClass,
+  textareaClass,
+} from "@/components/kit/Modal";
 import { PageHero } from "@/components/kit/PageHero";
-import { contractStatusLabels } from "@/lib/labels";
+import { Pills } from "@/components/kit/Pills";
+import { supabase } from "@/integrations/supabase/client";
+import { analyzeContractPdf } from "@/lib/ai.functions";
+import { contractStatusLabels, importStatusLabels } from "@/lib/labels";
 
 type Row = {
   id: string;
@@ -14,20 +29,40 @@ type Row = {
   end_date: string | null;
   annual_rent: number | null;
   total_value: number | null;
+  deposit: number | null;
   payment_cycle: string | null;
+  payments_count: number | null;
+  notes: string | null;
   status: string;
   source: string | null;
+  owner_id: string | null;
+  tenant_id: string | null;
   owner: { full_name: string } | null;
   tenant: { full_name: string } | null;
+  created_at: string;
+};
+
+type ImportRow = {
+  id: string;
+  file_name: string;
+  file_size: number | null;
+  status: string;
+  ocr_used: boolean | null;
+  warnings: unknown[] | null;
+  error_message: string | null;
+  created_at: string;
 };
 
 export const Route = createFileRoute("/_authenticated/contracts")({
   head: () => ({
     meta: [
       { title: "إدارة العقود | مثراء العقارية" },
-      { name: "description", content: "عقود الإيجار والبيع مع الأطراف والمدد والقيم وحالة السريان." },
+      {
+        name: "description",
+        content: "عقود الإيجار والبيع، إضافتها يدويًا أو استيرادها من ملف PDF وتحليلها بالذكاء الاصطناعي.",
+      },
       { property: "og:title", content: "إدارة العقود | مثراء العقارية" },
-      { property: "og:description", content: "عقود الإيجار والبيع مع الأطراف والمدد وحالة السريان." },
+      { property: "og:description", content: "عقود الإيجار والبيع واستيراد PDF وتحليلها آليًا." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -35,77 +70,681 @@ export const Route = createFileRoute("/_authenticated/contracts")({
   component: ContractsPage,
 });
 
+const SELECT =
+  "id, contract_number, contract_type, start_date, end_date, annual_rent, total_value, deposit, payment_cycle, payments_count, notes, status, source, owner_id, tenant_id, created_at, owner:owner_id(full_name), tenant:tenant_id(full_name)";
+
+type FormState = {
+  contract_number: string;
+  contract_type: string;
+  owner_id: string;
+  tenant_id: string;
+  start_date: string;
+  end_date: string;
+  annual_rent: string;
+  total_value: string;
+  deposit: string;
+  payment_cycle: string;
+  payments_count: string;
+  status: string;
+  notes: string;
+};
+
+const emptyForm: FormState = {
+  contract_number: "",
+  contract_type: "rent",
+  owner_id: "",
+  tenant_id: "",
+  start_date: "",
+  end_date: "",
+  annual_rent: "",
+  total_value: "",
+  deposit: "",
+  payment_cycle: "annual",
+  payments_count: "1",
+  status: "active",
+  notes: "",
+};
+
+const cycleLabels: Record<string, string> = {
+  annual: "سنوي",
+  semi: "نصف سنوي",
+  quarterly: "ربع سنوي",
+  monthly: "شهري",
+};
+
 function ContractsPage() {
+  const [tab, setTab] = useState("all");
+  const [formOpen, setFormOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [form, setForm] = useState<FormState>(emptyForm);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useTableRows<Row>({
+    table: "contracts",
+    select: SELECT,
+    orderBy: { column: "created_at" },
+    queryKey: ["contracts"],
+  });
+
+  const imports = useTableRows<ImportRow>({
+    table: "contract_imports",
+    select: "id, file_name, file_size, status, ocr_used, warnings, error_message, created_at",
+    orderBy: { column: "created_at" },
+    queryKey: ["contract_imports"],
+  });
+
+  const contacts = useQuery({
+    queryKey: ["contacts", "picker"],
+    queryFn: async () => {
+      const { data: rows, error } = await supabase
+        .from("contacts")
+        .select("id, full_name")
+        .order("full_name")
+        .limit(500);
+      if (error) throw error;
+      return rows ?? [];
+    },
+  });
+
+  const rows = data ?? [];
+  const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
+
+  const openCreate = (prefill?: Partial<FormState>) => {
+    setEditing(null);
+    setForm({ ...emptyForm, ...prefill });
+    setFormOpen(true);
+  };
+
+  const openEdit = (row: Row) => {
+    setEditing(row);
+    setForm({
+      contract_number: row.contract_number ?? "",
+      contract_type: row.contract_type ?? "rent",
+      owner_id: row.owner_id ?? "",
+      tenant_id: row.tenant_id ?? "",
+      start_date: row.start_date ?? "",
+      end_date: row.end_date ?? "",
+      annual_rent: row.annual_rent != null ? String(row.annual_rent) : "",
+      total_value: row.total_value != null ? String(row.total_value) : "",
+      deposit: row.deposit != null ? String(row.deposit) : "",
+      payment_cycle: row.payment_cycle ?? "annual",
+      payments_count: row.payments_count != null ? String(row.payments_count) : "1",
+      status: row.status ?? "active",
+      notes: row.notes ?? "",
+    });
+    setFormOpen(true);
+  };
+
+  const save = useMutation({
+    mutationFn: async (source: "manual" | "pdf_import" = "manual") => {
+      const payload = {
+        contract_number: form.contract_number.trim() || `C-${Date.now().toString(36).toUpperCase()}`,
+        contract_type: form.contract_type,
+        owner_id: form.owner_id || null,
+        tenant_id: form.tenant_id || null,
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
+        annual_rent: form.annual_rent ? Number(form.annual_rent) : null,
+        total_value: form.total_value ? Number(form.total_value) : null,
+        deposit: form.deposit ? Number(form.deposit) : null,
+        payment_cycle: form.payment_cycle || null,
+        payments_count: form.payments_count ? Number(form.payments_count) : null,
+        status: form.status,
+        notes: form.notes.trim() || null,
+      };
+      if (editing) {
+        const { error } = await supabase.from("contracts").update(payload).eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("contracts").insert({ ...payload, source });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      toast.success(editing ? "تم تحديث العقد" : "تم إنشاء العقد");
+      setFormOpen(false);
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("contracts").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contracts"] });
+      toast.success("تم حذف العقد");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحذف"),
+  });
+
+  const counts = useMemo(
+    () => ({
+      all: rows.length,
+      rent: rows.filter((r) => r.contract_type !== "sale").length,
+      sale: rows.filter((r) => r.contract_type === "sale").length,
+      active: rows.filter((r) => r.status === "active").length,
+      expired: rows.filter((r) => r.status === "expired" || r.status === "terminated").length,
+      imports: (imports.data ?? []).length,
+    }),
+    [rows, imports.data],
+  );
+
+  const filtered = rows.filter((r) => {
+    if (tab === "all") return true;
+    if (tab === "rent") return r.contract_type !== "sale";
+    if (tab === "sale") return r.contract_type === "sale";
+    if (tab === "active") return r.status === "active";
+    if (tab === "imports") return true;
+    return r.status === "expired" || r.status === "terminated";
+  });
+
   return (
     <>
       <PageHero
         title="إدارة العقود"
         subtitle="جميع العقود المسجلة أو المستوردة من ملفات PDF، مع أطرافها وقيمها ودفعاتها."
         icon={FileText}
+        stats={[
+          { value: String(counts.active), label: "عقد ساري" },
+          { value: String(counts.expired), label: "منتهٍ / منهي" },
+          { value: String(counts.imports), label: "ملف مستورد" },
+        ]}
       />
 
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
+          onClick={() => openCreate()}
           className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
         >
           <Plus className="size-4" />
           عقد جديد
         </button>
-        <Link
-          to="/contract-imports"
+        <button
+          type="button"
+          onClick={() => setImportOpen(true)}
           className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
         >
-          <Upload className="size-4" />
+          <FileUp className="size-4" />
           استيراد عقد PDF
-        </Link>
+        </button>
       </div>
 
-
-      <LiveTable<Row>
-        table="contracts"
-        select="id, contract_number, contract_type, start_date, end_date, annual_rent, total_value, payment_cycle, status, source, owner:owner_id(full_name), tenant:tenant_id(full_name)"
-        orderBy={{ column: "created_at" }}
-        searchPlaceholder="بحث برقم العقد أو الطرف"
-        emptyText="لا توجد عقود"
-        emptyHint="أضِف عقدًا يدويًا أو استورد ملف PDF لعقد قائم ليظهر هنا."
-        columns={[
-          { header: "رقم العقد", cell: (r) => r.contract_number ?? "—", className: "font-semibold" },
-          { header: "النوع", cell: (r) => (r.contract_type === "sale" ? "بيع" : "إيجار") },
-          { header: "المالك", cell: (r) => r.owner?.full_name ?? "—" },
-          { header: "المستأجر / المشتري", cell: (r) => r.tenant?.full_name ?? "—" },
-          { header: "من", cell: (r) => formatDate(r.start_date) },
-          { header: "إلى", cell: (r) => formatDate(r.end_date) },
-          {
-            header: "القيمة",
-            cell: (r) => formatCurrency(r.annual_rent ?? r.total_value),
-          },
-          {
-            header: "المصدر",
-            cell: (r) => (
-              <Chip tone={r.source === "pdf_import" ? "gold" : "neutral"}>
-                {r.source === "pdf_import" ? "استيراد PDF" : "إدخال يدوي"}
-              </Chip>
-            ),
-          },
-          {
-            header: "الحالة",
-            cell: (r) => (
-              <Chip
-                tone={
-                  r.status === "active"
-                    ? "success"
-                    : r.status === "expired" || r.status === "terminated"
-                      ? "danger"
-                      : "warning"
-                }
-              >
-                {contractStatusLabels[r.status] ?? r.status}
-              </Chip>
-            ),
-          },
+      <Pills
+        variant="card"
+        defaultKey="all"
+        onChange={setTab}
+        items={[
+          { key: "all", label: "كل العقود", count: counts.all },
+          { key: "rent", label: "إيجار", count: counts.rent },
+          { key: "sale", label: "بيع", count: counts.sale },
+          { key: "active", label: "سارية", count: counts.active },
+          { key: "expired", label: "منتهية", count: counts.expired },
+          { key: "imports", label: "ملفات PDF", count: counts.imports },
         ]}
       />
+
+      {tab === "imports" ? (
+        <DataTable<ImportRow>
+          rows={imports.data ?? []}
+          searchPlaceholder="بحث باسم الملف"
+          emptyState={
+            <EmptyState
+              text="لا توجد ملفات مستوردة"
+              hint="اضغط «استيراد عقد PDF» لرفع ملف وتحليله بالذكاء الاصطناعي."
+            />
+          }
+          columns={[
+            { header: "الملف", cell: (r) => r.file_name, className: "font-semibold" },
+            {
+              header: "الحجم",
+              cell: (r) => (r.file_size ? `${(r.file_size / 1024 / 1024).toFixed(2)} م.ب` : "—"),
+            },
+            {
+              header: "الحالة",
+              cell: (r) => (
+                <Chip
+                  tone={
+                    r.status === "approved"
+                      ? "success"
+                      : r.status === "failed" || r.status === "rejected"
+                        ? "danger"
+                        : "warning"
+                  }
+                >
+                  {importStatusLabels[r.status] ?? r.status}
+                </Chip>
+              ),
+            },
+            { header: "تحذيرات", cell: (r) => (r.warnings?.length ?? 0) || "—" },
+            { header: "التاريخ", sortable: true, value: (r) => r.created_at, cell: (r) => formatDate(r.created_at) },
+          ]}
+        />
+      ) : isLoading ? (
+        <div className="surface-card grid place-items-center gap-2 px-6 py-16 text-center">
+          <Loader2 className="size-6 animate-spin text-primary" />
+          <p className="text-[13px] text-muted-foreground">جاري تحميل العقود…</p>
+        </div>
+      ) : (
+        <DataTable<Row>
+          rows={filtered}
+          draggableRows
+          dragLabel="عقد"
+          showColumnsButton
+          searchPlaceholder="بحث برقم العقد أو الطرف"
+          emptyState={
+            <EmptyState
+              text="لا توجد عقود"
+              hint="أضِف عقدًا يدويًا أو استورد ملف PDF لعقد قائم ليظهر هنا."
+            />
+          }
+          columns={[
+            {
+              header: "رقم العقد",
+              sortable: true,
+              value: (r) => r.contract_number ?? "",
+              cell: (r) => r.contract_number ?? "—",
+              className: "font-semibold",
+            },
+            { header: "النوع", cell: (r) => (r.contract_type === "sale" ? "بيع" : "إيجار") },
+            { header: "المالك", cell: (r) => r.owner?.full_name ?? "—" },
+            { header: "المستأجر / المشتري", cell: (r) => r.tenant?.full_name ?? "—" },
+            { header: "من", sortable: true, value: (r) => r.start_date ?? "", cell: (r) => formatDate(r.start_date) },
+            { header: "إلى", sortable: true, value: (r) => r.end_date ?? "", cell: (r) => formatDate(r.end_date) },
+            {
+              header: "القيمة",
+              sortable: true,
+              value: (r) => r.annual_rent ?? r.total_value ?? 0,
+              cell: (r) => formatCurrency(r.annual_rent ?? r.total_value),
+            },
+            { header: "الدورة", cell: (r) => cycleLabels[r.payment_cycle ?? ""] ?? r.payment_cycle ?? "—" },
+            {
+              header: "المصدر",
+              cell: (r) => (
+                <Chip tone={r.source === "pdf_import" ? "gold" : "neutral"}>
+                  {r.source === "pdf_import" ? "استيراد PDF" : "إدخال يدوي"}
+                </Chip>
+              ),
+            },
+            {
+              header: "الحالة",
+              cell: (r) => (
+                <Chip
+                  tone={
+                    r.status === "active"
+                      ? "success"
+                      : r.status === "expired" || r.status === "terminated"
+                        ? "danger"
+                        : "warning"
+                  }
+                >
+                  {contractStatusLabels[r.status] ?? r.status}
+                </Chip>
+              ),
+            },
+            {
+              header: "إجراءات",
+              cell: (r) => (
+                <span className="inline-flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(r)}
+                    className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-primary"
+                  >
+                    <Pencil className="size-4" />
+                    تعديل
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm(`حذف العقد ${r.contract_number ?? ""}؟`)) remove.mutate(r.id);
+                    }}
+                    className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-destructive"
+                  >
+                    <Trash2 className="size-4" />
+                    حذف
+                  </button>
+                </span>
+              ),
+            },
+          ]}
+        />
+      )}
+
+      <Modal
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        wide
+        title={editing ? "تعديل العقد" : "عقد جديد"}
+        subtitle="الأطراف تُختار من قاعدة العملاء، وتُحدَّث لوحة التحكم تلقائيًا بعد الحفظ."
+        footer={
+          <>
+            <PrimaryButton onClick={() => save.mutate("manual")} disabled={save.isPending}>
+              {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              حفظ العقد
+            </PrimaryButton>
+            <GhostButton onClick={() => setFormOpen(false)}>إلغاء</GhostButton>
+          </>
+        }
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="رقم العقد" hint="يُولَّد تلقائيًا إذا تُرك فارغًا">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.contract_number}
+              onChange={(e) => set({ contract_number: e.target.value })}
+            />
+          </Field>
+          <Field label="نوع العقد">
+            <select
+              className={inputClass}
+              value={form.contract_type}
+              onChange={(e) => set({ contract_type: e.target.value })}
+            >
+              <option value="rent">إيجار</option>
+              <option value="sale">بيع</option>
+            </select>
+          </Field>
+          <Field label="المالك">
+            <select
+              className={inputClass}
+              value={form.owner_id}
+              onChange={(e) => set({ owner_id: e.target.value })}
+            >
+              <option value="">— اختر —</option>
+              {(contacts.data ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.full_name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="المستأجر / المشتري">
+            <select
+              className={inputClass}
+              value={form.tenant_id}
+              onChange={(e) => set({ tenant_id: e.target.value })}
+            >
+              <option value="">— اختر —</option>
+              {(contacts.data ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.full_name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="تاريخ البداية">
+            <input
+              type="date"
+              className={inputClass}
+              value={form.start_date}
+              onChange={(e) => set({ start_date: e.target.value })}
+            />
+          </Field>
+          <Field label="تاريخ النهاية">
+            <input
+              type="date"
+              className={inputClass}
+              value={form.end_date}
+              onChange={(e) => set({ end_date: e.target.value })}
+            />
+          </Field>
+          <Field label="الإيجار السنوي">
+            <input
+              className={inputClass}
+              dir="ltr"
+              inputMode="numeric"
+              value={form.annual_rent}
+              onChange={(e) => set({ annual_rent: e.target.value })}
+            />
+          </Field>
+          <Field label="القيمة الإجمالية">
+            <input
+              className={inputClass}
+              dir="ltr"
+              inputMode="numeric"
+              value={form.total_value}
+              onChange={(e) => set({ total_value: e.target.value })}
+            />
+          </Field>
+          <Field label="التأمين">
+            <input
+              className={inputClass}
+              dir="ltr"
+              inputMode="numeric"
+              value={form.deposit}
+              onChange={(e) => set({ deposit: e.target.value })}
+            />
+          </Field>
+          <Field label="دورة السداد">
+            <select
+              className={inputClass}
+              value={form.payment_cycle}
+              onChange={(e) => set({ payment_cycle: e.target.value })}
+            >
+              {Object.entries(cycleLabels).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="عدد الدفعات">
+            <input
+              className={inputClass}
+              dir="ltr"
+              inputMode="numeric"
+              value={form.payments_count}
+              onChange={(e) => set({ payments_count: e.target.value })}
+            />
+          </Field>
+          <Field label="الحالة">
+            <select
+              className={inputClass}
+              value={form.status}
+              onChange={(e) => set({ status: e.target.value })}
+            >
+              {Object.entries(contractStatusLabels).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="ملاحظات" className="sm:col-span-2">
+            <textarea
+              className={textareaClass}
+              value={form.notes}
+              onChange={(e) => set({ notes: e.target.value })}
+            />
+          </Field>
+        </div>
+      </Modal>
+
+      <ImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onExtracted={(prefill) => {
+          setImportOpen(false);
+          openCreate(prefill);
+        }}
+      />
     </>
+  );
+}
+
+function ImportDialog({
+  open,
+  onClose,
+  onExtracted,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onExtracted: (prefill: Partial<FormState>) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [result, setResult] = useState<Record<string, unknown> | null>(null);
+  const queryClient = useQueryClient();
+
+  const analyze = useMutation({
+    mutationFn: async (f: File) => {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("تعذّر قراءة الملف"));
+        reader.readAsDataURL(f);
+      });
+
+      const path = `imports/${Date.now()}-${f.name.replace(/[^\w.\-]/g, "_")}`;
+      const upload = await supabase.storage.from("contract-files").upload(path, f, { upsert: true });
+      if (upload.error) throw new Error("تعذّر رفع الملف إلى المخزن الخاص");
+
+      const { extractionJson } = await analyzeContractPdf({
+        data: { fileName: f.name, dataUrl },
+      });
+      const extraction = JSON.parse(extractionJson) as Record<string, unknown>;
+
+      await supabase.from("contract_imports").insert({
+        file_path: path,
+        file_name: f.name,
+        file_size: f.size,
+        status: "needs_review",
+        extraction: extraction as never,
+        warnings: (Array.isArray(extraction["warnings"]) ? extraction["warnings"] : []) as never,
+      });
+
+
+      return extraction;
+    },
+    onSuccess: (extraction) => {
+      setResult(extraction);
+      queryClient.invalidateQueries({ queryKey: ["contract_imports"] });
+      queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
+      toast.success("تم تحليل الملف بالذكاء الاصطناعي");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر تحليل الملف"),
+  });
+
+  const str = (key: string) => {
+    const v = result?.[key];
+    return v == null || v === "" ? "" : String(v);
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={() => {
+        setFile(null);
+        setResult(null);
+        onClose();
+      }}
+      wide
+      title="استيراد عقد PDF"
+      subtitle="ارفع ملف العقد ليقرأه الذكاء الاصطناعي ويستخرج بياناته تلقائيًا للمراجعة."
+      footer={
+        result ? (
+          <>
+            <PrimaryButton
+              onClick={() =>
+                onExtracted({
+                  contract_number: str("contract_number"),
+                  contract_type: str("contract_type") === "sale" ? "sale" : "rent",
+                  start_date: str("start_date"),
+                  end_date: str("end_date"),
+                  annual_rent: str("annual_rent"),
+                  total_value: str("total_value"),
+                  deposit: str("deposit"),
+                  payments_count: str("payments_count") || "1",
+                  notes: [str("property_name"), str("district"), str("special_terms")]
+                    .filter(Boolean)
+                    .join(" — "),
+                })
+              }
+            >
+              متابعة إلى نموذج العقد
+            </PrimaryButton>
+            <GhostButton
+              onClick={() => {
+                setResult(null);
+                setFile(null);
+              }}
+            >
+              ملف آخر
+            </GhostButton>
+          </>
+        ) : (
+          <PrimaryButton onClick={() => file && analyze.mutate(file)} disabled={!file || analyze.isPending}>
+            {analyze.isPending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+            تحليل الملف
+          </PrimaryButton>
+        )
+      }
+    >
+      {result ? (
+        <div className="space-y-3">
+          <p className="text-[13px] font-semibold text-foreground">البيانات المستخرجة</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {[
+              ["رقم العقد", "contract_number"],
+              ["نوع العقد", "contract_type"],
+              ["المالك", "owner_name"],
+              ["المستأجر", "tenant_name"],
+              ["البداية", "start_date"],
+              ["النهاية", "end_date"],
+              ["الإيجار السنوي", "annual_rent"],
+              ["القيمة الإجمالية", "total_value"],
+              ["التأمين", "deposit"],
+              ["عدد الدفعات", "payments_count"],
+              ["العقار", "property_name"],
+              ["الحي", "district"],
+            ].map(([label, key]) => (
+              <div
+                key={key}
+                className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2 text-[12.5px]"
+              >
+                <span className="font-semibold text-foreground">{str(key as string) || "—"}</span>
+                <span className="text-muted-foreground">{label}</span>
+              </div>
+            ))}
+          </div>
+          {Array.isArray(result["warnings"]) && result["warnings"].length ? (
+            <ul className="list-inside list-disc space-y-1 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-[12.5px] text-warning-foreground">
+              {(result["warnings"] as string[]).map((w, i) => (
+                <li key={i}>{String(w)}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="grid w-full place-items-center gap-3 rounded-2xl border-2 border-dashed border-border bg-muted/30 px-6 py-14 text-center transition-colors hover:border-primary/40 hover:bg-accent/40"
+        >
+          <span className="grid size-14 place-items-center rounded-2xl border border-border bg-card text-primary">
+            <FileUp className="size-7" />
+          </span>
+          <span className="text-[14px] font-bold text-foreground">
+            {file ? file.name : "اسحب ملف العقد هنا أو اضغط للاختيار"}
+          </span>
+          <span className="text-[12px] text-muted-foreground">ملف PDF واحد — يُخزَّن بشكل خاص وآمن</span>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+        </button>
+      )}
+    </Modal>
   );
 }

@@ -7,6 +7,14 @@ import { toast } from "sonner";
 import { Chip } from "@/components/kit/Chip";
 import { DataTable } from "@/components/kit/DataTable";
 import { EmptyState, formatCurrency, formatDate, useTableRows } from "@/components/kit/LiveTable";
+import {
+  Field,
+  GhostButton,
+  Modal,
+  PrimaryButton,
+  inputClass,
+  textareaClass,
+} from "@/components/kit/Modal";
 import { PageHero } from "@/components/kit/PageHero";
 import { Pills } from "@/components/kit/Pills";
 import { Toggle } from "@/components/kit/Toggle";
@@ -23,6 +31,9 @@ type PropertyRow = {
   price_text: string | null;
   city: string | null;
   district: string | null;
+  description: string | null;
+  map_url: string | null;
+  whatsapp_number: string | null;
   is_visible: boolean;
   is_featured: boolean;
   needs_review: boolean;
@@ -53,10 +64,49 @@ const statusLabels: Record<string, string> = {
 };
 
 const SELECT =
-  "id, code, name, purpose, property_type, status, price_value, price_text, city, district, is_visible, is_featured, needs_review, sort_order, created_at";
+  "id, code, name, purpose, property_type, status, price_value, price_text, city, district, description, map_url, whatsapp_number, is_visible, is_featured, needs_review, sort_order, created_at";
+
+type FormState = {
+  name: string;
+  code: string;
+  purpose: string;
+  property_type: string;
+  city: string;
+  district: string;
+  price_text: string;
+  price_value: string;
+  status: string;
+  description: string;
+  map_url: string;
+  whatsapp_number: string;
+  sort_order: string;
+  is_visible: boolean;
+  is_featured: boolean;
+};
+
+const emptyForm: FormState = {
+  name: "",
+  code: "",
+  purpose: "rent",
+  property_type: "",
+  city: "بريدة",
+  district: "",
+  price_text: "",
+  price_value: "",
+  status: "available",
+  description: "",
+  map_url: "",
+  whatsapp_number: "",
+  sort_order: "0",
+  is_visible: true,
+  is_featured: false,
+};
 
 function PropertiesPage() {
   const [tab, setTab] = useState("all");
+  const [editing, setEditing] = useState<PropertyRow | null>(null);
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<FormState>(emptyForm);
   const queryClient = useQueryClient();
   const { data, isLoading, error } = useTableRows<PropertyRow>({
     table: "properties",
@@ -65,9 +115,83 @@ function PropertiesPage() {
   });
 
   const rows = data ?? [];
+  const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm);
+    setOpen(true);
+  };
+
+  const openEdit = (row: PropertyRow) => {
+    setEditing(row);
+    setForm({
+      name: row.name ?? "",
+      code: row.code ?? "",
+      purpose: row.purpose ?? "rent",
+      property_type: row.property_type ?? "",
+      city: row.city ?? "",
+      district: row.district ?? "",
+      price_text: row.price_text ?? "",
+      price_value: row.price_value != null ? String(row.price_value) : "",
+      status: row.status ?? "available",
+      description: row.description ?? "",
+      map_url: row.map_url ?? "",
+      whatsapp_number: row.whatsapp_number ?? "",
+      sort_order: String(row.sort_order ?? 0),
+      is_visible: row.is_visible,
+      is_featured: row.is_featured,
+    });
+    setOpen(true);
+  };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!form.name.trim()) throw new Error("اسم العقار مطلوب");
+      const payload = {
+        name: form.name.trim(),
+        code: form.code.trim() || `P-${Date.now().toString(36).toUpperCase()}`,
+        purpose: form.purpose,
+        property_type: form.property_type.trim() || null,
+        city: form.city.trim() || null,
+        district: form.district.trim() || null,
+        price_text: form.price_text.trim() || null,
+        price_value: form.price_value ? Number(form.price_value) : null,
+        status: form.status,
+        description: form.description.trim() || null,
+        map_url: form.map_url.trim() || null,
+        whatsapp_number: form.whatsapp_number.trim() || null,
+        sort_order: Number(form.sort_order) || 0,
+        is_visible: form.is_visible,
+        is_featured: form.is_featured,
+      };
+      if (editing) {
+        const { error: err } = await supabase
+          .from("properties")
+          .update(payload)
+          .eq("id", editing.id);
+        if (err) throw err;
+      } else {
+        const { error: err } = await supabase.from("properties").insert(payload);
+        if (err) throw err;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
+      queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["public-properties"] });
+      toast.success(editing ? "تم تحديث العقار" : "تم إضافة العقار وسيظهر على الموقع");
+      setOpen(false);
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
+  });
 
   const flags = useMutation({
-    mutationFn: async (input: { id: string; field: "is_visible" | "is_featured"; value: boolean }) => {
+    mutationFn: async (input: {
+      id: string;
+      field: "is_visible" | "is_featured";
+      value: boolean;
+    }) => {
       const patch =
         input.field === "is_visible" ? { is_visible: input.value } : { is_featured: input.value };
       const { error: err } = await supabase.from("properties").update(patch).eq("id", input.id);
@@ -75,7 +199,7 @@ function PropertiesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
-      queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["public-properties"] });
       toast.success("تم تحديث حالة العقار");
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التحديث"),
@@ -88,6 +212,7 @@ function PropertiesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
+      queryClient.invalidateQueries({ queryKey: ["public-properties"] });
       toast.success("تم حذف العقار");
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحذف"),
@@ -112,7 +237,7 @@ function PropertiesPage() {
     <>
       <PageHero
         title="العقارات"
-        subtitle="إدارة العقارات المعروضة وبياناتها وحالة ظهورها."
+        subtitle="إدارة العقارات المعروضة وبياناتها وحالة ظهورها على الموقع."
         icon={Building2}
         stats={[
           { value: String(counts.all), label: "إجمالي العقارات" },
@@ -124,7 +249,7 @@ function PropertiesPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
-          onClick={() => toast.info("نموذج إضافة عقار قيد التجهيز في المرحلة القادمة.")}
+          onClick={openCreate}
           className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
         >
           <Plus className="size-4" />
@@ -167,7 +292,9 @@ function PropertiesPage() {
           rows={filtered}
           selectable
           showColumnsButton
-          searchPlaceholder="بحث"
+          draggableRows
+          dragLabel="عقار"
+          searchPlaceholder="بحث بالاسم أو الكود أو الحي"
           emptyState={
             <EmptyState
               text="لا توجد عقارات مسجلة"
@@ -178,10 +305,11 @@ function PropertiesPage() {
             {
               header: "العقار",
               sortable: true,
+              value: (r) => r.name,
               cell: (r) => r.name,
               className: "font-semibold",
             },
-            { header: "الكود", sortable: true, cell: (r) => r.code ?? "—" },
+            { header: "الكود", sortable: true, value: (r) => r.code ?? "", cell: (r) => r.code ?? "—" },
             {
               header: "النوع",
               cell: (r) => (
@@ -192,7 +320,12 @@ function PropertiesPage() {
             },
             { header: "الحي", cell: (r) => r.district ?? "—" },
             { header: "المدينة", cell: (r) => r.city ?? "—" },
-            { header: "السعر", cell: (r) => r.price_text ?? formatCurrency(r.price_value) },
+            {
+              header: "السعر",
+              sortable: true,
+              value: (r) => r.price_value ?? 0,
+              cell: (r) => r.price_text ?? formatCurrency(r.price_value),
+            },
             {
               header: "الحالة",
               cell: (r) => (
@@ -223,15 +356,25 @@ function PropertiesPage() {
                 />
               ),
             },
-            { header: "الترتيب", sortable: true, cell: (r) => r.sort_order ?? 0 },
-            { header: "تاريخ الإضافة", sortable: true, cell: (r) => formatDate(r.created_at) },
+            {
+              header: "الترتيب",
+              sortable: true,
+              value: (r) => r.sort_order ?? 0,
+              cell: (r) => r.sort_order ?? 0,
+            },
+            {
+              header: "تاريخ الإضافة",
+              sortable: true,
+              value: (r) => r.created_at,
+              cell: (r) => formatDate(r.created_at),
+            },
             {
               header: "إجراءات",
               cell: (r) => (
                 <span className="inline-flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => toast.info("تعديل العقار متاح في المرحلة القادمة.")}
+                    onClick={() => openEdit(r)}
                     className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-primary"
                   >
                     <Pencil className="size-4" />
@@ -253,6 +396,155 @@ function PropertiesPage() {
           ]}
         />
       )}
+
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        wide
+        title={editing ? "تعديل العقار" : "إضافة عقار جديد"}
+        subtitle="البيانات المحفوظة تظهر مباشرة على الموقع العام عند تفعيل خيار «مرئي»."
+        footer={
+          <>
+            <PrimaryButton onClick={() => save.mutate()} disabled={save.isPending}>
+              {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              حفظ
+            </PrimaryButton>
+            <GhostButton onClick={() => setOpen(false)}>إلغاء</GhostButton>
+          </>
+        }
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="اسم العقار" className="sm:col-span-2">
+            <input
+              className={inputClass}
+              value={form.name}
+              onChange={(e) => set({ name: e.target.value })}
+              placeholder="مثال: شقة في حي الرحاب"
+            />
+          </Field>
+          <Field label="الكود" hint="يُولَّد تلقائيًا إذا تُرك فارغًا">
+            <input
+              className={inputClass}
+              value={form.code}
+              onChange={(e) => set({ code: e.target.value })}
+              dir="ltr"
+            />
+          </Field>
+          <Field label="الغرض">
+            <select
+              className={inputClass}
+              value={form.purpose}
+              onChange={(e) => set({ purpose: e.target.value })}
+            >
+              <option value="rent">إيجار</option>
+              <option value="sale">بيع</option>
+              <option value="investment">استثمار</option>
+            </select>
+          </Field>
+          <Field label="نوع العقار">
+            <input
+              className={inputClass}
+              value={form.property_type}
+              onChange={(e) => set({ property_type: e.target.value })}
+              placeholder="شقة / فيلا / أرض"
+            />
+          </Field>
+          <Field label="الحالة">
+            <select
+              className={inputClass}
+              value={form.status}
+              onChange={(e) => set({ status: e.target.value })}
+            >
+              {Object.entries(statusLabels).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="المدينة">
+            <input
+              className={inputClass}
+              value={form.city}
+              onChange={(e) => set({ city: e.target.value })}
+            />
+          </Field>
+          <Field label="الحي">
+            <input
+              className={inputClass}
+              value={form.district}
+              onChange={(e) => set({ district: e.target.value })}
+            />
+          </Field>
+          <Field label="السعر (نص للعرض)">
+            <input
+              className={inputClass}
+              value={form.price_text}
+              onChange={(e) => set({ price_text: e.target.value })}
+              placeholder="35,000 ريال سنويًا"
+            />
+          </Field>
+          <Field label="السعر (رقم)">
+            <input
+              className={inputClass}
+              value={form.price_value}
+              onChange={(e) => set({ price_value: e.target.value })}
+              inputMode="numeric"
+              dir="ltr"
+            />
+          </Field>
+          <Field label="رابط الخريطة">
+            <input
+              className={inputClass}
+              value={form.map_url}
+              onChange={(e) => set({ map_url: e.target.value })}
+              dir="ltr"
+            />
+          </Field>
+          <Field label="رقم واتساب للتواصل">
+            <input
+              className={inputClass}
+              value={form.whatsapp_number}
+              onChange={(e) => set({ whatsapp_number: e.target.value })}
+              dir="ltr"
+            />
+          </Field>
+          <Field label="ترتيب الظهور">
+            <input
+              className={inputClass}
+              value={form.sort_order}
+              onChange={(e) => set({ sort_order: e.target.value })}
+              inputMode="numeric"
+              dir="ltr"
+            />
+          </Field>
+          <Field label="الوصف" className="sm:col-span-2">
+            <textarea
+              className={textareaClass}
+              value={form.description}
+              onChange={(e) => set({ description: e.target.value })}
+            />
+          </Field>
+          <div className="flex items-center gap-6 sm:col-span-2">
+            <span className="flex items-center gap-2 text-[12.5px] font-semibold">
+              <Toggle
+                label="مرئي على الموقع"
+                checked={form.is_visible}
+                onChange={(v) => set({ is_visible: v })}
+              />
+              مرئي على الموقع
+            </span>
+            <span className="flex items-center gap-2 text-[12.5px] font-semibold">
+              <Toggle
+                label="عقار مميز"
+                checked={form.is_featured}
+                onChange={(v) => set({ is_featured: v })}
+              />
+              عقار مميز
+            </span>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

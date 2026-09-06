@@ -27,15 +27,17 @@ export type NavGroup = {
 export const navGroups: NavGroup[] = [
   {
     icon: Home,
-    items: [{ label: "لوحة التحكم", to: "/dashboard" }],
+    items: [
+      { label: "لوحة التحكم", to: "/dashboard" },
+      { label: "المساعد الذكي", to: "/ai" },
+    ],
   },
   {
     label: "إدارة العقارات",
     icon: Factory,
     items: [
       { label: "العقارات", to: "/properties", countKey: "properties", module: "properties" },
-      { label: "طلبات عرض عقار", to: "/submissions", countKey: "listingRequests", module: "requests" },
-      { label: "طلبات توفير عقار", to: "/supply-requests", countKey: "supplyRequests", module: "requests" },
+      { label: "الطلبات الواردة", to: "/requests", countKey: "listingRequests", module: "requests" },
       { label: "إدارة الحجوزات", to: "/reservations", countKey: "reservations", module: "reservations" },
     ],
   },
@@ -45,7 +47,6 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: "الملاك", to: "/owners", countKey: "owners", module: "owners" },
       { label: "إدارة العقود", to: "/contracts", countKey: "contracts", module: "contracts" },
-      { label: "استيراد PDF", to: "/contract-imports", countKey: "imports", module: "contracts" },
       { label: "الفواتير", to: "/invoices", countKey: "invoices", module: "invoices" },
       { label: "إدارة التذكيرات", to: "/reminders", countKey: "followups", module: "reminders" },
     ],
@@ -53,22 +54,20 @@ export const navGroups: NavGroup[] = [
   {
     label: "المهام",
     icon: CircleCheck,
-    items: [
-      { label: "كل المهام", to: "/tasks", countKey: "tasks", module: "tasks" },
-      { label: "مهام عادية", to: "/tasks/normal", module: "tasks" },
-      { label: "مهام تصوير", to: "/tasks/photography", module: "tasks" },
-    ],
+    items: [{ label: "كل المهام", to: "/tasks", countKey: "tasks", module: "tasks" }],
   },
   {
     label: "CRM",
     icon: Users,
     items: [
+      { label: "نظام CRM", to: "/crm", module: "crm" },
       { label: "العملاء", to: "/clients", countKey: "contacts", module: "contacts" },
       { label: "الفرص", to: "/opportunities", countKey: "opportunities", module: "crm" },
       { label: "المتابعات والأنشطة", to: "/activities", module: "crm" },
       { label: "التقارير", to: "/reports", module: "crm" },
     ],
   },
+
   {
     label: "إعدادات الموقع",
     icon: Settings,

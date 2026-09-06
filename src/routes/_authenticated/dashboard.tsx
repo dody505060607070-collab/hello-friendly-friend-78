@@ -210,7 +210,7 @@ function DashboardPage() {
           عقد إيجار جديد
         </Link>
         <Link
-          to="/contract-imports"
+          to="/contracts"
           className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
         >
           <Upload className="size-4" />
@@ -396,14 +396,14 @@ function DashboardPage() {
           <p className="mt-0.5 text-[12.5px] text-muted-foreground">عناصر تنتظر الإجراء</p>
           <div className="mt-4 grid gap-2">
             <WorkItem
-              to="/supply-requests"
+              to="/requests"
               icon={Search}
               title="طلبات توفير عقار"
               hint="بانتظار بدء المتابعة"
               count={s?.supply ?? 0}
             />
             <WorkItem
-              to="/submissions"
+              to="/requests"
               icon={Building2}
               title="عقارات مقدمة"
               hint="بانتظار المراجعة"
@@ -417,7 +417,7 @@ function DashboardPage() {
               count={s?.pendingTasks ?? 0}
             />
             <WorkItem
-              to="/contract-imports"
+              to="/contracts"
               icon={Upload}
               title="عقود PDF مستوردة"
               hint="تحتاج مراجعة الاستخراج"
