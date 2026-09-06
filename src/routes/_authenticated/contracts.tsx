@@ -604,11 +604,13 @@ function ImportDialog({
       });
 
       const path = `imports/${Date.now()}-${f.name.replace(/[^\w.\-]/g, "_")}`;
-      await supabase.storage.from("contract-files").upload(path, f, { upsert: true });
+      const upload = await supabase.storage.from("contract-files").upload(path, f, { upsert: true });
+      if (upload.error) throw new Error("تعذّر رفع الملف إلى المخزن الخاص");
 
-      const { extraction } = await analyzeContractPdf({
+      const { extractionJson } = await analyzeContractPdf({
         data: { fileName: f.name, dataUrl },
       });
+      const extraction = JSON.parse(extractionJson) as Record<string, unknown>;
 
       await supabase.from("contract_imports").insert({
         file_path: path,
@@ -618,6 +620,7 @@ function ImportDialog({
         extraction: extraction as never,
         warnings: (Array.isArray(extraction["warnings"]) ? extraction["warnings"] : []) as never,
       });
+
 
       return extraction;
     },
