@@ -91,7 +91,7 @@ function DashboardPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listing_requests")
-        .select("id, owner_name, property_type, city, status, created_at")
+        .select("id, full_name, property_type, city, status, created_at")
         .order("created_at", { ascending: false })
         .limit(6);
       if (error) throw error;
@@ -181,7 +181,7 @@ function DashboardPage() {
               {(latestRequests.data ?? []).map((r) => (
                 <li key={r.id} className="flex items-center justify-between gap-3 py-3">
                   <div>
-                    <p className="text-[13.5px] font-semibold text-foreground">{r.owner_name}</p>
+                    <p className="text-[13.5px] font-semibold text-foreground">{r.full_name}</p>
                     <p className="text-[12px] text-muted-foreground">
                       {[r.property_type, r.city].filter(Boolean).join(" · ") || "—"}
                     </p>
