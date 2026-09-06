@@ -140,7 +140,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
         </div>
 
-        <Link to="/" className="absolute left-1/2 -translate-x-1/2">
+        <Link to="/dashboard" className="absolute left-1/2 -translate-x-1/2">
           <img
             src={logo}
             alt="الرشودي للعقارات"

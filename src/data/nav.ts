@@ -27,7 +27,7 @@ export type NavGroup = {
 export const navGroups: NavGroup[] = [
   {
     icon: Home,
-    items: [{ label: "لوحة التحكم", to: "/" }],
+    items: [{ label: "لوحة التحكم", to: "/dashboard" }],
   },
   {
     label: "إدارة العقارات",

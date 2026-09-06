@@ -34,7 +34,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/" });
+      if (data.session) navigate({ to: "/dashboard" });
     });
   }, [navigate]);
 
@@ -45,7 +45,7 @@ function AuthPage() {
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: "/" });
+        navigate({ to: "/dashboard" });
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -58,7 +58,7 @@ function AuthPage() {
         if (error) throw error;
         toast.success("تم إنشاء الحساب. إن طُلب تأكيد البريد فافتح الرسالة المرسلة إليك.");
         const { data } = await supabase.auth.getSession();
-        if (data.session) navigate({ to: "/" });
+        if (data.session) navigate({ to: "/dashboard" });
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "تعذّر إكمال العملية");
@@ -78,7 +78,7 @@ function AuthPage() {
       return;
     }
     if (result.redirected) return;
-    navigate({ to: "/" });
+    navigate({ to: "/dashboard" });
   };
 
   return (
