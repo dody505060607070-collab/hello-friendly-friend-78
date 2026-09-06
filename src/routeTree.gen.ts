@@ -11,12 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedActivitiesRouteImport } from './routes/_authenticated/activities'
 import { Route as AuthenticatedActivityLogRouteImport } from './routes/_authenticated/activity-log'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedContractImportsRouteImport } from './routes/_authenticated/contract-imports'
 import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
 import { Route as AuthenticatedErrorLogRouteImport } from './routes/_authenticated/error-log'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
@@ -46,11 +46,6 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedActivitiesRoute = AuthenticatedActivitiesRouteImport.update({
   id: '/activities',
   path: '/activities',
@@ -76,6 +71,11 @@ const AuthenticatedContractImportsRoute =
 const AuthenticatedContractsRoute = AuthenticatedContractsRouteImport.update({
   id: '/contracts',
   path: '/contracts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
@@ -182,13 +182,14 @@ const AuthenticatedTasksPhotographyRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedIndexRoute
+  '/': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/contract-imports': typeof AuthenticatedContractImportsRoute
   '/contracts': typeof AuthenticatedContractsRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/error-log': typeof AuthenticatedErrorLogRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
@@ -210,12 +211,14 @@ export interface FileRoutesByFullPath {
   '/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/contract-imports': typeof AuthenticatedContractImportsRoute
   '/contracts': typeof AuthenticatedContractsRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/error-log': typeof AuthenticatedErrorLogRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
@@ -233,7 +236,6 @@ export interface FileRoutesByTo {
   '/submissions': typeof AuthenticatedSubmissionsRoute
   '/supply-requests': typeof AuthenticatedSupplyRequestsRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
-  '/': typeof AuthenticatedIndexRoute
   '/tasks/normal': typeof AuthenticatedTasksNormalRoute
   '/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
@@ -246,6 +248,7 @@ export interface FileRoutesById {
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/contract-imports': typeof AuthenticatedContractImportsRoute
   '/_authenticated/contracts': typeof AuthenticatedContractsRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
   '/_authenticated/error-log': typeof AuthenticatedErrorLogRoute
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
@@ -263,7 +266,6 @@ export interface FileRoutesById {
   '/_authenticated/submissions': typeof AuthenticatedSubmissionsRoute
   '/_authenticated/supply-requests': typeof AuthenticatedSupplyRequestsRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
-  '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/tasks/normal': typeof AuthenticatedTasksNormalRoute
   '/_authenticated/tasks/photography': typeof AuthenticatedTasksPhotographyRoute
 }
@@ -277,6 +279,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/contract-imports'
     | '/contracts'
+    | '/dashboard'
     | '/employees'
     | '/error-log'
     | '/invoices'
@@ -298,12 +301,14 @@ export interface FileRouteTypes {
     | '/tasks/photography'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/auth'
     | '/activities'
     | '/activity-log'
     | '/clients'
     | '/contract-imports'
     | '/contracts'
+    | '/dashboard'
     | '/employees'
     | '/error-log'
     | '/invoices'
@@ -321,7 +326,6 @@ export interface FileRouteTypes {
     | '/submissions'
     | '/supply-requests'
     | '/tasks'
-    | '/'
     | '/tasks/normal'
     | '/tasks/photography'
   id:
@@ -333,6 +337,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clients'
     | '/_authenticated/contract-imports'
     | '/_authenticated/contracts'
+    | '/_authenticated/dashboard'
     | '/_authenticated/employees'
     | '/_authenticated/error-log'
     | '/_authenticated/invoices'
@@ -350,7 +355,6 @@ export interface FileRouteTypes {
     | '/_authenticated/submissions'
     | '/_authenticated/supply-requests'
     | '/_authenticated/tasks'
-    | '/_authenticated/'
     | '/_authenticated/tasks/normal'
     | '/_authenticated/tasks/photography'
   fileRoutesById: FileRoutesById
@@ -375,13 +379,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/': {
-      id: '/_authenticated/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/activities': {
       id: '/_authenticated/activities'
@@ -416,6 +413,13 @@ declare module '@tanstack/react-router' {
       path: '/contracts'
       fullPath: '/contracts'
       preLoaderRoute: typeof AuthenticatedContractsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/employees': {
@@ -573,6 +577,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedContractImportsRoute: typeof AuthenticatedContractImportsRoute
   AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
   AuthenticatedErrorLogRoute: typeof AuthenticatedErrorLogRoute
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
@@ -590,7 +595,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSubmissionsRoute: typeof AuthenticatedSubmissionsRoute
   AuthenticatedSupplyRequestsRoute: typeof AuthenticatedSupplyRequestsRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -599,6 +603,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedContractImportsRoute: AuthenticatedContractImportsRoute,
   AuthenticatedContractsRoute: AuthenticatedContractsRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
   AuthenticatedErrorLogRoute: AuthenticatedErrorLogRoute,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
@@ -616,7 +621,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSubmissionsRoute: AuthenticatedSubmissionsRoute,
   AuthenticatedSupplyRequestsRoute: AuthenticatedSupplyRequestsRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
