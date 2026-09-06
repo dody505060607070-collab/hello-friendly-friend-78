@@ -3,6 +3,7 @@ import { Clock, Mail, MapPin, Menu, Phone, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import logoAsset from "@/assets/mithra-logo.png.asset.json";
+import { AiWidget } from "@/components/site/AiWidget";
 import { useSession } from "@/hooks/useAuth";
 import { COMPANY_EMAIL, COMPANY_PHONE, whatsappLink } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
