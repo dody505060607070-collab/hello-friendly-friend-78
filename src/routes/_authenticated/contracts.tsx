@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { FileText } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { FileText, Plus, Upload } from "lucide-react";
 
 import { Chip } from "@/components/kit/Chip";
 import { LiveTable, formatCurrency, formatDate } from "@/components/kit/LiveTable";
