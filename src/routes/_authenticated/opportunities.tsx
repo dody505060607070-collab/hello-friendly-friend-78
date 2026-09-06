@@ -21,9 +21,9 @@ type Row = {
 export const Route = createFileRoute("/_authenticated/opportunities")({
   head: () => ({
     meta: [
-      { title: "الفرص | الرشودي للعقارات" },
+      { title: "الفرص | مثراء العقارية" },
       { name: "description", content: "متابعة فرص البيع والإيجار ومراحلها حتى الإغلاق." },
-      { property: "og:title", content: "الفرص | الرشودي للعقارات" },
+      { property: "og:title", content: "الفرص | مثراء العقارية" },
       { property: "og:description", content: "متابعة فرص البيع والإيجار ومراحلها حتى الإغلاق." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

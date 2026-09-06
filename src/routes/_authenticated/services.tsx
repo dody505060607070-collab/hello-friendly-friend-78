@@ -17,9 +17,9 @@ type Row = {
 export const Route = createFileRoute("/_authenticated/services")({
   head: () => ({
     meta: [
-      { title: "الخدمات | الرشودي للعقارات" },
+      { title: "الخدمات | مثراء العقارية" },
       { name: "description", content: "خدمات الشركة المعروضة في الموقع العام وترتيبها." },
-      { property: "og:title", content: "الخدمات | الرشودي للعقارات" },
+      { property: "og:title", content: "الخدمات | مثراء العقارية" },
       { property: "og:description", content: "خدمات الشركة المعروضة في الموقع العام وترتيبها." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

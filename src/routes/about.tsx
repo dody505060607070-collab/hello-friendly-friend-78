@@ -8,13 +8,13 @@ import { whatsappLink } from "@/lib/site-data";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "من نحن | الرشودي للعقارات في بريدة" },
+      { title: "من نحن | مثراء العقارية في بريدة" },
       {
         name: "description",
         content:
-          "تعرّف على مؤسسة الرشودي للعقارات: أكثر من 8 سنوات في سوق بريدة، إيجار وبيع وإدارة أملاك بخدمة موثوقة.",
+          "تعرّف على مؤسسة مثراء العقارية: أكثر من 8 سنوات في سوق بريدة، إيجار وبيع وإدارة أملاك بخدمة موثوقة.",
       },
-      { property: "og:title", content: "من نحن | الرشودي للعقارات في بريدة" },
+      { property: "og:title", content: "من نحن | مثراء العقارية في بريدة" },
       {
         property: "og:description",
         content: "خبرة محلية في عقارات بريدة: إيجار، بيع، إدارة أملاك ومتابعة عقود.",
@@ -39,7 +39,7 @@ function AboutPage() {
       <section className="relative isolate">
         <img
           src={heroImage}
-          alt="الرشودي للعقارات"
+          alt="مثراء العقارية"
           width={1920}
           height={1088}
           className="absolute inset-0 -z-10 size-full object-cover"
@@ -48,7 +48,7 @@ function AboutPage() {
         <div className="mx-auto max-w-4xl px-4 py-20 text-center text-primary-foreground">
           <h1 className="text-3xl font-extrabold md:text-4xl">من نحن</h1>
           <p className="mt-4 text-[14.5px] leading-8 opacity-90">
-            مؤسسة الرشودي للعقارات — خبرة محلية في بريدة، وقرار عقاري أوضح لعملائنا.
+            مؤسسة مثراء العقارية — خبرة محلية في بريدة، وقرار عقاري أوضح لعملائنا.
           </p>
         </div>
       </section>
@@ -93,7 +93,7 @@ function AboutPage() {
 
         <div className="mt-10 flex flex-wrap justify-center gap-3">
           <a
-            href={whatsappLink(null, "مرحباً، أرغب بالتحدث مع فريق الرشودي للعقارات")}
+            href={whatsappLink(null, "مرحباً، أرغب بالتحدث مع فريق مثراء العقارية")}
             target="_blank"
             rel="noreferrer"
             className="rounded-lg bg-primary px-6 py-3 text-[14px] font-bold text-primary-foreground"

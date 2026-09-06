@@ -18,9 +18,9 @@ import { Pills } from "@/components/kit/Pills";
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
-      { title: "إعدادات الموقع — الرشودي للعقارات" },
+      { title: "إعدادات الموقع — مثراء العقارية" },
       { name: "description", content: "التحكم في بيانات الموقع والتواصل وإعدادات التشغيل." },
-      { property: "og:title", content: "إعدادات الموقع — الرشودي للعقارات" },
+      { property: "og:title", content: "إعدادات الموقع — مثراء العقارية" },
       { property: "og:description", content: "الهوية البصرية وبيانات التواصل والروابط والإحصائيات." },
     ],
   }),

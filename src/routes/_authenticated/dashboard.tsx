@@ -21,12 +21,12 @@ import { requestStatusLabels, taskStatusLabels } from "@/lib/labels";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "لوحة التحكم | الرشودي للعقارات" },
+      { title: "لوحة التحكم | مثراء العقارية" },
       {
         name: "description",
-        content: "نظرة سريعة على العقارات والطلبات والاستحقاقات والمهام في نظام الرشودي للعقارات.",
+        content: "نظرة سريعة على العقارات والطلبات والاستحقاقات والمهام في نظام مثراء العقارية.",
       },
-      { property: "og:title", content: "لوحة التحكم | الرشودي للعقارات" },
+      { property: "og:title", content: "لوحة التحكم | مثراء العقارية" },
       {
         property: "og:description",
         content: "نظرة سريعة على العقارات والطلبات والاستحقاقات والمهام.",

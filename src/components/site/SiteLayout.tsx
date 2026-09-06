@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Clock, Mail, MapPin, Menu, Phone, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
-import logo from "@/assets/logo.png";
+import logoAsset from "@/assets/mithra-logo.png.asset.json";
 import { useSession } from "@/hooks/useAuth";
 import { COMPANY_EMAIL, COMPANY_PHONE, whatsappLink } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
@@ -63,8 +63,8 @@ function SiteHeader() {
           ))}
         </nav>
 
-        <Link to="/" aria-label="الرشودي للعقارات">
-          <img src={logo} alt="الرشودي للعقارات" width={1152} height={576} className="h-10 w-auto" />
+        <Link to="/" aria-label="مثراء العقارية">
+          <img src={logoAsset.url} alt="مثراء العقارية" width={1152} height={576} className="h-10 w-auto" />
         </Link>
       </div>
 
@@ -103,9 +103,9 @@ function SiteFooter() {
     <footer className="bg-primary text-primary-foreground">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-3">
         <div>
-          <h3 className="border-e-4 border-gold pe-3 text-[17px] font-bold">الرشودي للعقارات</h3>
+          <h3 className="border-e-4 border-gold pe-3 text-[17px] font-bold">مثراء العقارية</h3>
           <p className="mt-4 text-[13.5px] leading-7 opacity-80">
-            الرشودي للعقارات شركة رائدة في سوق العقارات بـبريدة منذ أكثر من 8 سنوات، نقدم أفضل
+            مثراء العقارية شركة رائدة في سوق العقارات بـبريدة منذ أكثر من 8 سنوات، نقدم أفضل
             الخيارات السكنية والتجارية بخبرة واحترافية عالية.
           </p>
         </div>
@@ -154,7 +154,7 @@ function SiteFooter() {
       </div>
 
       <div className="border-t border-primary-foreground/15 py-5 text-center text-[12.5px] opacity-70">
-        جميع الحقوق محفوظة © {new Date().getFullYear()} — مؤسسة الرشودي
+        جميع الحقوق محفوظة © {new Date().getFullYear()} — مؤسسة مثراء
       </div>
     </footer>
   );

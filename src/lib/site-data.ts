@@ -27,7 +27,7 @@ const PROPERTY_FIELDS =
 
 export const DEFAULT_WHATSAPP = "966550818020";
 export const COMPANY_PHONE = "0550818020";
-export const COMPANY_EMAIL = "info@al-rashudi.com";
+export const COMPANY_EMAIL = "info@mithra.sa";
 
 export function whatsappLink(number?: string | null, text?: string) {
   const digits = (number ?? DEFAULT_WHATSAPP).replace(/[^0-9]/g, "");

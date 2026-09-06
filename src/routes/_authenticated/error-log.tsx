@@ -14,9 +14,9 @@ type Row = {
 export const Route = createFileRoute("/_authenticated/error-log")({
   head: () => ({
     meta: [
-      { title: "سجل الأخطاء | الرشودي للعقارات" },
+      { title: "سجل الأخطاء | مثراء العقارية" },
       { name: "description", content: "أخطاء النظام وفشل الإرسال والتكاملات للمعالجة." },
-      { property: "og:title", content: "سجل الأخطاء | الرشودي للعقارات" },
+      { property: "og:title", content: "سجل الأخطاء | مثراء العقارية" },
       { property: "og:description", content: "أخطاء النظام وفشل الإرسال والتكاملات للمعالجة." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

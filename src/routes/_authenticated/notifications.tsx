@@ -16,9 +16,9 @@ type Row = {
 export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => ({
     meta: [
-      { title: "الإشعارات | الرشودي للعقارات" },
+      { title: "الإشعارات | مثراء العقارية" },
       { name: "description", content: "إشعارات المهام والعقود والمتابعات الخاصة بحسابك." },
-      { property: "og:title", content: "الإشعارات | الرشودي للعقارات" },
+      { property: "og:title", content: "الإشعارات | مثراء العقارية" },
       { property: "og:description", content: "إشعارات المهام والعقود والمتابعات الخاصة بحسابك." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

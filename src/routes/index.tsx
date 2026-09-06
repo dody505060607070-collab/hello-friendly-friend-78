@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, Handshake, Home, KeyRound, Search, ShieldCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import heroImage from "@/assets/site-hero.jpg";
+import { HeroVideo } from "@/components/site/HeroVideo";
 import { PropertyGrid } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PropertyMapSection } from "@/components/site/PropertyMapSection";
@@ -12,13 +12,13 @@ import { publicPropertiesQuery, publicServicesQuery } from "@/lib/site-data";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "الرشودي للعقارات | عقارات بريدة للإيجار والبيع" },
+      { title: "مثراء العقارية | عقارات بريدة للإيجار والبيع" },
       {
         name: "description",
         content:
-          "الرشودي للعقارات في بريدة: شقق وفلل ومعارض للإيجار والبيع، خبرة محلية تفوق 8 سنوات وخدمة سريعة عبر واتساب.",
+          "مثراء العقارية في بريدة: شقق وفلل ومعارض للإيجار والبيع، خبرة محلية تفوق 8 سنوات وخدمة سريعة عبر واتساب.",
       },
-      { property: "og:title", content: "الرشودي للعقارات | عقارات بريدة للإيجار والبيع" },
+      { property: "og:title", content: "مثراء العقارية | عقارات بريدة للإيجار والبيع" },
       {
         property: "og:description",
         content: "خبرة محلية في سوق عقارات بريدة: إيجار، بيع، إدارة أملاك ومتابعة عقود.",
@@ -72,42 +72,8 @@ function HomePage() {
 
   return (
     <SiteLayout>
-      <section className="relative isolate">
-        <img
-          src={heroImage}
-          alt="عقارات الرشودي في بريدة"
-          width={1920}
-          height={1088}
-          className="absolute inset-0 -z-10 size-full object-cover"
-        />
-        <div className="absolute inset-0 -z-10 bg-primary/75" />
-        <div className="mx-auto max-w-4xl px-4 py-24 text-center text-primary-foreground md:py-32">
-          <p className="text-[14px] font-semibold tracking-wide text-gold">
-            نعرف بريدة.. ونفهم العقار
-          </p>
-          <h1 className="mt-4 text-3xl font-extrabold leading-snug md:text-5xl">
-            خبرةٌ محلية.. وقرارٌ عقاري أوضح
-          </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-8 opacity-90">
-            أكثر من 8 سنوات في سوق عقارات بريدة. نساعدك على اختيار الوحدة المناسبة للإيجار أو
-            الشراء، ونتابع معك العقد والتحصيل حتى النهاية.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              to="/rent"
-              className="rounded-lg bg-gold px-6 py-3 text-[14px] font-bold text-gold-foreground"
-            >
-              تصفّح عقارات الإيجار
-            </Link>
-            <Link
-              to="/sale"
-              className="rounded-lg border border-primary-foreground/40 px-6 py-3 text-[14px] font-bold"
-            >
-              تصفّح عقارات البيع
-            </Link>
-          </div>
-        </div>
-      </section>
+      <HeroVideo />
+
 
       <section className="relative z-10 mx-auto -mt-10 max-w-5xl px-4">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-float">
