@@ -44,6 +44,24 @@ function ContractsPage() {
         icon={FileText}
       />
 
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          <Plus className="size-4" />
+          عقد جديد
+        </button>
+        <Link
+          to="/contract-imports"
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted"
+        >
+          <Upload className="size-4" />
+          استيراد عقد PDF
+        </Link>
+      </div>
+
+
       <LiveTable<Row>
         table="contracts"
         select="id, contract_number, contract_type, start_date, end_date, annual_rent, total_value, payment_cycle, status, source, owner:owner_id(full_name), tenant:tenant_id(full_name)"
