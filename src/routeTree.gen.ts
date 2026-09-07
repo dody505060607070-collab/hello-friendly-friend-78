@@ -27,6 +27,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedEmployeeFormRouteImport } from './routes/_authenticated/employee-form'
 import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
 import { Route as AuthenticatedErrorLogRouteImport } from './routes/_authenticated/error-log'
+import { Route as AuthenticatedInvoiceFormRouteImport } from './routes/_authenticated/invoice-form'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated/opportunities'
@@ -137,6 +138,12 @@ const AuthenticatedErrorLogRoute = AuthenticatedErrorLogRouteImport.update({
   path: '/error-log',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInvoiceFormRoute =
+  AuthenticatedInvoiceFormRouteImport.update({
+    id: '/invoice-form',
+    path: '/invoice-form',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
   id: '/invoices',
   path: '/invoices',
@@ -251,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/employee-form': typeof AuthenticatedEmployeeFormRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/error-log': typeof AuthenticatedErrorLogRoute
+  '/invoice-form': typeof AuthenticatedInvoiceFormRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
@@ -288,6 +296,7 @@ export interface FileRoutesByTo {
   '/employee-form': typeof AuthenticatedEmployeeFormRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/error-log': typeof AuthenticatedErrorLogRoute
+  '/invoice-form': typeof AuthenticatedInvoiceFormRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
@@ -327,6 +336,7 @@ export interface FileRoutesById {
   '/_authenticated/employee-form': typeof AuthenticatedEmployeeFormRoute
   '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
   '/_authenticated/error-log': typeof AuthenticatedErrorLogRoute
+  '/_authenticated/invoice-form': typeof AuthenticatedInvoiceFormRoute
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
@@ -366,6 +376,7 @@ export interface FileRouteTypes {
     | '/employee-form'
     | '/employees'
     | '/error-log'
+    | '/invoice-form'
     | '/invoices'
     | '/notifications'
     | '/opportunities'
@@ -403,6 +414,7 @@ export interface FileRouteTypes {
     | '/employee-form'
     | '/employees'
     | '/error-log'
+    | '/invoice-form'
     | '/invoices'
     | '/notifications'
     | '/opportunities'
@@ -441,6 +453,7 @@ export interface FileRouteTypes {
     | '/_authenticated/employee-form'
     | '/_authenticated/employees'
     | '/_authenticated/error-log'
+    | '/_authenticated/invoice-form'
     | '/_authenticated/invoices'
     | '/_authenticated/notifications'
     | '/_authenticated/opportunities'
@@ -601,6 +614,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorLogRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/invoice-form': {
+      id: '/_authenticated/invoice-form'
+      path: '/invoice-form'
+      fullPath: '/invoice-form'
+      preLoaderRoute: typeof AuthenticatedInvoiceFormRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/invoices': {
       id: '/_authenticated/invoices'
       path: '/invoices'
@@ -752,6 +772,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmployeeFormRoute: typeof AuthenticatedEmployeeFormRoute
   AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
   AuthenticatedErrorLogRoute: typeof AuthenticatedErrorLogRoute
+  AuthenticatedInvoiceFormRoute: typeof AuthenticatedInvoiceFormRoute
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
@@ -781,6 +802,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmployeeFormRoute: AuthenticatedEmployeeFormRoute,
   AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
   AuthenticatedErrorLogRoute: AuthenticatedErrorLogRoute,
+  AuthenticatedInvoiceFormRoute: AuthenticatedInvoiceFormRoute,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,

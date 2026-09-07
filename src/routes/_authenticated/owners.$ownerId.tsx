@@ -15,6 +15,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
+import type { ReactNode } from "react";
 
 import { Chip } from "@/components/kit/Chip";
 import { formatCurrency, formatDate } from "@/components/kit/LiveTable";
@@ -161,7 +162,7 @@ function Info({ icon: Icon, label, value, ltr }: { icon: typeof Phone; label: st
   return <div className="bg-card p-5"><p className="flex items-center gap-2 text-[11.5px] text-muted-foreground"><Icon className="size-4" />{label}</p><p className="mt-2 text-[13px] font-semibold" dir={ltr ? "ltr" : undefined}>{value || "غير مسجل"}</p></div>;
 }
 
-function RecordSection({ title, icon: Icon, count, children }: { title: string; icon: typeof Building2; count: number; children: React.ReactNode }) {
+function RecordSection({ title, icon: Icon, count, children }: { title: string; icon: typeof Building2; count: number; children: ReactNode }) {
   return <section className="surface-card overflow-hidden"><header className="flex items-center justify-between border-b border-border px-5 py-4"><h2 className="flex items-center gap-2 text-[14px] font-bold"><Icon className="size-4 text-primary" />{title}</h2><Chip tone="primary">{count}</Chip></header><div className="p-4">{children}</div></section>;
 }
 

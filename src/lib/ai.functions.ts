@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/responses";
 const MODEL = "openai/gpt-5.6-sol";
 
@@ -43,14 +45,40 @@ const SYSTEM_PROMPT = `أنت "مساعد مثراء" — مساعد ذكي دا
 أجب دائمًا بالعربية الفصحى المبسطة، بإجابات قصيرة عملية ومرتبة بنقاط عند الحاجة. إن أرسل المستخدم بيانات مسحوبة من جدول، حللها واشرحها واقترح الخطوة التالية.`;
 
 export const askAdminAi = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator(
     (input: {
       messages: { role: "user" | "assistant"; content: string }[];
       context?: string;
     }) => input,
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const items: Item[] = [{ role: "system", content: [{ type: "input_text", text: SYSTEM_PROMPT }] }];
+    const latestQuestion = data.messages.at(-1)?.content ?? "";
+    const owners = await context.supabase
+      .from("contacts")
+      .select("id, full_name")
+      .contains("roles", ["owner"])
+      .limit(500);
+    const mentionedOwner = (owners.data ?? [])
+      .filter((owner) => owner.full_name.length >= 3 && latestQuestion.includes(owner.full_name))
+      .sort((a, b) => b.full_name.length - a.full_name.length)[0];
+    if (mentionedOwner) {
+      const [owner, properties, units, contracts, invoices] = await Promise.all([
+        context.supabase.from("contacts").select("id, full_name, kind, national_id, phone, phone_alt, whatsapp, email, address, notes, is_active, created_at").eq("id", mentionedOwner.id).single(),
+        context.supabase.from("properties").select("code, name, purpose, property_type, city, district, price_value, status, is_visible").eq("owner_id", mentionedOwner.id),
+        context.supabase.from("units").select("unit_number, unit_type, floor, area, rooms, status, is_rentable").eq("owner_id", mentionedOwner.id),
+        context.supabase.from("contracts").select("contract_number, contract_type, start_date, end_date, annual_rent, total_value, deposit, status").eq("owner_id", mentionedOwner.id),
+        context.supabase.from("invoices").select("invoice_number, issue_date, due_date, subtotal, vat_amount, total, status").eq("contact_id", mentionedOwner.id),
+      ]);
+      items.push({
+        role: "user",
+        content: [{
+          type: "input_text",
+          text: `بيانات موثوقة من النظام للمالك المذكور. لا تضف معلومات غير موجودة:\n${JSON.stringify({ owner: owner.data, properties: properties.data ?? [], units: units.data ?? [], contracts: contracts.data ?? [], invoices: invoices.data ?? [] }).slice(0, 30000)}`,
+        }],
+      });
+    }
     if (data.context?.trim()) {
       items.push({
         role: "user",

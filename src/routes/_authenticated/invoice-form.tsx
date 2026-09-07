@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Check, FileText, Loader2, Plus, ReceiptText, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Field, inputClass, textareaClass } from "@/components/kit/Modal";
@@ -84,5 +85,5 @@ function InvoiceFormPage() {
   </>;
 }
 
-function Section({ title, icon: Icon, children }: { title: string; icon: typeof ReceiptText; children: React.ReactNode }) { return <section className="surface-card overflow-hidden"><header className="flex items-center gap-2 border-b border-border px-5 py-4"><Icon className="size-4 text-primary" /><h2 className="text-[14px] font-bold">{title}</h2></header><div className="p-5">{children}</div></section>; }
+function Section({ title, icon: Icon, children }: { title: string; icon: typeof ReceiptText; children: ReactNode }) { return <section className="surface-card overflow-hidden"><header className="flex items-center gap-2 border-b border-border px-5 py-4"><Icon className="size-4 text-primary" /><h2 className="text-[14px] font-bold">{title}</h2></header><div className="p-5">{children}</div></section>; }
 function Total({ label, value, strong }: { label: string; value: number; strong?: boolean }) { return <div className="rounded-lg border border-border p-3"><p className="text-[11.5px] text-muted-foreground">{label}</p><p className={strong ? "mt-2 text-lg font-bold text-primary" : "mt-2 font-semibold"}>{new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 2 }).format(value)} ر.س</p></div>; }
