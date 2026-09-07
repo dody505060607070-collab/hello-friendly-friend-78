@@ -109,11 +109,8 @@ function OwnersPage() {
   const rows = data ?? [];
   const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
 
-  const openCreate = () => {
-    setEditing(null);
-    setForm(emptyForm);
-    setOpen(true);
-  };
+
+
 
   const openEdit = (row: Row) => {
     setEditing(row);
