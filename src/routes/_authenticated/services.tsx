@@ -139,8 +139,8 @@ function ServicesPage() {
         subtitle="كل خدمة تُضيفها هنا تظهر مباشرة للزوار في الموقع العام."
         icon={Sparkles}
         stats={[
-          { label: "إجمالي الخدمات", value: rows.length },
-          { label: "معروضة للزوار", value: rows.filter((r) => r.is_active).length },
+          { label: "إجمالي الخدمات", value: String(rows.length) },
+          { label: "معروضة للزوار", value: String(rows.filter((r) => r.is_active).length) },
         ]}
       />
 
@@ -216,7 +216,7 @@ function ServicesPage() {
         footer={
           <>
             <GhostButton onClick={() => setOpen(false)}>إلغاء</GhostButton>
-            <PrimaryButton onClick={() => save.mutate()} loading={save.isPending}>
+            <PrimaryButton onClick={() => save.mutate()} disabled={save.isPending}>
               حفظ
             </PrimaryButton>
           </>
