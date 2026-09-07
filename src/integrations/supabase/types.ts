@@ -1388,34 +1388,49 @@ export type Database = {
       }
       profiles: {
         Row: {
+          admin_notes: string | null
+          avatar_url: string | null
           created_at: string
           email: string | null
           full_name: string
+          hire_date: string | null
           id: string
           is_active: boolean
           job_title: string | null
           phone: string | null
           updated_at: string
+          whatsapp: string | null
+          whatsapp_notify: boolean
         }
         Insert: {
+          admin_notes?: string | null
+          avatar_url?: string | null
           created_at?: string
           email?: string | null
           full_name?: string
+          hire_date?: string | null
           id: string
           is_active?: boolean
           job_title?: string | null
           phone?: string | null
           updated_at?: string
+          whatsapp?: string | null
+          whatsapp_notify?: boolean
         }
         Update: {
+          admin_notes?: string | null
+          avatar_url?: string | null
           created_at?: string
           email?: string | null
           full_name?: string
+          hire_date?: string | null
           id?: string
           is_active?: boolean
           job_title?: string | null
           phone?: string | null
           updated_at?: string
+          whatsapp?: string | null
+          whatsapp_notify?: boolean
         }
         Relationships: []
       }
