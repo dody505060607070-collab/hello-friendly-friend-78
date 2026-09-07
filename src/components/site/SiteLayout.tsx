@@ -107,65 +107,71 @@ function SiteHeader() {
 
 function SiteFooter() {
   return (
-    <footer className="bg-primary text-primary-foreground">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-3">
-        <div>
-          <h3 className="border-e-4 border-gold pe-3 text-[17px] font-bold">مثراء العقارية</h3>
-          <p className="mt-4 text-[13.5px] leading-7 opacity-80">
-            مثراء العقارية شركة رائدة في سوق العقارات بـبريدة منذ أكثر من 8 سنوات، نقدم أفضل
-            الخيارات السكنية والتجارية بخبرة واحترافية عالية.
-          </p>
+    <footer className="relative isolate overflow-hidden text-white">
+      <img
+        src={footerImage}
+        alt=""
+        aria-hidden
+        width={1920}
+        height={1080}
+        loading="lazy"
+        className="absolute inset-0 -z-10 size-full object-cover"
+      />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-primary/80" />
+
+      <div className="mx-auto max-w-3xl px-4 py-16 text-center">
+        <Link to="/" aria-label="مثراء العقارية" className="inline-block">
+          <img
+            src={logoAsset.url}
+            alt="مثراء العقارية"
+            width={680}
+            height={510}
+            loading="lazy"
+            className="mx-auto h-24 w-auto brightness-0 invert md:h-32"
+          />
+        </Link>
+
+        <p className="mt-5 text-[14px] leading-7 text-white/85">
+          مثراء العقارية — إيجار وبيع وإدارة أملاك في بريدة، القصيم.
+        </p>
+
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-[13.5px] text-white/90">
+          <a href={`tel:${COMPANY_PHONE}`} dir="ltr" className="flex items-center gap-2 hover:text-gold">
+            <Phone className="size-4 text-gold" />
+            {COMPANY_PHONE}
+          </a>
+          <a href={`mailto:${COMPANY_EMAIL}`} dir="ltr" className="flex items-center gap-2 hover:text-gold">
+            <Mail className="size-4 text-gold" />
+            {COMPANY_EMAIL}
+          </a>
+          <span className="flex items-center gap-2">
+            <MapPin className="size-4 text-gold" />
+            بريدة — القصيم
+          </span>
+          <span className="flex items-center gap-2">
+            <Clock className="size-4 text-gold" />
+            السبت — الخميس 9ص — 10م
+          </span>
         </div>
 
-        <div>
-          <h3 className="border-e-4 border-gold pe-3 text-[17px] font-bold">روابط سريعة</h3>
-          <ul className="mt-4 space-y-2.5 text-[13.5px] opacity-85">
-            {[...navLinks.slice(1), { to: "/list-property", label: "اعرض | اطلب عقارك" }].map(
-              (item) => (
-                <li key={item.to} className="flex items-center gap-2">
-                  <span className="size-1.5 rounded-full bg-gold" />
-                  <Link to={item.to} className="hover:opacity-100">
-                    {item.label}
-                  </Link>
-                </li>
-              ),
-            )}
-          </ul>
-        </div>
+        <nav className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[13px] text-white/80">
+          {[...navLinks.slice(1), { to: "/list-property", label: "اعرض | اطلب عقارك" }, { to: "/favorites", label: "المفضلة" }].map(
+            (item) => (
+              <Link key={item.to} to={item.to} className="hover:text-gold">
+                {item.label}
+              </Link>
+            ),
+          )}
+        </nav>
 
-        <div>
-          <h3 className="border-e-4 border-gold pe-3 text-[17px] font-bold">تواصل معنا</h3>
-          <ul className="mt-4 space-y-3 text-[13.5px] opacity-85">
-            <li className="flex items-center gap-2">
-              <Phone className="size-4 text-gold" />
-              <a href={`tel:${COMPANY_PHONE}`} dir="ltr">
-                {COMPANY_PHONE}
-              </a>
-            </li>
-            <li className="flex items-center gap-2">
-              <Mail className="size-4 text-gold" />
-              <a href={`mailto:${COMPANY_EMAIL}`} dir="ltr">
-                {COMPANY_EMAIL}
-              </a>
-            </li>
-            <li className="flex items-center gap-2">
-              <MapPin className="size-4 text-gold" />
-              بريدة، المملكة العربية السعودية
-            </li>
-            <li className="flex items-center gap-2">
-              <Clock className="size-4 text-gold" />
-              من السبت للخميس 9ص — 10م
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="border-t border-primary-foreground/15 py-5 text-center text-[12.5px] opacity-70">
-        جميع الحقوق محفوظة © {new Date().getFullYear()} — مؤسسة مثراء
+        <p className="mt-8 text-[12px] text-white/60">
+          جميع الحقوق محفوظة © {new Date().getFullYear()} — مؤسسة مثراء
+        </p>
       </div>
     </footer>
   );
 }
+
 
 function CookieBanner() {
   const [visible, setVisible] = useState(false);
