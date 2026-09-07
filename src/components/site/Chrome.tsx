@@ -36,7 +36,7 @@ export function FloatingActions() {
   }, []);
 
   return (
-    <div className="fixed bottom-5 end-5 z-40 flex flex-col items-center gap-3">
+    <div className="fixed bottom-28 end-5 z-40 flex flex-col items-center gap-3">
       {show ? (
         <button
           type="button"
