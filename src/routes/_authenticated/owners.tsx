@@ -204,14 +204,13 @@ function OwnersPage() {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground hover:opacity-90"
+        <Link
+          to="/owner-form"
+          className="shine inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground"
         >
           <Plus className="size-4" />
           إضافة مالك جديد
-        </button>
+        </Link>
       </div>
 
       {isLoading ? (
