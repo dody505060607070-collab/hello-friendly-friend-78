@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Loader2, Pencil, Plus, Users } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Eye, Loader2, Pencil, Plus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -23,7 +23,7 @@ type Row = {
   id: string;
   full_name: string;
   phone: string | null;
-  whatsapp: string | null
+  whatsapp: string | null;
   email: string | null;
   national_id: string | null;
   address: string | null;
@@ -194,12 +194,12 @@ function OwnersPage() {
     <>
       <PageHero
         title="الملاك"
-        subtitle="بيانات الملاك المسجلين وعقاراتهم وعقودهم السارية — تُستخدم في العقود والفواتير والتذكيرات."
+        subtitle="إدارة بيانات الملاك وعقاراتهم وعقودهم الإيجارية"
         icon={Users}
         stats={[
           { value: String(stats.all), label: "إجمالي الملاك" },
-          { value: String(stats.active), label: "مالك نشط" },
-          { value: String(stats.withProperties), label: "لديه عقارات" },
+          { value: String(stats.active), label: "نشط" },
+          { value: String(stats.withProperties), label: "لديهم عقارات" },
         ]}
       />
 
@@ -210,7 +210,7 @@ function OwnersPage() {
           className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground hover:opacity-90"
         >
           <Plus className="size-4" />
-          إضافة مالك
+          إضافة مالك جديد
         </button>
       </div>
 
@@ -225,6 +225,7 @@ function OwnersPage() {
           showColumnsButton
           draggableRows
           dragLabel="مالك"
+          exportFileName="قائمة الملاك"
           searchPlaceholder="بحث بالاسم أو الجوال أو الهوية"
           emptyState={
             <EmptyState
@@ -240,9 +241,13 @@ function OwnersPage() {
               cell: (r) => r.full_name,
               className: "font-semibold",
             },
+            {
+              header: "النوع",
+              value: () => "مالك",
+              cell: () => <Chip tone="gold">مالك</Chip>,
+            },
+            { header: "رقم الهوية / السجل", cell: (r) => <span dir="ltr">{r.national_id ?? "—"}</span> },
             { header: "الجوال", cell: (r) => <span dir="ltr">{r.phone ?? "—"}</span> },
-            { header: "واتساب", cell: (r) => <span dir="ltr">{r.whatsapp ?? "—"}</span> },
-            { header: "الهوية", cell: (r) => <span dir="ltr">{r.national_id ?? "—"}</span> },
             {
               header: "العقارات",
               sortable: true,
@@ -260,7 +265,7 @@ function OwnersPage() {
               ),
             },
             {
-              header: "نشط",
+              header: "الحالة",
               cell: (r) => (
                 <Toggle
                   label={`تفعيل ${r.full_name}`}
@@ -271,22 +276,28 @@ function OwnersPage() {
               ),
             },
             {
-              header: "أُضيف",
-              sortable: true,
-              value: (r) => r.created_at,
-              cell: (r) => formatDate(r.created_at),
-            },
-            {
               header: "إجراءات",
               cell: (r) => (
-                <button
-                  type="button"
-                  onClick={() => openEdit(r)}
-                  className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-primary"
-                >
-                  <Pencil className="size-4" />
-                  تعديل
-                </button>
+                <div className="flex items-center gap-1">
+                  <Link
+                    to="/owners/$ownerId"
+                    params={{ ownerId: r.id }}
+                    className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-primary"
+                    aria-label={`عرض ${r.full_name}`}
+                    title="عرض الملف الكامل"
+                  >
+                    <Eye className="size-4" />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => openEdit(r)}
+                    className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-primary"
+                    aria-label={`تعديل ${r.full_name}`}
+                    title="تعديل"
+                  >
+                    <Pencil className="size-4" />
+                  </button>
+                </div>
               ),
             },
           ]}
@@ -298,7 +309,7 @@ function OwnersPage() {
         onClose={() => setOpen(false)}
         wide
         title={editing ? "تعديل بيانات المالك" : "إضافة مالك جديد"}
-        subtitle="المالك المسجَّل هنا يمكن ربطه بالعقارات والمباني والعقود."
+        subtitle="تُستخدم هذه البيانات في العقارات والعقود والفواتير والتذكيرات."
         footer={
           <>
             <PrimaryButton onClick={() => save.mutate()} disabled={save.isPending}>

@@ -1,7 +1,8 @@
-import { ChevronDown, ChevronLeft, ChevronRight, Columns3, Filter, Search, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Columns3, Download, Filter, Search, X } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
+import { exportWorkbook } from "@/lib/export";
 
 export type Column<T> = {
   header: string;
@@ -35,6 +36,7 @@ export function DataTable<T>({
   emptyState,
   draggableRows = true,
   dragLabel,
+  exportFileName = "بيانات",
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -48,6 +50,8 @@ export function DataTable<T>({
   /** السماح بسحب الصفوف إلى شات الذكاء الاصطناعي */
   draggableRows?: boolean;
   dragLabel?: string;
+  /** اسم ملف Excel، ويظهر زر التصدير تلقائيًا لكل جدول */
+  exportFileName?: string;
 }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -110,6 +114,29 @@ export function DataTable<T>({
           />
         </div>
         {toolbarExtra}
+        <button
+          type="button"
+          onClick={() =>
+            void exportWorkbook(exportFileName, [
+              {
+                name: "البيانات",
+                rows: filtered.map((row) =>
+                  Object.fromEntries(
+                    columns.map((column) => [
+                      column.header,
+                      column.value ? column.value(row) ?? "" : textOf(column.cell(row)),
+                    ]),
+                  ),
+                ),
+              },
+            ])
+          }
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 text-[12.5px] font-semibold text-foreground transition-colors hover:bg-muted"
+          title="تنزيل النتائج الحالية بصيغة Excel"
+        >
+          <Download className="size-4 text-primary" />
+          Excel
+        </button>
         {showFilter ? (
           <button
             type="button"

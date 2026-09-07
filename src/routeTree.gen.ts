@@ -27,6 +27,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedEmployeeFormRouteImport } from './routes/_authenticated/employee-form'
 import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
 import { Route as AuthenticatedErrorLogRouteImport } from './routes/_authenticated/error-log'
+import { Route as AuthenticatedInvoiceFormRouteImport } from './routes/_authenticated/invoice-form'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated/opportunities'
@@ -44,6 +45,8 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTaskFormRouteImport } from './routes/_authenticated/task-form'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as PropertiesCodeRouteImport } from './routes/properties.$code'
+import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
+import { Route as AuthenticatedOwnersOwnerIdRouteImport } from './routes/_authenticated/owners.$ownerId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -136,6 +139,12 @@ const AuthenticatedErrorLogRoute = AuthenticatedErrorLogRouteImport.update({
   path: '/error-log',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInvoiceFormRoute =
+  AuthenticatedInvoiceFormRouteImport.update({
+    id: '/invoice-form',
+    path: '/invoice-form',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
   id: '/invoices',
   path: '/invoices',
@@ -225,6 +234,18 @@ const PropertiesCodeRoute = PropertiesCodeRouteImport.update({
   path: '/properties/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedInvoicesInvoiceIdRoute =
+  AuthenticatedInvoicesInvoiceIdRouteImport.update({
+    id: '/$invoiceId',
+    path: '/$invoiceId',
+    getParentRoute: () => AuthenticatedInvoicesRoute,
+  } as any)
+const AuthenticatedOwnersOwnerIdRoute =
+  AuthenticatedOwnersOwnerIdRouteImport.update({
+    id: '/$ownerId',
+    path: '/$ownerId',
+    getParentRoute: () => AuthenticatedOwnersRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -244,10 +265,11 @@ export interface FileRoutesByFullPath {
   '/employee-form': typeof AuthenticatedEmployeeFormRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/error-log': typeof AuthenticatedErrorLogRoute
-  '/invoices': typeof AuthenticatedInvoicesRoute
+  '/invoice-form': typeof AuthenticatedInvoiceFormRoute
+  '/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
-  '/owners': typeof AuthenticatedOwnersRoute
+  '/owners': typeof AuthenticatedOwnersRouteWithChildren
   '/partners': typeof AuthenticatedPartnersRoute
   '/properties': typeof AuthenticatedPropertiesRoute
   '/property-form': typeof AuthenticatedPropertyFormRoute
@@ -261,6 +283,8 @@ export interface FileRoutesByFullPath {
   '/task-form': typeof AuthenticatedTaskFormRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/properties/$code': typeof PropertiesCodeRoute
+  '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
+  '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -280,10 +304,11 @@ export interface FileRoutesByTo {
   '/employee-form': typeof AuthenticatedEmployeeFormRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/error-log': typeof AuthenticatedErrorLogRoute
-  '/invoices': typeof AuthenticatedInvoicesRoute
+  '/invoice-form': typeof AuthenticatedInvoiceFormRoute
+  '/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
-  '/owners': typeof AuthenticatedOwnersRoute
+  '/owners': typeof AuthenticatedOwnersRouteWithChildren
   '/partners': typeof AuthenticatedPartnersRoute
   '/properties': typeof AuthenticatedPropertiesRoute
   '/property-form': typeof AuthenticatedPropertyFormRoute
@@ -297,6 +322,8 @@ export interface FileRoutesByTo {
   '/task-form': typeof AuthenticatedTaskFormRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/properties/$code': typeof PropertiesCodeRoute
+  '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
+  '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -318,10 +345,11 @@ export interface FileRoutesById {
   '/_authenticated/employee-form': typeof AuthenticatedEmployeeFormRoute
   '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
   '/_authenticated/error-log': typeof AuthenticatedErrorLogRoute
-  '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
+  '/_authenticated/invoice-form': typeof AuthenticatedInvoiceFormRoute
+  '/_authenticated/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
-  '/_authenticated/owners': typeof AuthenticatedOwnersRoute
+  '/_authenticated/owners': typeof AuthenticatedOwnersRouteWithChildren
   '/_authenticated/partners': typeof AuthenticatedPartnersRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
   '/_authenticated/property-form': typeof AuthenticatedPropertyFormRoute
@@ -335,6 +363,8 @@ export interface FileRoutesById {
   '/_authenticated/task-form': typeof AuthenticatedTaskFormRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/properties/$code': typeof PropertiesCodeRoute
+  '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
+  '/_authenticated/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -356,6 +386,7 @@ export interface FileRouteTypes {
     | '/employee-form'
     | '/employees'
     | '/error-log'
+    | '/invoice-form'
     | '/invoices'
     | '/notifications'
     | '/opportunities'
@@ -373,6 +404,8 @@ export interface FileRouteTypes {
     | '/task-form'
     | '/tasks'
     | '/properties/$code'
+    | '/invoices/$invoiceId'
+    | '/owners/$ownerId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -392,6 +425,7 @@ export interface FileRouteTypes {
     | '/employee-form'
     | '/employees'
     | '/error-log'
+    | '/invoice-form'
     | '/invoices'
     | '/notifications'
     | '/opportunities'
@@ -409,6 +443,8 @@ export interface FileRouteTypes {
     | '/task-form'
     | '/tasks'
     | '/properties/$code'
+    | '/invoices/$invoiceId'
+    | '/owners/$ownerId'
   id:
     | '__root__'
     | '/'
@@ -429,6 +465,7 @@ export interface FileRouteTypes {
     | '/_authenticated/employee-form'
     | '/_authenticated/employees'
     | '/_authenticated/error-log'
+    | '/_authenticated/invoice-form'
     | '/_authenticated/invoices'
     | '/_authenticated/notifications'
     | '/_authenticated/opportunities'
@@ -446,6 +483,8 @@ export interface FileRouteTypes {
     | '/_authenticated/task-form'
     | '/_authenticated/tasks'
     | '/properties/$code'
+    | '/_authenticated/invoices/$invoiceId'
+    | '/_authenticated/owners/$ownerId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -588,6 +627,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorLogRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/invoice-form': {
+      id: '/_authenticated/invoice-form'
+      path: '/invoice-form'
+      fullPath: '/invoice-form'
+      preLoaderRoute: typeof AuthenticatedInvoiceFormRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/invoices': {
       id: '/_authenticated/invoices'
       path: '/invoices'
@@ -707,8 +753,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PropertiesCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/invoices/$invoiceId': {
+      id: '/_authenticated/invoices/$invoiceId'
+      path: '/$invoiceId'
+      fullPath: '/invoices/$invoiceId'
+      preLoaderRoute: typeof AuthenticatedInvoicesInvoiceIdRouteImport
+      parentRoute: typeof AuthenticatedInvoicesRoute
+    }
+    '/_authenticated/owners/$ownerId': {
+      id: '/_authenticated/owners/$ownerId'
+      path: '/$ownerId'
+      fullPath: '/owners/$ownerId'
+      preLoaderRoute: typeof AuthenticatedOwnersOwnerIdRouteImport
+      parentRoute: typeof AuthenticatedOwnersRoute
+    }
   }
 }
+
+interface AuthenticatedInvoicesRouteChildren {
+  AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
+}
+
+const AuthenticatedInvoicesRouteChildren: AuthenticatedInvoicesRouteChildren = {
+  AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
+}
+
+const AuthenticatedInvoicesRouteWithChildren =
+  AuthenticatedInvoicesRoute._addFileChildren(
+    AuthenticatedInvoicesRouteChildren,
+  )
+
+interface AuthenticatedOwnersRouteChildren {
+  AuthenticatedOwnersOwnerIdRoute: typeof AuthenticatedOwnersOwnerIdRoute
+}
+
+const AuthenticatedOwnersRouteChildren: AuthenticatedOwnersRouteChildren = {
+  AuthenticatedOwnersOwnerIdRoute: AuthenticatedOwnersOwnerIdRoute,
+}
+
+const AuthenticatedOwnersRouteWithChildren =
+  AuthenticatedOwnersRoute._addFileChildren(AuthenticatedOwnersRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivitiesRoute: typeof AuthenticatedActivitiesRoute
@@ -721,10 +805,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmployeeFormRoute: typeof AuthenticatedEmployeeFormRoute
   AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
   AuthenticatedErrorLogRoute: typeof AuthenticatedErrorLogRoute
-  AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
+  AuthenticatedInvoiceFormRoute: typeof AuthenticatedInvoiceFormRoute
+  AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRouteWithChildren
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
-  AuthenticatedOwnersRoute: typeof AuthenticatedOwnersRoute
+  AuthenticatedOwnersRoute: typeof AuthenticatedOwnersRouteWithChildren
   AuthenticatedPartnersRoute: typeof AuthenticatedPartnersRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
   AuthenticatedPropertyFormRoute: typeof AuthenticatedPropertyFormRoute
@@ -750,10 +835,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmployeeFormRoute: AuthenticatedEmployeeFormRoute,
   AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
   AuthenticatedErrorLogRoute: AuthenticatedErrorLogRoute,
-  AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
+  AuthenticatedInvoiceFormRoute: AuthenticatedInvoiceFormRoute,
+  AuthenticatedInvoicesRoute: AuthenticatedInvoicesRouteWithChildren,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
-  AuthenticatedOwnersRoute: AuthenticatedOwnersRoute,
+  AuthenticatedOwnersRoute: AuthenticatedOwnersRouteWithChildren,
   AuthenticatedPartnersRoute: AuthenticatedPartnersRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
   AuthenticatedPropertyFormRoute: AuthenticatedPropertyFormRoute,
