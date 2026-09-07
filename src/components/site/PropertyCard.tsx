@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Building2, MapPin } from "lucide-react";
 
+import { FavoriteButton } from "@/components/site/FavoriteButton";
 import { coverImage, purposeLabels, whatsappLink, type PublicProperty } from "@/lib/site-data";
 
 export function PropertyCard({ property }: { property: PublicProperty }) {
@@ -10,14 +11,14 @@ export function PropertyCard({ property }: { property: PublicProperty }) {
     (property.price_value ? `${property.price_value.toLocaleString("ar-SA")} ريال` : "السعر عند الطلب");
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-shadow hover:shadow-float">
+    <article className="lift group overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-shadow hover:shadow-float">
       <div className="relative h-48 bg-muted">
         {cover ? (
           <img
             src={cover}
             alt={property.name}
             loading="lazy"
-            className="size-full object-cover"
+            className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="grid size-full place-items-center text-muted-foreground">
@@ -27,6 +28,7 @@ export function PropertyCard({ property }: { property: PublicProperty }) {
         <span className="absolute end-3 top-3 rounded-lg bg-primary px-3 py-1 text-[12px] font-bold text-primary-foreground">
           {purposeLabels[property.purpose] ?? property.purpose}
         </span>
+        <FavoriteButton code={property.code} className="absolute bottom-3 end-3" />
         {property.is_featured ? (
           <span className="absolute start-3 top-3 rounded-lg bg-gold px-3 py-1 text-[12px] font-bold text-gold-foreground">
             مميز
