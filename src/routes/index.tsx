@@ -259,10 +259,11 @@ function HomePage() {
           لمحات من العقارات والأحياء التي نعمل بها.
         </p>
         <div className="mt-6 grid gap-5 md:grid-cols-2">
-          {[videoInterior, videoCity].map((v) => (
+          {[{ v: videoInterior, poster: featureInterior }, { v: videoCity, poster: bgCity }].map(({ v, poster }) => (
             <video
               key={v.url}
               src={v.url}
+              poster={poster}
               autoPlay
               muted
               loop
