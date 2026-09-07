@@ -44,6 +44,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTaskFormRouteImport } from './routes/_authenticated/task-form'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as PropertiesCodeRouteImport } from './routes/properties.$code'
+import { Route as AuthenticatedOwnersOwnerIdRouteImport } from './routes/_authenticated/owners.$ownerId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -225,6 +226,12 @@ const PropertiesCodeRoute = PropertiesCodeRouteImport.update({
   path: '/properties/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedOwnersOwnerIdRoute =
+  AuthenticatedOwnersOwnerIdRouteImport.update({
+    id: '/$ownerId',
+    path: '/$ownerId',
+    getParentRoute: () => AuthenticatedOwnersRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -247,7 +254,7 @@ export interface FileRoutesByFullPath {
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
-  '/owners': typeof AuthenticatedOwnersRoute
+  '/owners': typeof AuthenticatedOwnersRouteWithChildren
   '/partners': typeof AuthenticatedPartnersRoute
   '/properties': typeof AuthenticatedPropertiesRoute
   '/property-form': typeof AuthenticatedPropertyFormRoute
@@ -261,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/task-form': typeof AuthenticatedTaskFormRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/properties/$code': typeof PropertiesCodeRoute
+  '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -283,7 +291,7 @@ export interface FileRoutesByTo {
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
-  '/owners': typeof AuthenticatedOwnersRoute
+  '/owners': typeof AuthenticatedOwnersRouteWithChildren
   '/partners': typeof AuthenticatedPartnersRoute
   '/properties': typeof AuthenticatedPropertiesRoute
   '/property-form': typeof AuthenticatedPropertyFormRoute
@@ -297,6 +305,7 @@ export interface FileRoutesByTo {
   '/task-form': typeof AuthenticatedTaskFormRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/properties/$code': typeof PropertiesCodeRoute
+  '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -321,7 +330,7 @@ export interface FileRoutesById {
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
-  '/_authenticated/owners': typeof AuthenticatedOwnersRoute
+  '/_authenticated/owners': typeof AuthenticatedOwnersRouteWithChildren
   '/_authenticated/partners': typeof AuthenticatedPartnersRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
   '/_authenticated/property-form': typeof AuthenticatedPropertyFormRoute
@@ -335,6 +344,7 @@ export interface FileRoutesById {
   '/_authenticated/task-form': typeof AuthenticatedTaskFormRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/properties/$code': typeof PropertiesCodeRoute
+  '/_authenticated/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/task-form'
     | '/tasks'
     | '/properties/$code'
+    | '/owners/$ownerId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/task-form'
     | '/tasks'
     | '/properties/$code'
+    | '/owners/$ownerId'
   id:
     | '__root__'
     | '/'
@@ -446,6 +458,7 @@ export interface FileRouteTypes {
     | '/_authenticated/task-form'
     | '/_authenticated/tasks'
     | '/properties/$code'
+    | '/_authenticated/owners/$ownerId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -707,8 +720,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PropertiesCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/owners/$ownerId': {
+      id: '/_authenticated/owners/$ownerId'
+      path: '/$ownerId'
+      fullPath: '/owners/$ownerId'
+      preLoaderRoute: typeof AuthenticatedOwnersOwnerIdRouteImport
+      parentRoute: typeof AuthenticatedOwnersRoute
+    }
   }
 }
+
+interface AuthenticatedOwnersRouteChildren {
+  AuthenticatedOwnersOwnerIdRoute: typeof AuthenticatedOwnersOwnerIdRoute
+}
+
+const AuthenticatedOwnersRouteChildren: AuthenticatedOwnersRouteChildren = {
+  AuthenticatedOwnersOwnerIdRoute: AuthenticatedOwnersOwnerIdRoute,
+}
+
+const AuthenticatedOwnersRouteWithChildren =
+  AuthenticatedOwnersRoute._addFileChildren(AuthenticatedOwnersRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivitiesRoute: typeof AuthenticatedActivitiesRoute
@@ -724,7 +755,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
-  AuthenticatedOwnersRoute: typeof AuthenticatedOwnersRoute
+  AuthenticatedOwnersRoute: typeof AuthenticatedOwnersRouteWithChildren
   AuthenticatedPartnersRoute: typeof AuthenticatedPartnersRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
   AuthenticatedPropertyFormRoute: typeof AuthenticatedPropertyFormRoute
@@ -753,7 +784,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
-  AuthenticatedOwnersRoute: AuthenticatedOwnersRoute,
+  AuthenticatedOwnersRoute: AuthenticatedOwnersRouteWithChildren,
   AuthenticatedPartnersRoute: AuthenticatedPartnersRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
   AuthenticatedPropertyFormRoute: AuthenticatedPropertyFormRoute,
