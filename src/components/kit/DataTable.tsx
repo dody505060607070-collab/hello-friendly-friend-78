@@ -33,7 +33,7 @@ export function DataTable<T>({
   rowClassName,
   toolbarExtra,
   emptyState,
-  draggableRows = false,
+  draggableRows = true,
   dragLabel,
 }: {
   columns: Column<T>[];

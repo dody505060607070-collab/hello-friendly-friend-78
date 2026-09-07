@@ -99,6 +99,8 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+import { AiDock } from "./AiDock";
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -192,6 +194,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="min-w-0 flex-1 px-4 py-6 md:px-8">
           <div className="mx-auto max-w-6xl space-y-6">{children}</div>
         </main>
+
+        <AiDock />
       </div>
     </div>
   );
