@@ -67,20 +67,26 @@ export function Field({
   children,
   hint,
   className,
+  required,
 }: {
   label: string;
   children: ReactNode;
   hint?: string;
   className?: string;
+  required?: boolean;
 }) {
   return (
     <label className={cn("block space-y-1.5", className)}>
-      <span className="text-[12.5px] font-semibold text-foreground">{label}</span>
+      <span className="text-[12.5px] font-semibold text-foreground">
+        {label}
+        {required ? <span className="text-destructive"> *</span> : null}
+      </span>
       {children}
       {hint ? <span className="block text-[11.5px] text-muted-foreground">{hint}</span> : null}
     </label>
   );
 }
+
 
 export const inputClass =
   "h-10 w-full rounded-lg border border-border bg-card px-3 text-[13px] outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/40";
