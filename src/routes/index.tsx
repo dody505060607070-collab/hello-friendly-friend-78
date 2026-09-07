@@ -15,6 +15,7 @@ import { PropertyGrid } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PropertyMapSection } from "@/components/site/PropertyMapSection";
 import { Reveal } from "@/components/site/Reveal";
+import { useRecentlyViewed } from "@/lib/favorites";
 import { publicPropertiesQuery, publicServicesQuery } from "@/lib/site-data";
 
 export const Route = createFileRoute("/")({
@@ -75,6 +76,9 @@ function HomePage() {
         (!district || p.district === district),
     );
   }, [all.data, purpose, type, district]);
+
+  const recentCodes = useRecentlyViewed();
+  const recent = (all.data ?? []).filter((p) => recentCodes.includes(p.code)).slice(0, 3);
 
   const shownServices = services.data?.length ? services.data : fallbackServices;
 
@@ -200,6 +204,13 @@ function HomePage() {
           })}
         </div>
       </Reveal>
+
+      {recent.length > 0 ? (
+        <Reveal as="section" className="mx-auto max-w-6xl px-4 pb-6">
+          <h2 className="mb-6 text-[22px] font-bold text-foreground sm:text-[26px]">شاهدتها مؤخراً</h2>
+          <PropertyGrid properties={recent} />
+        </Reveal>
+      ) : null}
 
       <Reveal as="section" className="relative isolate overflow-hidden py-20">
         <img
