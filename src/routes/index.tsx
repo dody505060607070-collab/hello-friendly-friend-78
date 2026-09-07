@@ -3,6 +3,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, Handshake, Home, KeyRound, Search, ShieldCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import bgCity from "@/assets/bg-city.jpg";
+import ctaImage from "@/assets/cta-deal.jpg";
+import featureCommercial from "@/assets/feature-commercial.jpg";
+import featureInterior from "@/assets/feature-interior.jpg";
+import featureLand from "@/assets/feature-land.jpg";
+import videoInterior from "@/assets/video-interior.mp4.asset.json";
+import videoCity from "@/assets/video-city.mp4.asset.json";
 import { HeroVideo } from "@/components/site/HeroVideo";
 import { PropertyGrid } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -194,17 +201,87 @@ function HomePage() {
         </div>
       </Reveal>
 
+      <Reveal as="section" className="relative isolate overflow-hidden py-20">
+        <img
+          src={bgCity}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          className="absolute inset-0 -z-10 size-full object-cover"
+        />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-background/85 backdrop-blur-[2px]" />
+        <div className="mx-auto max-w-6xl px-4">
+          <h2 className="text-center text-[24px] font-bold text-foreground sm:text-[30px]">
+            تصنيفات نغطيها في بريدة
+          </h2>
+          <div className="mt-9 grid gap-6 md:grid-cols-3">
+            {[
+              { img: featureInterior, title: "سكني مفروش وجاهز", text: "شقق وفلل بتشطيب حديث جاهزة للسكن الفوري.", to: "/rent" as const },
+              { img: featureCommercial, title: "تجاري ومكاتب", text: "معارض ومكاتب في مواقع حيوية بمداخل مستقلة.", to: "/rent" as const },
+              { img: featureLand, title: "أراضٍ واستثمار", text: "أراضٍ سكنية وتجارية بفرص نمو حقيقية.", to: "/sale" as const },
+            ].map((card) => (
+              <Link
+                key={card.title}
+                to={card.to}
+                className="lift group relative isolate block h-72 overflow-hidden rounded-3xl shadow-card"
+              >
+                <img
+                  src={card.img}
+                  alt={card.title}
+                  loading="lazy"
+                  className="absolute inset-0 -z-10 size-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <span aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+                <span className="absolute inset-x-0 bottom-0 block p-6 text-white">
+                  <span className="block text-[17px] font-bold">{card.title}</span>
+                  <span className="mt-1.5 block text-[13px] leading-6 text-white/85">{card.text}</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </Reveal>
+
+      <Reveal as="section" className="mx-auto max-w-6xl px-4 pb-16">
+        <h2 className="text-[22px] font-bold text-foreground sm:text-[26px]">جولة بصرية</h2>
+        <p className="mt-2 text-[13.5px] text-muted-foreground">
+          لمحات من العقارات والأحياء التي نعمل بها.
+        </p>
+        <div className="mt-6 grid gap-5 md:grid-cols-2">
+          {[videoInterior, videoCity].map((v) => (
+            <video
+              key={v.url}
+              src={v.url}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              className="h-64 w-full rounded-3xl object-cover shadow-card md:h-72"
+            />
+          ))}
+        </div>
+      </Reveal>
+
       <PropertyMapSection properties={all.data} />
 
-      <section className="bg-primary py-14 text-primary-foreground">
+      <section className="relative isolate overflow-hidden py-20 text-white">
+        <img
+          src={ctaImage}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          className="absolute inset-0 -z-10 size-full object-cover"
+        />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-primary/75" />
         <div className="mx-auto flex max-w-4xl flex-col items-center gap-5 px-4 text-center">
-          <h2 className="text-[24px] font-bold">عندك عقار للإيجار أو البيع؟</h2>
-          <p className="max-w-xl text-[14px] leading-7 opacity-90">
+          <h2 className="text-[24px] font-bold sm:text-[30px]">عندك عقار للإيجار أو البيع؟</h2>
+          <p className="max-w-xl text-[14px] leading-7 text-white/90">
             أرسل تفاصيل عقارك وسيتواصل معك فريقنا لتقييمه وعرضه على العملاء المناسبين.
           </p>
           <Link
             to="/list-property"
-            className="rounded-lg bg-gold px-7 py-3 text-[14px] font-bold text-gold-foreground"
+            className="shine rounded-xl bg-gold px-8 py-3.5 text-[14px] font-bold text-gold-foreground"
           >
             اعرض | اطلب عقارك
           </Link>
