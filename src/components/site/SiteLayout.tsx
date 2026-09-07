@@ -1,8 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Clock, Mail, MapPin, Menu, Phone, X } from "lucide-react";
+import { Clock, Heart, Mail, MapPin, Menu, Phone, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
+import footerImage from "@/assets/bg-footer.jpg";
 import logoAsset from "@/assets/mithra-logo-transparent.png.asset.json";
+import { FloatingActions, ScrollProgress } from "@/components/site/Chrome";
 import { AiWidget } from "@/components/site/AiWidget";
 import { useSession } from "@/hooks/useAuth";
 import { COMPANY_EMAIL, COMPANY_PHONE, whatsappLink } from "@/lib/site-data";
@@ -30,6 +32,13 @@ function SiteHeader() {
             className="hidden rounded-lg border border-primary-foreground/35 px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-primary-foreground/10 md:inline-flex"
           >
             اعرض | اطلب عقارك
+          </Link>
+          <Link
+            to="/favorites"
+            aria-label="المفضلة"
+            className="grid size-9 place-items-center rounded-lg border border-primary-foreground/30 transition-colors hover:bg-primary-foreground/10"
+          >
+            <Heart className="size-4.5" />
           </Link>
           <Link
             to={session ? "/dashboard" : "/auth"}
@@ -217,20 +226,11 @@ function CookieBanner() {
 export function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <ScrollProgress />
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <SiteFooter />
-      <a
-        href={whatsappLink(null, "مرحباً، لدي استفسار عقاري")}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="تواصل عبر واتساب"
-        className="shine fixed bottom-44 start-6 z-40 grid size-14 place-items-center rounded-full bg-[#25D366] text-white shadow-float"
-      >
-        <svg viewBox="0 0 24 24" className="size-6" fill="currentColor" aria-hidden="true">
-          <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.32 4.96L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Zm5.8 14.06c-.24.68-1.4 1.3-1.93 1.35-.53.05-1.02.07-2.87-.6-2.2-.8-3.6-3.1-3.71-3.25-.11-.15-.9-1.2-.9-2.29 0-1.09.57-1.62.77-1.85.2-.23.44-.28.59-.28l.42.01c.14 0 .32-.05.5.38.18.44.62 1.53.67 1.64.06.11.09.24.02.39-.08.15-.15.24-.29.38-.14.14-.22.24-.32.39-.11.15-.23.32-.1.62.13.3.58 1.02 1.24 1.62.85.76 1.45.98 1.7 1.09.24.11.42.1.58-.06.15-.15.66-.77.84-1.03.18-.27.36-.22.6-.13.24.09 1.53.72 1.79.85.26.13.44.2.5.31.06.11.06.66-.18 1.34Z" />
-        </svg>
-      </a>
+      <FloatingActions />
       <AiWidget />
       <CookieBanner />
 
