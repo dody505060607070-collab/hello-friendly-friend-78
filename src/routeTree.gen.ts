@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as ListPropertyRouteImport } from './routes/list-property'
 import { Route as RentRouteImport } from './routes/rent'
 import { Route as SaleRouteImport } from './routes/sale'
@@ -71,6 +72,11 @@ const AuthRoute = AuthRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritesRoute = FavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ListPropertyRoute = ListPropertyRouteImport.update({
@@ -258,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
@@ -298,6 +305,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
@@ -382,6 +391,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/contact'
+    | '/favorites'
     | '/list-property'
     | '/rent'
     | '/sale'
@@ -422,6 +432,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/contact'
+    | '/favorites'
     | '/list-property'
     | '/rent'
     | '/sale'
@@ -463,6 +474,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/contact'
+    | '/favorites'
     | '/list-property'
     | '/rent'
     | '/sale'
@@ -505,6 +517,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
   ContactRoute: typeof ContactRoute
+  FavoritesRoute: typeof FavoritesRoute
   ListPropertyRoute: typeof ListPropertyRoute
   RentRoute: typeof RentRoute
   SaleRoute: typeof SaleRoute
@@ -546,6 +559,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favorites': {
+      id: '/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof FavoritesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/list-property': {
@@ -884,6 +904,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
   ContactRoute: ContactRoute,
+  FavoritesRoute: FavoritesRoute,
   ListPropertyRoute: ListPropertyRoute,
   RentRoute: RentRoute,
   SaleRoute: SaleRoute,

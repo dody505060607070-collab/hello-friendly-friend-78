@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, MapPin, Phone, Share2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { FavoriteButton } from "@/components/site/FavoriteButton";
 import { PropertyCard } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { recordView } from "@/lib/favorites";
 import {
   COMPANY_PHONE,
   galleryImages,
@@ -57,6 +59,10 @@ function PropertyPage() {
   const { data: property, isLoading, error } = useQuery(publicPropertyQuery(code));
   const related = useQuery(publicPropertiesQuery(undefined, 12));
   const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    recordView(code);
+  }, [code]);
 
   if (isLoading) {
     return (
@@ -123,7 +129,8 @@ function PropertyPage() {
 
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <div>
-            <div className="overflow-hidden rounded-2xl border border-border bg-muted">
+            <div className="relative overflow-hidden rounded-2xl border border-border bg-muted">
+              <FavoriteButton code={property.code} className="absolute end-4 top-4 z-10 size-11" />
               {images[active]?.url ? (
                 <img
                   src={images[active]!.url}

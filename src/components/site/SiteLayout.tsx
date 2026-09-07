@@ -1,11 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Clock, Mail, MapPin, Menu, Phone, X } from "lucide-react";
+import { Clock, Heart, Mail, MapPin, Menu, Phone, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
+import footerImage from "@/assets/bg-footer.jpg";
 import logoAsset from "@/assets/mithra-logo-transparent.png.asset.json";
+import { FloatingActions, ScrollProgress } from "@/components/site/Chrome";
 import { AiWidget } from "@/components/site/AiWidget";
 import { useSession } from "@/hooks/useAuth";
-import { COMPANY_EMAIL, COMPANY_PHONE, whatsappLink } from "@/lib/site-data";
+import { COMPANY_EMAIL, COMPANY_PHONE } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -30,6 +32,13 @@ function SiteHeader() {
             className="hidden rounded-lg border border-primary-foreground/35 px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-primary-foreground/10 md:inline-flex"
           >
             اعرض | اطلب عقارك
+          </Link>
+          <Link
+            to="/favorites"
+            aria-label="المفضلة"
+            className="grid size-9 place-items-center rounded-lg border border-primary-foreground/30 transition-colors hover:bg-primary-foreground/10"
+          >
+            <Heart className="size-4.5" />
           </Link>
           <Link
             to={session ? "/dashboard" : "/auth"}
@@ -107,65 +116,71 @@ function SiteHeader() {
 
 function SiteFooter() {
   return (
-    <footer className="bg-primary text-primary-foreground">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-3">
-        <div>
-          <h3 className="border-e-4 border-gold pe-3 text-[17px] font-bold">مثراء العقارية</h3>
-          <p className="mt-4 text-[13.5px] leading-7 opacity-80">
-            مثراء العقارية شركة رائدة في سوق العقارات بـبريدة منذ أكثر من 8 سنوات، نقدم أفضل
-            الخيارات السكنية والتجارية بخبرة واحترافية عالية.
-          </p>
+    <footer className="relative isolate overflow-hidden text-white">
+      <img
+        src={footerImage}
+        alt=""
+        aria-hidden
+        width={1920}
+        height={1080}
+        loading="lazy"
+        className="absolute inset-0 -z-10 size-full object-cover"
+      />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-primary/80" />
+
+      <div className="mx-auto max-w-3xl px-4 py-16 text-center">
+        <Link to="/" aria-label="مثراء العقارية" className="inline-block">
+          <img
+            src={logoAsset.url}
+            alt="مثراء العقارية"
+            width={680}
+            height={510}
+            loading="lazy"
+            className="mx-auto h-24 w-auto brightness-0 invert md:h-32"
+          />
+        </Link>
+
+        <p className="mt-5 text-[14px] leading-7 text-white/85">
+          مثراء العقارية — إيجار وبيع وإدارة أملاك في بريدة، القصيم.
+        </p>
+
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-[13.5px] text-white/90">
+          <a href={`tel:${COMPANY_PHONE}`} dir="ltr" className="flex items-center gap-2 hover:text-gold">
+            <Phone className="size-4 text-gold" />
+            {COMPANY_PHONE}
+          </a>
+          <a href={`mailto:${COMPANY_EMAIL}`} dir="ltr" className="flex items-center gap-2 hover:text-gold">
+            <Mail className="size-4 text-gold" />
+            {COMPANY_EMAIL}
+          </a>
+          <span className="flex items-center gap-2">
+            <MapPin className="size-4 text-gold" />
+            بريدة — القصيم
+          </span>
+          <span className="flex items-center gap-2">
+            <Clock className="size-4 text-gold" />
+            السبت — الخميس 9ص — 10م
+          </span>
         </div>
 
-        <div>
-          <h3 className="border-e-4 border-gold pe-3 text-[17px] font-bold">روابط سريعة</h3>
-          <ul className="mt-4 space-y-2.5 text-[13.5px] opacity-85">
-            {[...navLinks.slice(1), { to: "/list-property", label: "اعرض | اطلب عقارك" }].map(
-              (item) => (
-                <li key={item.to} className="flex items-center gap-2">
-                  <span className="size-1.5 rounded-full bg-gold" />
-                  <Link to={item.to} className="hover:opacity-100">
-                    {item.label}
-                  </Link>
-                </li>
-              ),
-            )}
-          </ul>
-        </div>
+        <nav className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[13px] text-white/80">
+          {[...navLinks.slice(1), { to: "/list-property", label: "اعرض | اطلب عقارك" }, { to: "/favorites", label: "المفضلة" }].map(
+            (item) => (
+              <Link key={item.to} to={item.to} className="hover:text-gold">
+                {item.label}
+              </Link>
+            ),
+          )}
+        </nav>
 
-        <div>
-          <h3 className="border-e-4 border-gold pe-3 text-[17px] font-bold">تواصل معنا</h3>
-          <ul className="mt-4 space-y-3 text-[13.5px] opacity-85">
-            <li className="flex items-center gap-2">
-              <Phone className="size-4 text-gold" />
-              <a href={`tel:${COMPANY_PHONE}`} dir="ltr">
-                {COMPANY_PHONE}
-              </a>
-            </li>
-            <li className="flex items-center gap-2">
-              <Mail className="size-4 text-gold" />
-              <a href={`mailto:${COMPANY_EMAIL}`} dir="ltr">
-                {COMPANY_EMAIL}
-              </a>
-            </li>
-            <li className="flex items-center gap-2">
-              <MapPin className="size-4 text-gold" />
-              بريدة، المملكة العربية السعودية
-            </li>
-            <li className="flex items-center gap-2">
-              <Clock className="size-4 text-gold" />
-              من السبت للخميس 9ص — 10م
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="border-t border-primary-foreground/15 py-5 text-center text-[12.5px] opacity-70">
-        جميع الحقوق محفوظة © {new Date().getFullYear()} — مؤسسة مثراء
+        <p className="mt-8 text-[12px] text-white/60">
+          جميع الحقوق محفوظة © {new Date().getFullYear()} — مؤسسة مثراء
+        </p>
       </div>
     </footer>
   );
 }
+
 
 function CookieBanner() {
   const [visible, setVisible] = useState(false);
@@ -211,20 +226,11 @@ function CookieBanner() {
 export function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <ScrollProgress />
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <SiteFooter />
-      <a
-        href={whatsappLink(null, "مرحباً، لدي استفسار عقاري")}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="تواصل عبر واتساب"
-        className="shine fixed bottom-44 start-6 z-40 grid size-14 place-items-center rounded-full bg-[#25D366] text-white shadow-float"
-      >
-        <svg viewBox="0 0 24 24" className="size-6" fill="currentColor" aria-hidden="true">
-          <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.32 4.96L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Zm5.8 14.06c-.24.68-1.4 1.3-1.93 1.35-.53.05-1.02.07-2.87-.6-2.2-.8-3.6-3.1-3.71-3.25-.11-.15-.9-1.2-.9-2.29 0-1.09.57-1.62.77-1.85.2-.23.44-.28.59-.28l.42.01c.14 0 .32-.05.5.38.18.44.62 1.53.67 1.64.06.11.09.24.02.39-.08.15-.15.24-.29.38-.14.14-.22.24-.32.39-.11.15-.23.32-.1.62.13.3.58 1.02 1.24 1.62.85.76 1.45.98 1.7 1.09.24.11.42.1.58-.06.15-.15.66-.77.84-1.03.18-.27.36-.22.6-.13.24.09 1.53.72 1.79.85.26.13.44.2.5.31.06.11.06.66-.18 1.34Z" />
-        </svg>
-      </a>
+      <FloatingActions />
       <AiWidget />
       <CookieBanner />
 

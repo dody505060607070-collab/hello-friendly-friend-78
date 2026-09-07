@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Award, Building2, Handshake, Users } from "lucide-react";
 
-import heroImage from "@/assets/site-hero.jpg";
+import heroImage from "@/assets/hero-about.jpg";
+import { PageHero } from "@/components/site/PageHero";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { whatsappLink } from "@/lib/site-data";
 
@@ -36,22 +37,13 @@ const stats = [
 function AboutPage() {
   return (
     <SiteLayout>
-      <section className="relative isolate">
-        <img
-          src={heroImage}
-          alt="مثراء العقارية"
-          width={1920}
-          height={1088}
-          className="absolute inset-0 -z-10 size-full object-cover"
-        />
-        <div className="absolute inset-0 -z-10 bg-primary/80" />
-        <div className="mx-auto max-w-4xl px-4 py-20 text-center text-primary-foreground">
-          <h1 className="text-3xl font-extrabold md:text-4xl">من نحن</h1>
-          <p className="mt-4 text-[14.5px] leading-8 opacity-90">
-            مؤسسة مثراء العقارية — خبرة محلية في بريدة، وقرار عقاري أوضح لعملائنا.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        image={heroImage}
+        eyebrow="مؤسسة مثراء العقارية"
+        title="من نحن"
+        subtitle="خبرة محلية في بريدة، وقرار عقاري أوضح لعملائنا — إيجار وبيع وإدارة أملاك بمعايير مهنية."
+        height="lg"
+      />
 
       <section className="mx-auto max-w-4xl px-4 py-14">
         <div className="rounded-2xl border border-border bg-card p-8 shadow-card">

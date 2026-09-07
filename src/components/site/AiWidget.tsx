@@ -63,7 +63,7 @@ export function AiWidget() {
     <>
       <div
         style={{ transform: `translateY(${offsetY}px)` }}
-        className="fixed bottom-5 start-5 z-50 touch-none select-none"
+        className="fixed bottom-28 start-5 z-50 touch-none select-none"
         onPointerDown={(e) => {
           (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
           dragging.current = { startY: e.clientY, startOffset: offsetY, moved: false };
@@ -107,7 +107,7 @@ export function AiWidget() {
       </div>
 
       {open ? (
-        <section className="glass-panel fixed bottom-32 start-4 z-50 flex h-[min(30rem,70vh)] w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden">
+        <section className="glass-panel fixed bottom-44 start-4 z-50 flex h-[min(30rem,70vh)] w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden">
           <header className="flex items-center gap-2 bg-primary px-4 py-3 text-primary-foreground">
             <Sparkles className="size-4 text-gold" />
             <h2 className="text-[13.5px] font-bold">مساعد مثراء الذكي</h2>
