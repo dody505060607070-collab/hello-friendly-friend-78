@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Loader2, Send, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import markAsset from "@/assets/mithra-mark.png.asset.json";
 import { askPublicAi } from "@/lib/ai.functions";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,8 @@ export function AiWidget() {
     },
   ]);
   const scroller = useRef<HTMLDivElement>(null);
+  const [offsetY, setOffsetY] = useState(0);
+  const dragging = useRef<{ startY: number; startOffset: number; moved: boolean } | null>(null);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
@@ -58,18 +61,53 @@ export function AiWidget() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label="المساعد الذكي"
-        className="fixed bottom-5 start-5 z-50 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-[13px] font-bold text-primary-foreground shadow-float transition-transform hover:scale-105"
+      <div
+        style={{ transform: `translateY(${offsetY}px)` }}
+        className="fixed bottom-5 start-5 z-50 touch-none select-none"
+        onPointerDown={(e) => {
+          (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+          dragging.current = { startY: e.clientY, startOffset: offsetY, moved: false };
+        }}
+        onPointerMove={(e) => {
+          const d = dragging.current;
+          if (!d) return;
+          const delta = e.clientY - d.startY;
+          if (Math.abs(delta) > 4) d.moved = true;
+          const next = Math.min(40, Math.max(-(window.innerHeight - 190), d.startOffset + delta));
+          setOffsetY(next);
+        }}
+        onPointerUp={() => {
+          const moved = dragging.current?.moved;
+          dragging.current = null;
+          if (!moved) setOpen((v) => !v);
+        }}
+        title="اسحب لتحريك المساعد • اضغط للفتح"
       >
-        {open ? <X className="size-5" /> : <Sparkles className="size-5 text-gold" />}
-        <span className="hidden sm:inline">المساعد الذكي</span>
-      </button>
+        <button
+          type="button"
+          aria-label="مثراء AI — المساعد الذكي"
+          className="glass shine group flex flex-col items-center gap-1 rounded-3xl px-3 pb-2 pt-3 shadow-float"
+        >
+          <span className="grid size-14 place-items-center rounded-2xl bg-white/70 ring-1 ring-primary/15">
+            {open ? (
+              <X className="size-6 text-primary" />
+            ) : (
+              <img
+                src={markAsset.url}
+                alt=""
+                width={680}
+                height={360}
+                loading="lazy"
+                className="h-9 w-auto animate-float-slow"
+              />
+            )}
+          </span>
+          <span className="text-[11px] font-extrabold tracking-wide text-primary">مثراء AI</span>
+        </button>
+      </div>
 
       {open ? (
-        <section className="fixed bottom-20 start-4 z-50 flex h-[26rem] w-[min(22rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-float">
+        <section className="glass-panel fixed bottom-32 start-4 z-50 flex h-[min(30rem,70vh)] w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden">
           <header className="flex items-center gap-2 bg-primary px-4 py-3 text-primary-foreground">
             <Sparkles className="size-4 text-gold" />
             <h2 className="text-[13.5px] font-bold">مساعد مثراء الذكي</h2>
