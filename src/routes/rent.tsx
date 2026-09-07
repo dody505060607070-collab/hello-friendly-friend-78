@@ -128,7 +128,7 @@ function RentPage() {
         />
       </section>
 
-      <PropertyMapSection purpose="rent" />
+      <PropertyMapSection properties={filtered} />
     </SiteLayout>
   );
 }

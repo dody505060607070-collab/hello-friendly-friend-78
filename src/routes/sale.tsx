@@ -135,7 +135,7 @@ function SalePage() {
         </Reveal>
       </section>
 
-      <PropertyMapSection purpose="sale" />
+      <PropertyMapSection properties={filtered} />
     </SiteLayout>
   );
 }
