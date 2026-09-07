@@ -203,6 +203,7 @@ function OwnersPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/owner-form"
+          search={{ id: "" }}
           className="shine inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground"
         >
           <Plus className="size-4" />
