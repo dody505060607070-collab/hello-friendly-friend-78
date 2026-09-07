@@ -178,3 +178,119 @@
   background-color: var(--color-card);
   box-shadow: var(--shadow-card);
 }
+
+/* ── Liquid glass + motion layer ─────────────────────────────── */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@utility glass {
+  border: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent);
+  background: color-mix(in oklab, var(--color-card) 62%, transparent);
+  backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: var(--shadow-card);
+}
+
+@utility glass-dark {
+  border: 1px solid oklch(1 0 0 / 18%);
+  background: oklch(0.22 0.02 262 / 45%);
+  backdrop-filter: blur(20px) saturate(160%);
+}
+
+@utility glass-panel {
+  border-radius: var(--radius-2xl);
+  border: 1px solid color-mix(in oklab, var(--color-border) 65%, transparent);
+  background: color-mix(in oklab, var(--color-card) 66%, transparent);
+  backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: var(--shadow-float);
+}
+
+/* Sheen sweep on hover for buttons and cards */
+@utility shine {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    filter 0.25s ease;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%);
+    background: linear-gradient(100deg, transparent 30%, oklch(1 0 0 / 35%) 50%, transparent 70%);
+    transition: transform 0.6s ease;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-float);
+  }
+
+  &:hover::after {
+    transform: translateX(120%);
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.985);
+  }
+}
+
+@utility lift {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-float);
+  }
+}
+
+@utility mesh-bg {
+  background:
+    radial-gradient(60% 70% at 15% 10%, oklch(0.93 0.05 262 / 70%) 0%, transparent 60%),
+    radial-gradient(50% 60% at 90% 0%, oklch(0.93 0.06 75 / 55%) 0%, transparent 60%),
+    radial-gradient(70% 70% at 50% 100%, oklch(0.95 0.03 262 / 60%) 0%, transparent 65%);
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@utility animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+@utility animate-pop-in {
+  animation: pop-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

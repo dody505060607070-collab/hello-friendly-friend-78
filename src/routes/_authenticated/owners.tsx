@@ -109,11 +109,8 @@ function OwnersPage() {
   const rows = data ?? [];
   const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
 
-  const openCreate = () => {
-    setEditing(null);
-    setForm(emptyForm);
-    setOpen(true);
-  };
+
+
 
   const openEdit = (row: Row) => {
     setEditing(row);
@@ -204,14 +201,14 @@ function OwnersPage() {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground hover:opacity-90"
+        <Link
+          to="/owner-form"
+          search={{ id: "" }}
+          className="shine inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground"
         >
           <Plus className="size-4" />
           إضافة مالك جديد
-        </button>
+        </Link>
       </div>
 
       {isLoading ? (

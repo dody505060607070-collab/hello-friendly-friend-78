@@ -111,9 +111,11 @@ function ListPropertyPage() {
 
   return (
     <SiteLayout>
-      <section className="bg-primary py-14 text-primary-foreground">
+      <section className="relative isolate overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 py-16 text-primary-foreground">
+        <span aria-hidden className="pointer-events-none absolute -top-24 start-1/4 size-72 rounded-full bg-gold/25 blur-3xl" />
+        <span aria-hidden className="pointer-events-none absolute -bottom-28 end-10 size-72 rounded-full bg-white/10 blur-3xl" />
         <div className="mx-auto max-w-6xl px-4 text-center">
-          <h1 className="text-3xl font-extrabold">اعرض | اطلب عقارك</h1>
+          <h1 className="animate-pop-in text-3xl font-extrabold sm:text-4xl">اعرض | اطلب عقارك</h1>
           <p className="mt-3 text-[14px] opacity-90">
             يصل طلبك مباشرة إلى فريق مثراء ويُسجَّل في نظام المتابعة الداخلي.
           </p>

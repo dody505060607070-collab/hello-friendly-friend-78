@@ -7,6 +7,7 @@ import { HeroVideo } from "@/components/site/HeroVideo";
 import { PropertyGrid } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PropertyMapSection } from "@/components/site/PropertyMapSection";
+import { Reveal } from "@/components/site/Reveal";
 import { publicPropertiesQuery, publicServicesQuery } from "@/lib/site-data";
 
 export const Route = createFileRoute("/")({
@@ -75,14 +76,14 @@ function HomePage() {
       <HeroVideo />
 
 
-      <section className="relative z-10 mx-auto -mt-10 max-w-5xl px-4">
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-float">
+      <section className="relative z-20 mx-auto -mt-14 max-w-5xl px-4">
+        <div className="glass-panel animate-pop-in p-4 sm:p-5">
           <div className="grid gap-3 md:grid-cols-4">
             <select
               value={purpose}
               onChange={(e) => setPurpose(e.target.value)}
               aria-label="نوع العرض"
-              className="h-11 rounded-lg border border-input bg-background px-3 text-[13.5px]"
+              className="h-11 rounded-xl border border-input bg-card/80 px-3 text-[13.5px] outline-none transition-colors focus:border-primary/50"
             >
               <option value="">كل العروض</option>
               <option value="rent">للإيجار</option>
@@ -92,7 +93,7 @@ function HomePage() {
               value={type}
               onChange={(e) => setType(e.target.value)}
               aria-label="نوع العقار"
-              className="h-11 rounded-lg border border-input bg-background px-3 text-[13.5px]"
+              className="h-11 rounded-xl border border-input bg-card/80 px-3 text-[13.5px] outline-none transition-colors focus:border-primary/50"
             >
               <option value="">كل أنواع العقارات</option>
               {types.map((t) => (
@@ -105,7 +106,7 @@ function HomePage() {
               value={district}
               onChange={(e) => setDistrict(e.target.value)}
               aria-label="الحي"
-              className="h-11 rounded-lg border border-input bg-background px-3 text-[13.5px]"
+              className="h-11 rounded-xl border border-input bg-card/80 px-3 text-[13.5px] outline-none transition-colors focus:border-primary/50"
             >
               <option value="">كل الأحياء</option>
               {districts.map((d) => (
@@ -114,7 +115,7 @@ function HomePage() {
                 </option>
               ))}
             </select>
-            <div className="flex h-11 items-center justify-center gap-2 rounded-lg bg-primary text-[13.5px] font-bold text-primary-foreground">
+            <div className="shine flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-[13.5px] font-bold text-primary-foreground">
               <Search className="size-4" />
               {results ? `${results.length} نتيجة` : "ابحث عن عقارك"}
             </div>
@@ -134,9 +135,9 @@ function HomePage() {
         </section>
       ) : null}
 
-      <section className="mx-auto max-w-6xl px-4 py-14">
-        <div className="mb-6 flex items-end justify-between">
-          <h2 className="text-[22px] font-bold text-foreground">أحدث عقارات الإيجار</h2>
+      <Reveal as="section" className="mx-auto max-w-6xl px-4 py-16">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <h2 className="text-[22px] font-bold text-foreground sm:text-[26px]">أحدث عقارات الإيجار</h2>
           <Link to="/rent" className="text-[13.5px] font-semibold text-primary hover:underline">
             عرض الكل
           </Link>
@@ -147,12 +148,12 @@ function HomePage() {
           error={rent.error}
           emptyText="لا توجد عقارات إيجار معروضة حالياً."
         />
-      </section>
+      </Reveal>
 
-      <section className="bg-secondary/60 py-14">
+      <Reveal as="section" className="mesh-bg py-16">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-6 flex items-end justify-between">
-            <h2 className="text-[22px] font-bold text-foreground">أحدث عقارات البيع</h2>
+            <h2 className="text-[22px] font-bold text-foreground sm:text-[26px]">أحدث عقارات البيع</h2>
             <Link to="/sale" className="text-[13.5px] font-semibold text-primary hover:underline">
               عرض الكل
             </Link>
@@ -164,10 +165,10 @@ function HomePage() {
             emptyText="لا توجد عقارات بيع معروضة حالياً."
           />
         </div>
-      </section>
+      </Reveal>
 
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <h2 className="text-center text-[22px] font-bold text-foreground">خدماتنا</h2>
+      <Reveal as="section" className="mx-auto max-w-6xl px-4 py-20">
+        <h2 className="text-center text-[24px] font-bold text-foreground sm:text-[30px]">خدماتنا</h2>
         <p className="mx-auto mt-3 max-w-xl text-center text-[13.5px] leading-7 text-muted-foreground">
           نغطي رحلة العقار كاملة: العرض، التفاوض، العقد، ثم المتابعة والتحصيل.
         </p>
@@ -178,9 +179,9 @@ function HomePage() {
             return (
               <div
                 key={service.id}
-                className="rounded-2xl border border-border bg-card p-6 text-center shadow-card"
+                className="glass lift rounded-2xl p-6 text-center"
               >
-                <span className="mx-auto grid size-12 place-items-center rounded-xl bg-accent text-accent-foreground">
+                <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-card">
                   <Icon className="size-6" />
                 </span>
                 <h3 className="mt-4 text-[15.5px] font-bold text-foreground">{service.title}</h3>
@@ -191,7 +192,7 @@ function HomePage() {
             );
           })}
         </div>
-      </section>
+      </Reveal>
 
       <PropertyMapSection properties={all.data} />
 

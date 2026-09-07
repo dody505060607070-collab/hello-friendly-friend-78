@@ -31,6 +31,7 @@ import { Route as AuthenticatedInvoiceFormRouteImport } from './routes/_authenti
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated/opportunities'
+import { Route as AuthenticatedOwnerFormRouteImport } from './routes/_authenticated/owner-form'
 import { Route as AuthenticatedOwnersRouteImport } from './routes/_authenticated/owners'
 import { Route as AuthenticatedPartnersRouteImport } from './routes/_authenticated/partners'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
@@ -162,6 +163,11 @@ const AuthenticatedOpportunitiesRoute =
     path: '/opportunities',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOwnerFormRoute = AuthenticatedOwnerFormRouteImport.update({
+  id: '/owner-form',
+  path: '/owner-form',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOwnersRoute = AuthenticatedOwnersRouteImport.update({
   id: '/owners',
   path: '/owners',
@@ -269,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/owner-form': typeof AuthenticatedOwnerFormRoute
   '/owners': typeof AuthenticatedOwnersRouteWithChildren
   '/partners': typeof AuthenticatedPartnersRoute
   '/properties': typeof AuthenticatedPropertiesRoute
@@ -308,6 +315,7 @@ export interface FileRoutesByTo {
   '/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/owner-form': typeof AuthenticatedOwnerFormRoute
   '/owners': typeof AuthenticatedOwnersRouteWithChildren
   '/partners': typeof AuthenticatedPartnersRoute
   '/properties': typeof AuthenticatedPropertiesRoute
@@ -349,6 +357,7 @@ export interface FileRoutesById {
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/_authenticated/owner-form': typeof AuthenticatedOwnerFormRoute
   '/_authenticated/owners': typeof AuthenticatedOwnersRouteWithChildren
   '/_authenticated/partners': typeof AuthenticatedPartnersRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
@@ -390,6 +399,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/notifications'
     | '/opportunities'
+    | '/owner-form'
     | '/owners'
     | '/partners'
     | '/properties'
@@ -429,6 +439,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/notifications'
     | '/opportunities'
+    | '/owner-form'
     | '/owners'
     | '/partners'
     | '/properties'
@@ -469,6 +480,7 @@ export interface FileRouteTypes {
     | '/_authenticated/invoices'
     | '/_authenticated/notifications'
     | '/_authenticated/opportunities'
+    | '/_authenticated/owner-form'
     | '/_authenticated/owners'
     | '/_authenticated/partners'
     | '/_authenticated/properties'
@@ -655,6 +667,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOpportunitiesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/owner-form': {
+      id: '/_authenticated/owner-form'
+      path: '/owner-form'
+      fullPath: '/owner-form'
+      preLoaderRoute: typeof AuthenticatedOwnerFormRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/owners': {
       id: '/_authenticated/owners'
       path: '/owners'
@@ -809,6 +828,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRouteWithChildren
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
+  AuthenticatedOwnerFormRoute: typeof AuthenticatedOwnerFormRoute
   AuthenticatedOwnersRoute: typeof AuthenticatedOwnersRouteWithChildren
   AuthenticatedPartnersRoute: typeof AuthenticatedPartnersRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
@@ -839,6 +859,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRouteWithChildren,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
+  AuthenticatedOwnerFormRoute: AuthenticatedOwnerFormRoute,
   AuthenticatedOwnersRoute: AuthenticatedOwnersRouteWithChildren,
   AuthenticatedPartnersRoute: AuthenticatedPartnersRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
