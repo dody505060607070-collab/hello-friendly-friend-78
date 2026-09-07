@@ -67,8 +67,13 @@ export function PropertyMap({
         attribution: "&copy; OpenStreetMap",
         maxZoom: 19,
       }).addTo(map);
+      L.control.zoom({ position: "bottomleft" }).addTo(map);
+      L.control.scale({ position: "bottomright", imperial: false }).addTo(map);
+      map.on("click", () => map.scrollWheelZoom.enable());
+      map.on("mouseout", () => map.scrollWheelZoom.disable());
       mapRef.current = map;
       layerRef.current = L.layerGroup().addTo(map);
+
     }
     const map = mapRef.current as import("leaflet").Map;
     const layer = layerRef.current as import("leaflet").LayerGroup;
