@@ -1,12 +1,11 @@
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createServerFn } from "@tanstack/react-start";
 
-async function assertSuperAdmin(supabase: {
-  rpc: (
-    fn: string,
-    args: Record<string, unknown>,
-  ) => Promise<{ data: unknown; error: { message: string } | null }>;
-}, userId: string) {
+type AuthedSupabase = Parameters<
+  Parameters<typeof requireSupabaseAuth.server>[0]
+>[0]["context"]["supabase"];
+
+async function assertSuperAdmin(supabase: AuthedSupabase, userId: string) {
   const { data, error } = await supabase.rpc("has_role", {
     _user_id: userId,
     _role: "super_admin",

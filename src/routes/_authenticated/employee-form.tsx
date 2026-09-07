@@ -132,7 +132,7 @@ function EmployeeFormPage() {
             phone: form.phone,
             whatsapp: form.whatsapp,
             jobTitle: form.job_title,
-            hireDate: form.hire_date || undefined,
+            hireDate: form.hire_date,
             adminNotes: form.admin_notes,
             isSuperAdmin: form.is_super_admin,
           },
