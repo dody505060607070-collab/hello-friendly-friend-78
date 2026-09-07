@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import heroImage from "@/assets/hero-list-property.jpg";
+import { PageHero } from "@/components/site/PageHero";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,16 +113,13 @@ function ListPropertyPage() {
 
   return (
     <SiteLayout>
-      <section className="relative isolate overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 py-16 text-primary-foreground">
-        <span aria-hidden className="pointer-events-none absolute -top-24 start-1/4 size-72 rounded-full bg-gold/25 blur-3xl" />
-        <span aria-hidden className="pointer-events-none absolute -bottom-28 end-10 size-72 rounded-full bg-white/10 blur-3xl" />
-        <div className="mx-auto max-w-6xl px-4 text-center">
-          <h1 className="animate-pop-in text-3xl font-extrabold sm:text-4xl">اعرض | اطلب عقارك</h1>
-          <p className="mt-3 text-[14px] opacity-90">
-            يصل طلبك مباشرة إلى فريق مثراء ويُسجَّل في نظام المتابعة الداخلي.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        image={heroImage}
+        eyebrow="خدمة الملاك والباحثين"
+        title="اعرض أو اطلب عقارك"
+        subtitle="أرسل بيانات عقارك لعرضه للإيجار أو البيع، أو اطلب عقاراً بمواصفات محددة وسيتواصل معك فريقنا."
+        height="md"
+      />
 
       <section className="mx-auto max-w-3xl px-4 py-12">
         <div className="mb-6 grid grid-cols-2 gap-2 rounded-xl border border-border bg-card p-1.5">

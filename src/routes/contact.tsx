@@ -3,6 +3,9 @@ import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import heroImage from "@/assets/hero-contact.jpg";
+import heroVideo from "@/assets/video-city.mp4.asset.json";
+import { PageHero } from "@/components/site/PageHero";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,16 +50,14 @@ function ContactPage() {
 
   return (
     <SiteLayout>
-      <section className="relative isolate overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 py-16 text-primary-foreground">
-        <span aria-hidden className="pointer-events-none absolute -top-24 start-1/4 size-72 rounded-full bg-gold/25 blur-3xl" />
-        <span aria-hidden className="pointer-events-none absolute -bottom-28 end-10 size-72 rounded-full bg-white/10 blur-3xl" />
-        <div className="mx-auto max-w-6xl px-4 text-center">
-          <h1 className="animate-pop-in text-3xl font-extrabold sm:text-4xl">تواصل معنا</h1>
-          <p className="mt-3 text-[14px] opacity-90">
-            فريقنا جاهز للرد على استفساراتك العقارية في بريدة.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        image={heroImage}
+        video={heroVideo.url}
+        eyebrow="فريقنا في خدمتك"
+        title="تواصل معنا"
+        subtitle="فريقنا جاهز للرد على استفساراتك العقارية في بريدة عبر الهاتف أو واتساب أو البريد."
+        height="md"
+      />
 
       <section className="mx-auto max-w-6xl px-4 py-12">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
