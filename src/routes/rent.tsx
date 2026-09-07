@@ -47,9 +47,11 @@ function RentPage() {
 
   return (
     <SiteLayout>
-      <section className="bg-primary py-14 text-primary-foreground">
+      <section className="relative isolate overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 py-16 text-primary-foreground">
+        <span aria-hidden className="pointer-events-none absolute -top-24 start-1/4 size-72 rounded-full bg-gold/25 blur-3xl" />
+        <span aria-hidden className="pointer-events-none absolute -bottom-28 end-10 size-72 rounded-full bg-white/10 blur-3xl" />
         <div className="mx-auto max-w-6xl px-4">
-          <h1 className="text-[28px] font-extrabold">قسم الإيجار</h1>
+          <h1 className="animate-pop-in text-[30px] font-extrabold sm:text-[38px]">قسم الإيجار</h1>
           <p className="mt-3 max-w-2xl text-[14px] leading-7 opacity-90">
             وحدات سكنية وتجارية جاهزة للإيجار في أحياء بريدة، محدّثة مباشرة من نظام إدارة العقارات
             لدينا.

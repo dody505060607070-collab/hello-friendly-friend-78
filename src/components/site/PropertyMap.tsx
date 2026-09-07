@@ -59,7 +59,7 @@ export function PropertyMap({
     if (!leaflet || !containerRef.current) return;
     const L = leaflet;
     if (!mapRef.current) {
-      const map = L.map(containerRef.current, { scrollWheelZoom: false }).setView(
+      const map = L.map(containerRef.current, { scrollWheelZoom: false, zoomControl: false }).setView(
         [26.3536, 43.9667],
         11,
       );
@@ -130,7 +130,7 @@ export function PropertyMap({
               key={filter.key}
               type="button"
               onClick={() => setActive(filter.key)}
-              className={`rounded-lg px-4 py-2 text-[13px] font-bold transition ${
+              className={`shine rounded-full px-4 py-2 text-[13px] font-bold transition ${
                 active === filter.key
                   ? "bg-primary text-primary-foreground"
                   : "border border-border bg-card text-muted-foreground hover:text-foreground"
@@ -156,7 +156,7 @@ export function PropertyMap({
 
       <div
         ref={containerRef}
-        className="h-[420px] w-full overflow-hidden rounded-2xl border border-border shadow-card"
+        className="h-[380px] w-full overflow-hidden rounded-2xl border border-border shadow-float sm:h-[480px]"
       />
     </section>
   );
