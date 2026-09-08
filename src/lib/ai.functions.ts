@@ -262,16 +262,25 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
 {"contract_number":"","contract_type":"rent|sale","owner_name":"","tenant_name":"","broker_name":"","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD","signed_date":"YYYY-MM-DD","annual_rent":0,"total_value":0,"deposit":0,"fees":0,"payment_cycle":"","payments_count":0,"property_name":"","unit_number":"","city":"","district":"","special_terms":"","warnings":[]}
 اترك أي قيمة غير موجودة فارغة أو null، وأضِف أي ملاحظة مهمة في warnings.`;
 
-    const text = await callGateway([
-      { role: "system", content: [{ type: "input_text", text: SYSTEM_PROMPT }] },
-      {
-        role: "user",
-        content: [
-          { type: "input_text", text: instruction },
-          { type: "input_file", filename: data.fileName, file_data: data.dataUrl },
-        ],
-      },
-    ]);
+    // نظام مختصر + JSON مباشر + بدون "تفكير" = استجابة أسرع بكثير.
+    const text = await callGateway(
+      [
+        {
+          role: "system",
+          content: [
+            { type: "input_text", text: "أنت مستخرج بيانات عقود عقارية. أعد JSON فقط دون أي شرح." },
+          ],
+        },
+        {
+          role: "user",
+          content: [
+            { type: "input_text", text: instruction },
+            { type: "input_file", filename: data.fileName, file_data: data.dataUrl },
+          ],
+        },
+      ],
+      { json: true, fast: true, maxTokens: 1200 },
+    );
 
     const match = text.match(/\{[\s\S]*\}/);
     let extractionJson = "{}";
