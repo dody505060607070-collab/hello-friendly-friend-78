@@ -303,7 +303,31 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
 7) استخرج من هذا الملف فقط، ولا تنقل شيئًا من عقد آخر.
 8) راجع الناتج قبل الإخراج وتأكد أن كل قيمة موجودة فعلًا في نص العقد.`;
 
-    const extractedText = data.extractedText?.trim().slice(0, 80_000) ?? "";
+    const rawText = data.extractedText?.trim() ?? "";
+    // تحليل حتمي أولًا: نصحّح النص العربي المقلوب ثم نقرأ الحقول من نموذج «إيجار» مباشرة.
+    const { parseEjarContract, normalizeArabicPdfText, looksScrambled } = await import("./ejar-parser");
+    const deterministic = rawText ? parseEjarContract(rawText) : null;
+    const cleanText = rawText && looksScrambled(rawText) ? normalizeArabicPdfText(rawText) : rawText;
+
+    if (
+      deterministic &&
+      deterministic.contract_number &&
+      deterministic.owner_name &&
+      deterministic.owner_national_id &&
+      deterministic.start_date &&
+      deterministic.tenant_name
+    ) {
+      const warnings: string[] = [];
+      if (!deterministic.payments.length) warnings.push("لم يُقرأ جدول الدفعات من العقد.");
+      if (!deterministic.annual_rent) warnings.push("لم تُقرأ القيمة السنوية للإيجار.");
+      return {
+        extractionJson: JSON.stringify({ ...deterministic, special_terms: "", warnings, source: "parser" }),
+        raw: "parser",
+      };
+    }
+
+    const extractedText = cleanText.slice(0, 80_000);
+
     const userContent: Part[] = [
       { type: "input_text", text: instruction },
       ...(extractedText
@@ -341,11 +365,23 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
     let extractionJson = "{}";
     if (match) {
       try {
-        extractionJson = JSON.stringify(JSON.parse(match[0]));
+        const parsed = JSON.parse(match[0]) as Record<string, unknown>;
+        if (deterministic) {
+          // القيم المقروءة حرفيًا من العقد تتفوق دائمًا على تخمين الذكاء الاصطناعي.
+          for (const [key, value] of Object.entries(deterministic)) {
+            const filled =
+              (typeof value === "string" && value.trim()) ||
+              (typeof value === "number" && value > 0) ||
+              (Array.isArray(value) && value.length > 0);
+            if (filled) parsed[key] = value;
+          }
+        }
+        extractionJson = JSON.stringify(parsed);
       } catch {
         extractionJson = "{}";
       }
     }
+
     return { extractionJson, raw: text };
   });
 

@@ -53,27 +53,34 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
       const tel = str(phone).replace(/\s/g, "");
       if (!name && !nid) return null;
 
-      let existingId: string | null = null;
+      type Found = { id: string; roles: string[] | null };
+      let existing: Found | null = null;
       if (nid) {
-        const byId = await db.from("contacts").select("id").eq("national_id", nid).limit(1);
-        existingId = byId.data?.[0]?.id ?? null;
-      }
-      if (!existingId && tel) {
-        const byPhone = await db.from("contacts").select("id").eq("phone", tel).limit(1);
-        existingId = byPhone.data?.[0]?.id ?? null;
-      }
-      if (!existingId && name) {
-        const byName = await db.from("contacts").select("id").ilike("full_name", name).limit(1);
-        existingId = byName.data?.[0]?.id ?? null;
+        // الهوية/السجل التجاري معرّف قاطع: لا نطابق بالجوال أو الاسم عند وجودها
+        // حتى لا تختلط المنشأة بممثلها أو المالك بالمستأجر.
+        const byId = await db.from("contacts").select("id, roles").eq("national_id", nid).limit(1);
+        existing = (byId.data?.[0] as Found | undefined) ?? null;
+      } else {
+        if (tel) {
+          const byPhone = await db.from("contacts").select("id, roles").eq("phone", tel).limit(1);
+          existing = (byPhone.data?.[0] as Found | undefined) ?? null;
+        }
+        if (!existing && name) {
+          const byName = await db.from("contacts").select("id, roles").ilike("full_name", name).limit(1);
+          existing = (byName.data?.[0] as Found | undefined) ?? null;
+        }
       }
 
-      if (existingId) {
-        const patch: { national_id?: string; phone?: string } = {};
+      if (existing) {
+        const patch: { national_id?: string; phone?: string; roles?: string[]; full_name?: string } = {};
         if (nid) patch.national_id = nid;
         if (tel) patch.phone = tel;
-        if (Object.keys(patch).length) await db.from("contacts").update(patch).eq("id", existingId);
-        return existingId;
+        const roles = existing.roles ?? [];
+        if (!roles.includes(role)) patch.roles = [...roles, role];
+        if (Object.keys(patch).length) await db.from("contacts").update(patch).eq("id", existing.id);
+        return existing.id;
       }
+
 
       const ins = await db
         .from("contacts")
