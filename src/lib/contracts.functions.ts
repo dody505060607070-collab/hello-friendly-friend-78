@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireUnlocked } from "./kill-switch.server";
 
 type Extraction = Record<string, unknown>;
 
@@ -31,6 +32,7 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
       input,
   )
   .handler(async ({ data, context }) => {
+    await requireUnlocked();
     const staff = await context.supabase.rpc("is_staff", { _user_id: context.userId });
     if (!staff.data) throw new Error("غير مصرّح.");
 

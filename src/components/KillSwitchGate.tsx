@@ -1,6 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -17,17 +16,50 @@ async function fetchKillSwitch() {
 
 export function KillSwitchGate({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { data } = useQuery({
-    queryKey: ["site-kill-switch"],
-    queryFn: fetchKillSwitch,
-    refetchInterval: 30_000,
-    staleTime: 15_000,
+  const [state, setState] = useState<{ locked: boolean; message: string; loading: boolean }>({
+    locked: false,
+    message: "",
+    loading: true,
   });
+
+  useEffect(() => {
+    let mounted = true;
+    fetchKillSwitch()
+      .then((data) => {
+        if (!mounted) return;
+        setState({ locked: Boolean(data.locked), message: data.message || "", loading: false });
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setState({ locked: false, message: "", loading: false });
+      });
+    const id = setInterval(() => {
+      fetchKillSwitch().then((data) => {
+        if (!mounted) return;
+        setState({ locked: Boolean(data.locked), message: data.message || "", loading: false });
+      });
+    }, 15_000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, []);
 
   // Always let the hidden control route render so the owner can unlock.
   if (pathname.startsWith(CONTROL_PATH)) return <>{children}</>;
 
-  if (data?.locked) {
+  if (state.loading) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black text-white">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+          <p className="text-sm text-white/70">جاري التحقق...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (state.locked) {
     return (
       <div
         dir="rtl"
@@ -43,7 +75,7 @@ export function KillSwitchGate({ children }: { children: ReactNode }) {
           </div>
           <h1 className="text-2xl font-bold">الخدمة متوقفة</h1>
           <p className="mt-3 text-sm leading-7 text-white/70">
-            {data.message || "الموقع متوقف مؤقتاً. يرجى التواصل مع المالك."}
+            {state.message || "الموقع متوقف مؤقتاً. يرجى التواصل مع المالك."}
           </p>
         </div>
       </div>

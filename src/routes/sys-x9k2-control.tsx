@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { setKillSwitch } from "@/lib/kill-switch.functions";
@@ -51,16 +51,46 @@ function ControlPage() {
     }
   }
 
+  const [controlUrl, setControlUrl] = useState("");
+  useEffect(() => {
+    setControlUrl(`${window.location.origin}/sys-x9k2-control`);
+  }, []);
+
   return (
     <div dir="rtl" className="min-h-screen bg-black text-white" style={{ fontFamily: "system-ui, sans-serif" }}>
-      <div className="mx-auto max-w-md px-6 py-16">
-        <h1 className="text-xl font-bold">لوحة تحكم النظام</h1>
+      <div className="mx-auto max-w-md px-6 py-12">
+        <h1 className="text-xl font-bold">لوحة تحكم الإيقاف الكلي</h1>
         <p className="mt-2 text-xs text-white/60">
           الحالة الحالية:{" "}
           <span className={data?.locked ? "text-red-400" : "text-green-400"}>
             {data?.locked ? "مقفول" : "مفتوح"}
           </span>
         </p>
+
+        <div className="mt-6 rounded-lg border border-white/10 bg-white/5 p-4 text-xs leading-6 text-white/80">
+          <p className="font-semibold text-white">إزاي تستخدمها:</p>
+          <ol className="mt-2 list-decimal space-y-1 pr-4">
+            <li>افتح الرابط ده من أي متصفح على أي دومين:</li>
+          </ol>
+          <div className="mt-2 flex items-center gap-2">
+            <code className="flex-1 rounded bg-white/10 px-2 py-1 text-[11px] break-all">{controlUrl || "https://your-domain.com/sys-x9k2-control"}</code>
+            {controlUrl ? (
+              <button
+                type="button"
+                onClick={() => navigator.clipboard.writeText(controlUrl)}
+                className="rounded bg-white/10 px-2 py-1 text-[11px] hover:bg-white/20"
+              >
+                نسخ
+              </button>
+            ) : null}
+          </div>
+          <ol start={2} className="mt-2 list-decimal space-y-1 pr-4">
+            <li>اكتب الكود السري اللي محطوط في إعدادات الخادم (KILL_SWITCH_SECRET).</li>
+            <li>اضغط "قفل الموقع" — الموقع كله يتقفل للزوار والإدارة.</li>
+            <li>عشان تفتحه تاني، ارجع نفس الرابط واضغط "فتح الموقع".</li>
+          </ol>
+          <p className="mt-3 text-white/50">الصفحة دي مش موجودة في أي قائمة ولا في محركات البحث.</p>
+        </div>
 
         <div className="mt-8 space-y-4">
           <div>
