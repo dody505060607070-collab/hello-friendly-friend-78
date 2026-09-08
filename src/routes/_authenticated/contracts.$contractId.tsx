@@ -136,14 +136,42 @@ function ContractViewPage() {
           <button
             type="button"
             disabled={remove.isPending}
-            onClick={() => {
-              if (window.confirm(`حذف العقد ${c?.contract_number ?? ""} نهائيًا؟`)) remove.mutate();
-            }}
+            onClick={() => setConfirmOpen(true)}
             className="inline-flex h-10 items-center gap-2 rounded-lg bg-destructive px-4 text-[13px] font-semibold text-destructive-foreground disabled:opacity-60"
           >
             {remove.isPending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
             حذف العقد
           </button>
+
+          <Modal
+            open={confirmOpen}
+            onClose={() => setConfirmOpen(false)}
+            title={`حذف العقد ${c?.contract_number ?? ""}`}
+            subtitle="لا يمكن التراجع عن هذا الإجراء."
+            footer={
+              <>
+                <PrimaryButton onClick={() => remove.mutate(alsoOwner)} disabled={remove.isPending}>
+                  {remove.isPending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                  تأكيد الحذف
+                </PrimaryButton>
+                <GhostButton onClick={() => setConfirmOpen(false)}>إلغاء</GhostButton>
+              </>
+            }
+          >
+            <div className="space-y-3 text-[13px]">
+              <label className="flex items-center gap-2 font-semibold">
+                <Toggle
+                  label="حذف المالك أيضًا"
+                  checked={alsoOwner}
+                  onChange={(v) => setAlsoOwner(v)}
+                />
+                حذف المالك المرتبط بالعقد أيضًا {c?.owner?.full_name ? `(${c.owner.full_name})` : ""}
+              </label>
+              <p className="text-[12px] text-muted-foreground">
+                عند التفعيل سيتم حذف المالك وكل عقوده الأخرى، مع فصل عقاراته ووحداته.
+              </p>
+            </div>
+          </Modal>
         </div>
       </div>
 
