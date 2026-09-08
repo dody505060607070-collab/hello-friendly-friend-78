@@ -341,6 +341,8 @@ function RemindersPage() {
         </div>
       </section>
 
+      <TemplatesManager />
+
       <section className="space-y-3">
         <div className="flex items-center gap-2">
           <BellRing className="size-4 text-primary" />
@@ -463,5 +465,190 @@ function RemindersPage() {
         />
       </section>
     </>
+  );
+}
+
+type TemplateRow = {
+  id: string;
+  name: string;
+  body: string;
+  category: string | null;
+  language: string;
+  is_active: boolean;
+};
+
+/** إدارة قوالب الرسائل: إضافة وتعديل وتفعيل وحذف مع معاينة واتساب. */
+function TemplatesManager() {
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState<TemplateRow | null>(null);
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [text, setText] = useState("");
+
+  const list = useQuery({
+    queryKey: ["message_templates", "all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("message_templates")
+        .select("id, name, body, category, language, is_active")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as TemplateRow[];
+    },
+  });
+
+  const reset = () => {
+    setEditing(null);
+    setName("");
+    setCategory("");
+    setText("");
+  };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!name.trim() || !text.trim()) throw new Error("اسم القالب ونص الرسالة مطلوبان");
+      const payload = { name: name.trim(), body: text.trim(), category: category.trim() || null };
+      if (editing) {
+        const { error } = await supabase.from("message_templates").update(payload).eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("message_templates")
+          .insert({ ...payload, language: "ar", is_active: true });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(editing ? "تم تحديث القالب" : "تمت إضافة القالب");
+      reset();
+      queryClient.invalidateQueries({ queryKey: ["message_templates"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: async (row: TemplateRow) => {
+      const { error } = await supabase
+        .from("message_templates")
+        .update({ is_active: !row.is_active })
+        .eq("id", row.id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["message_templates"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (row: TemplateRow) => {
+      const { error } = await supabase.from("message_templates").delete().eq("id", row.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تم حذف القالب");
+      queryClient.invalidateQueries({ queryKey: ["message_templates"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <section className="surface-card overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-border px-5 py-4">
+        <MessageSquare className="size-4 text-primary" />
+        <div>
+          <h2 className="text-[14px] font-bold text-foreground">قوالب الرسائل الجاهزة</h2>
+          <p className="text-[12px] text-muted-foreground">
+            استخدم المتغيرات: {"{{name}}"} اسم العميل، {"{{contract}}"} رقم العقد، {"{{date}}"} التاريخ.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 px-5 py-5 lg:grid-cols-2">
+        <div className="space-y-3">
+          <Field label="اسم القالب">
+            <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
+          </Field>
+          <Field label="التصنيف">
+            <input
+              className={inputClass}
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              placeholder="تذكير سداد / متأخرات / تجديد"
+            />
+          </Field>
+          <Field label="نص القالب">
+            <textarea className={textareaClass} value={text} onChange={(e) => setText(e.target.value)} />
+          </Field>
+          <div className="flex items-center gap-2">
+            <PrimaryButton onClick={() => save.mutate()} disabled={save.isPending}>
+              {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              {editing ? "حفظ التعديل" : "إضافة قالب"}
+            </PrimaryButton>
+            {editing ? (
+              <button
+                type="button"
+                onClick={reset}
+                className="rounded-lg border border-border px-3 py-2 text-[12.5px] font-semibold text-muted-foreground hover:bg-muted"
+              >
+                إلغاء
+              </button>
+            ) : null}
+          </div>
+          <div className="rounded-xl bg-[#ece5dd] p-3">
+            <div className="ms-auto max-w-[92%] whitespace-pre-wrap rounded-xl bg-[#dcf8c6] p-3 text-[13px] leading-6 text-[#111b21] shadow-sm">
+              {text.trim() || "معاينة نص القالب كما يصل عبر واتساب."}
+            </div>
+          </div>
+        </div>
+
+        <ul className="space-y-2">
+          {(list.data ?? []).map((row) => (
+            <li key={row.id} className="rounded-xl border border-border bg-muted/20 p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[13px] font-bold text-foreground">{row.name}</span>
+                {row.category ? <Chip>{row.category}</Chip> : null}
+                <span className="ms-auto flex items-center gap-2 text-[12px]">
+                  <button
+                    type="button"
+                    onClick={() => toggleActive.mutate(row)}
+                    className={
+                      row.is_active
+                        ? "rounded-md bg-success/15 px-2 py-1 font-semibold text-success"
+                        : "rounded-md bg-muted px-2 py-1 font-semibold text-muted-foreground"
+                    }
+                  >
+                    {row.is_active ? "مفعّل" : "متوقف"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(row);
+                      setName(row.name);
+                      setCategory(row.category ?? "");
+                      setText(row.body);
+                    }}
+                    className="font-semibold text-primary"
+                  >
+                    تعديل
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => remove.mutate(row)}
+                    className="font-semibold text-destructive"
+                  >
+                    حذف
+                  </button>
+                </span>
+              </div>
+              <p className="mt-2 whitespace-pre-wrap text-[12.5px] leading-6 text-muted-foreground">
+                {row.body}
+              </p>
+            </li>
+          ))}
+          {list.data && list.data.length === 0 ? (
+            <EmptyState text="لا توجد قوالب بعد" hint="أضف أول قالب من النموذج المجاور." />
+          ) : null}
+        </ul>
+      </div>
+    </section>
   );
 }

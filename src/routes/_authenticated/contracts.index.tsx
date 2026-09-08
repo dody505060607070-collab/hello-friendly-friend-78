@@ -19,6 +19,7 @@ import { PageHero } from "@/components/kit/PageHero";
 import { Pills } from "@/components/kit/Pills";
 import { supabase } from "@/integrations/supabase/client";
 import { analyzeContractPdf } from "@/lib/ai.functions";
+import { finalizeContractImport } from "@/lib/contracts.functions";
 import { ensureClientAccount } from "@/lib/portal.functions";
 import { contractStatusLabels, importStatusLabels } from "@/lib/labels";
 
@@ -618,7 +619,39 @@ function ImportDialog({
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
+  const [importId, setImportId] = useState<string | null>(null);
+  const [filePath, setFilePath] = useState<string | null>(null);
+  const [report, setReport] = useState<{ created: string[]; warnings: string[] } | null>(null);
   const queryClient = useQueryClient();
+
+  const finalize = useMutation({
+    mutationFn: async () => {
+      if (!result) throw new Error("لا توجد بيانات مستخرجة");
+      return finalizeContractImport({
+        data: {
+          extraction: result,
+          filePath: filePath ?? undefined,
+          importId: importId ?? undefined,
+        },
+      });
+    },
+    onSuccess: (res) => {
+      setReport({ created: res.created, warnings: res.warnings });
+      queryClient.invalidateQueries({ queryKey: ["contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["contract_imports"] });
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      toast.success("تم ترحيل العقد وتوزيع بياناته تلقائيًا");
+      if (res.account) {
+        toast.success(
+          `بوابة العميل: المستخدم ${res.account.username} — كلمة المرور ${res.account.password}`,
+          { duration: 15000 },
+        );
+      }
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الترحيل"),
+  });
 
   const analyze = useMutation({
     mutationFn: async (f: File) => {
@@ -638,20 +671,26 @@ function ImportDialog({
       });
       const extraction = JSON.parse(extractionJson) as Record<string, unknown>;
 
-      await supabase.from("contract_imports").insert({
-        file_path: path,
-        file_name: f.name,
-        file_size: f.size,
-        status: "needs_review",
-        extraction: extraction as never,
-        warnings: (Array.isArray(extraction["warnings"]) ? extraction["warnings"] : []) as never,
-      });
+      const saved = await supabase
+        .from("contract_imports")
+        .insert({
+          file_path: path,
+          file_name: f.name,
+          file_size: f.size,
+          status: "needs_review",
+          extraction: extraction as never,
+          warnings: (Array.isArray(extraction["warnings"]) ? extraction["warnings"] : []) as never,
+        })
+        .select("id")
+        .single();
 
-
-      return extraction;
+      return { extraction, path, importId: saved.data?.id ?? null };
     },
-    onSuccess: (extraction) => {
+    onSuccess: ({ extraction, path, importId: id }) => {
       setResult(extraction);
+      setFilePath(path);
+      setImportId(id);
+      setReport(null);
       queryClient.invalidateQueries({ queryKey: ["contract_imports"] });
       queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
       toast.success("تم تحليل الملف بالذكاء الاصطناعي");
@@ -678,7 +717,11 @@ function ImportDialog({
       footer={
         result ? (
           <>
-            <PrimaryButton
+            <PrimaryButton onClick={() => finalize.mutate()} disabled={finalize.isPending || !!report}>
+              {finalize.isPending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+              ترحيل تلقائي كامل
+            </PrimaryButton>
+            <GhostButton
               onClick={() =>
                 onExtracted({
                   contract_number: str("contract_number"),
@@ -696,11 +739,12 @@ function ImportDialog({
               }
             >
               متابعة إلى نموذج العقد
-            </PrimaryButton>
+            </GhostButton>
             <GhostButton
               onClick={() => {
                 setResult(null);
                 setFile(null);
+                setReport(null);
               }}
             >
               ملف آخر
@@ -748,6 +792,34 @@ function ImportDialog({
               ))}
             </ul>
           ) : null}
+
+          {report ? (
+            <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-4">
+              <p className="text-[13px] font-bold text-foreground">نتيجة الترحيل التلقائي</p>
+              <ul className="list-inside list-disc space-y-1 text-[12.5px] text-success">
+                {report.created.map((c, i) => (
+                  <li key={i}>تم إنشاء {c}</li>
+                ))}
+              </ul>
+              {report.warnings.length ? (
+                <>
+                  <p className="text-[12.5px] font-bold text-foreground">استثناءات تحتاج مراجعة</p>
+                  <ul className="list-inside list-disc space-y-1 text-[12.5px] text-warning-foreground">
+                    {report.warnings.map((w, i) => (
+                      <li key={i}>{w}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-[12.5px] text-muted-foreground">لا توجد استثناءات — العقد جاهز.</p>
+              )}
+            </div>
+          ) : (
+            <p className="rounded-lg border border-border bg-accent/40 px-4 py-3 text-[12.5px] text-muted-foreground">
+              «ترحيل تلقائي كامل» ينشئ المالك والمستأجر والعقار والعقد وجدول الدفعات والفواتير
+              وحساب بوابة العميل وتذكير السداد دفعة واحدة.
+            </p>
+          )}
         </div>
       ) : (
         <button

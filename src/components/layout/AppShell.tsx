@@ -7,6 +7,7 @@ import logoAsset from "@/assets/mithra-logo.png.asset.json";
 import { navGroups } from "@/data/nav";
 import { signOut, useCurrentUser } from "@/hooks/useAuth";
 import { navCountsQuery } from "@/lib/counts";
+import { LanguageToggle, useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
@@ -14,6 +15,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const [closed, setClosed] = useState<string[]>([]);
   const { can } = useCurrentUser();
   const { data: counts } = useQuery(navCountsQuery);
+  const { t } = useI18n();
 
   const toggle = (label: string) =>
     setClosed((prev) =>
@@ -42,7 +44,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                   )}
                 />
                 <span className="flex items-center gap-2">
-                  {group.label}
+                  {t(group.label)}
                   {Icon ? <Icon className="size-[18px] text-primary/70" /> : null}
                 </span>
               </button>
@@ -84,7 +86,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                           {!group.label && Icon ? (
                             <Icon className="size-[18px] text-primary/70" />
                           ) : null}
-                          {item.label}
+                          {t(item.label)}
                         </span>
                       </Link>
                     </li>
@@ -134,6 +136,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             <LogOut className="size-[18px]" />
           </button>
+          <LanguageToggle />
           <NotificationsBell />
         </div>
 

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { MessagesSquare, Pin, Reply, Search, Send, Trash2 } from "lucide-react";
+import { Loader2, MessagesSquare, Paperclip, Pencil, Pin, Reply, Search, Send, Smile, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -29,11 +29,16 @@ type Msg = {
   sender_id: string;
   body: string | null;
   reply_to: string | null;
+  attachment_path: string | null;
+  attachment_name: string | null;
+  edited_at: string | null;
   is_pinned: boolean;
   deleted_at: string | null;
   created_at: string;
   sender: { full_name: string; job_title: string | null; avatar_url: string | null } | null;
 };
+
+const EMOJIS = ["👍", "🙏", "🔥", "✅", "❤️", "😀", "😅", "🎉", "📌", "📞", "🏠", "💰", "⏰", "📄"];
 
 function TeamChatPage() {
   const qc = useQueryClient();
@@ -41,6 +46,10 @@ function TeamChatPage() {
   const [body, setBody] = useState("");
   const [search, setSearch] = useState("");
   const [replyTo, setReplyTo] = useState<Msg | null>(null);
+  const [editing, setEditing] = useState<Msg | null>(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
 
   const messages = useQuery({
@@ -49,13 +58,39 @@ function TeamChatPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("group_messages")
-        .select("id, sender_id, body, reply_to, is_pinned, deleted_at, created_at, sender:sender_id(full_name, job_title, avatar_url)")
+        .select("id, sender_id, body, reply_to, is_pinned, deleted_at, created_at, attachment_path, attachment_name, edited_at, sender:sender_id(full_name, job_title, avatar_url)")
         .order("created_at")
         .limit(500);
       if (error) throw error;
       return (data ?? []) as unknown as Msg[];
     },
   });
+
+  const staff = useQuery({
+    queryKey: ["profiles", "team-chat"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, job_title, avatar_url")
+        .eq("is_active", true)
+        .order("full_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // بث لحظي لرسائل المجموعة
+  useEffect(() => {
+    const channel = supabase
+      .channel("group-messages-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "group_messages" }, () => {
+        qc.invalidateQueries({ queryKey: ["group-messages"] });
+      })
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [qc]);
 
   const all = messages.data ?? [];
   const byId = useMemo(() => new Map(all.map((m) => [m.id, m])), [all]);
@@ -73,6 +108,14 @@ function TeamChatPage() {
     mutationFn: async () => {
       const text = body.trim();
       if (!text) return;
+      if (editing) {
+        const { error } = await supabase
+          .from("group_messages")
+          .update({ body: text, edited_at: new Date().toISOString() })
+          .eq("id", editing.id);
+        if (error) throw error;
+        return;
+      }
       const { error } = await supabase.from("group_messages").insert({
         sender_id: userId!,
         body: text,
@@ -100,6 +143,7 @@ function TeamChatPage() {
     onSuccess: () => {
       setBody("");
       setReplyTo(null);
+      setEditing(null);
       qc.invalidateQueries({ queryKey: ["group-messages"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -113,6 +157,40 @@ function TeamChatPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["group-messages"] }),
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const sendFile = async (file: File) => {
+    setUploading(true);
+    try {
+      const path = `team-chat/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
+      const up = await supabase.storage.from("internal-files").upload(path, file, { upsert: true });
+      if (up.error) throw up.error;
+      const { error } = await supabase.from("group_messages").insert({
+        sender_id: userId!,
+        body: body.trim() || null,
+        attachment_path: path,
+        attachment_name: file.name,
+        reply_to: replyTo?.id ?? null,
+      });
+      if (error) throw error;
+      setBody("");
+      setReplyTo(null);
+      qc.invalidateQueries({ queryKey: ["group-messages"] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const openAttachment = async (path: string) => {
+    const { data, error } = await supabase.storage.from("internal-files").createSignedUrl(path, 300);
+    if (error || !data) {
+      toast.error("تعذّر فتح المرفق");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener");
+  };
 
   return (
     <>
@@ -136,6 +214,22 @@ function TeamChatPage() {
           </div>
           <span className="shrink-0 text-[12px] text-muted-foreground">{pinned.length} مثبتة</span>
         </header>
+
+        <div className="flex items-center gap-2 overflow-x-auto border-b border-border px-4 py-2">
+          <Users className="size-4 shrink-0 text-primary" />
+          {(staff.data ?? []).map((p) => (
+            <span
+              key={p.id}
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/50 px-2 py-1 text-[11.5px] text-muted-foreground"
+              title={p.job_title ?? ""}
+            >
+              <span className="grid size-5 place-items-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
+                {p.full_name.slice(0, 1)}
+              </span>
+              {p.full_name}
+            </span>
+          ))}
+        </div>
 
         {pinned.length ? (
           <div className="border-b border-border bg-warning/10 px-4 py-2 text-[12.5px]">
@@ -169,6 +263,17 @@ function TeamChatPage() {
                     </p>
                   ) : null}
                   <p className="whitespace-pre-wrap">{m.deleted_at ? "تم حذف الرسالة" : m.body}</p>
+                  {!m.deleted_at && m.attachment_path ? (
+                    <button
+                      type="button"
+                      onClick={() => openAttachment(m.attachment_path!)}
+                      className="mt-1 flex items-center gap-1.5 rounded-lg bg-background/25 px-2 py-1 text-[12px] underline"
+                    >
+                      <Paperclip className="size-3.5" />
+                      {m.attachment_name ?? "مرفق"}
+                    </button>
+                  ) : null}
+                  {m.edited_at ? <span className="text-[10.5px] opacity-70">(معدّلة)</span> : null}
                   <div className="mt-1 flex items-center gap-2 text-[10.5px] opacity-70">
                     <span>{new Date(m.created_at).toLocaleString("ar-SA")}</span>
                     {!m.deleted_at ? (
@@ -183,6 +288,18 @@ function TeamChatPage() {
                             onClick={() => patch.mutate({ id: m.id, values: { is_pinned: !m.is_pinned } })}
                           >
                             <Pin className="size-3.5" />
+                          </button>
+                        ) : null}
+                        {mine ? (
+                          <button
+                            type="button"
+                            title="تعديل"
+                            onClick={() => {
+                              setEditing(m);
+                              setBody(m.body ?? "");
+                            }}
+                          >
+                            <Pencil className="size-3.5" />
                           </button>
                         ) : null}
                         {mine || isSuperAdmin ? (
@@ -215,7 +332,56 @@ function TeamChatPage() {
               <span>رد على {replyTo.sender?.full_name}</span>
             </p>
           ) : null}
+          {editing ? (
+            <p className="flex items-center justify-between rounded-lg bg-warning/15 px-3 py-1.5 text-[12px]">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(null);
+                  setBody("");
+                }}
+                className="text-muted-foreground"
+              >
+                إلغاء
+              </button>
+              <span>تعديل رسالتك</span>
+            </p>
+          ) : null}
+          {emojiOpen ? (
+            <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-muted/30 p-2 text-lg">
+              {EMOJIS.map((e) => (
+                <button key={e} type="button" onClick={() => setBody((b) => b + e)}>
+                  {e}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <div className="flex gap-2">
+            <input
+              ref={fileRef}
+              type="file"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void sendFile(f);
+              }}
+            />
+            <button
+              type="button"
+              title="إرفاق ملف"
+              onClick={() => fileRef.current?.click()}
+              className="grid size-10 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted"
+            >
+              {uploading ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-4" />}
+            </button>
+            <button
+              type="button"
+              title="رموز"
+              onClick={() => setEmojiOpen((v) => !v)}
+              className="grid size-10 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted"
+            >
+              <Smile className="size-4" />
+            </button>
             <input
               className={inputClass}
               placeholder="اكتب رسالة… استخدم @اسم الموظف للإشارة"
