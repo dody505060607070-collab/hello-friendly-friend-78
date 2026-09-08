@@ -47,6 +47,7 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
       role: string,
       nationalId?: string,
       phone?: string,
+      kind: "individual" | "organization" = "individual",
     ) => {
       const nid = str(nationalId).replace(/\D/g, "");
       const tel = str(phone).replace(/\s/g, "");
@@ -78,7 +79,7 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
         .from("contacts")
         .insert({
           full_name: name || nid,
-          kind: "individual",
+          kind,
           roles: [role],
           national_id: nid || null,
           phone: tel || null,
@@ -97,25 +98,43 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
 
     const ownerName = str(e["owner_name"]);
     const tenantName = str(e["tenant_name"]);
-    const brokerName = str(e["broker_name"]);
+    const brokerName = str(e["broker_name"]) || str(e["broker_entity_name"]);
+    const tenantIsCompany =
+      e["tenant_is_company"] === true || !!str(e["tenant_cr_number"]);
+    const repName = str(e["tenant_rep_name"]);
+    const repPhone = str(e["tenant_rep_phone"]);
+    const repNid = str(e["tenant_rep_national_id"]);
     const ownerId = await findOrCreateContact(
       ownerName,
       "owner",
       str(e["owner_national_id"]),
       str(e["owner_phone"]),
     );
+    // المستأجر التجاري: المنشأة هي الطرف، وسجلها التجاري هو معرّفها، وجوال ممثلها للتواصل.
     const tenantId = await findOrCreateContact(
       tenantName,
       "tenant",
-      str(e["tenant_national_id"]),
-      str(e["tenant_phone"]),
+      tenantIsCompany
+        ? str(e["tenant_cr_number"]) || str(e["tenant_national_id"])
+        : str(e["tenant_national_id"]),
+      str(e["tenant_phone"]) || repPhone,
+      tenantIsCompany ? "organization" : "individual",
     );
+    if (tenantIsCompany && repName) {
+      await findOrCreateContact(repName, "tenant_representative", repNid, repPhone);
+      warnings.push(
+        `المستأجر منشأة تجارية «${tenantName}» — ممثلها النظامي: ${repName}${repNid ? ` (هوية ${repNid})` : ""}.`,
+      );
+    }
     const brokerId = await findOrCreateContact(brokerName, "broker", "", str(e["broker_phone"]));
     if (!ownerName) warnings.push("لم يُستخرج اسم المالك من الملف.");
     if (!tenantName) warnings.push("لم يُستخرج اسم المستأجر من الملف.");
 
     // العقار
-    const propertyName = str(e["property_name"]) || str(e["unit_number"]);
+    const propertyName =
+      str(e["property_name"]) ||
+      [str(e["property_type"]), str(e["district"])].filter(Boolean).join(" — ") ||
+      (str(e["unit_number"]) ? `وحدة ${str(e["unit_number"])}` : "");
     let propertyId: string | null = null;
     if (propertyName) {
       const found = await db.from("properties").select("id").ilike("name", propertyName).limit(1);
@@ -164,7 +183,27 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
         : cycleRaw.includes("نصف") || cycleRaw.includes("semi")
           ? "semiannual"
           : "annual";
-    const paymentsCount = Math.min(Math.max(Number(num(e["payments_count"]) ?? 1), 1), 60);
+    // جدول الدفعات المنصوص عليه في البند ١٢ إن وُجد
+    const rawRows = Array.isArray(e["payments"]) ? (e["payments"] as Record<string, unknown>[]) : [];
+    const scheduleRows = rawRows
+      .filter((r) => r && typeof r === "object")
+      .map((r) => ({
+        due: /^\d{4}-\d{2}-\d{2}$/.test(str(r["due_date"])) ? str(r["due_date"]) : null,
+        amount:
+          num(r["total"]) ??
+          (num(r["rent"]) ?? 0) + (num(r["vat"]) ?? 0) + (num(r["services"]) ?? 0),
+      }))
+      .filter((r) => r.due || r.amount);
+    const declaredCount = Number(num(e["payments_count"]) ?? 0);
+    const paymentsCount = Math.min(
+      Math.max(scheduleRows.length || declaredCount || 1, 1),
+      60,
+    );
+    if (declaredCount && scheduleRows.length && declaredCount !== scheduleRows.length) {
+      warnings.push(
+        `عدد الدفعات المذكور (${declaredCount}) يخالف صفوف جدول السداد (${scheduleRows.length}) — اعتُمد الجدول.`,
+      );
+    }
 
     // منع تكرار رقم العقد لنفس النوع
     const contractType = isSale ? "sale" : "rent";
@@ -220,16 +259,20 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
     // جدول الدفعات
     const base = startDate ? new Date(startDate) : new Date();
     const amountEach = total ? Math.round((total / paymentsCount) * 100) / 100 : 0;
-    if (!amountEach) warnings.push("قيمة العقد غير واضحة — أُنشئت الدفعات بقيمة صفر للمراجعة.");
-    const payments = Array.from({ length: paymentsCount }, (_, i) => ({
-      contract_id: contractId,
-      payment_number: i + 1,
-      due_date: addCycle(base, cycle, i),
-      amount_due: amountEach,
-      amount_paid: 0,
-      status: "pending",
-      is_derived: true,
-    }));
+    if (!amountEach && !scheduleRows.length)
+      warnings.push("قيمة العقد غير واضحة — أُنشئت الدفعات بقيمة صفر للمراجعة.");
+    const payments = Array.from({ length: paymentsCount }, (_, i) => {
+      const row = scheduleRows[i];
+      return {
+        contract_id: contractId,
+        payment_number: i + 1,
+        due_date: row?.due ?? addCycle(base, cycle, i),
+        amount_due: row?.amount ?? amountEach,
+        amount_paid: 0,
+        status: "pending",
+        is_derived: !row,
+      };
+    });
     const payIns = await db.from("contract_payments").insert(payments).select("id, due_date, amount_due, payment_number");
     if (payIns.error) warnings.push(`تعذّر إنشاء جدول الدفعات: ${payIns.error.message}`);
     else created.push(`${payIns.data.length} دفعة مجدولة`);
