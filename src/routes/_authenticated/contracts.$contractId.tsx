@@ -399,6 +399,29 @@ function ContractViewPage() {
               ) : null}
             </div>
           </Section>
+
+          {extraFields.length || importWarnings.length ? (
+            <Section title="كل بيانات العقد كما وردت في الملف">
+              {extraction.data?.["file_name"] ? (
+                <p className="mb-3 text-[12px] text-muted-foreground">
+                  المصدر: {String(extraction.data["file_name"])}
+                </p>
+              ) : null}
+              <div className="grid gap-3 sm:grid-cols-3">
+                {extraFields.map((f) => (
+                  <Row key={f.label} label={f.label} value={String(f.value)} />
+                ))}
+              </div>
+              {importWarnings.length ? (
+                <ul className="mt-4 space-y-1 rounded-xl bg-amber-50 p-3 text-[12.5px] text-amber-900">
+                  {importWarnings.map((w) => (
+                    <li key={w}>• {w}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </Section>
+          ) : null}
+
         </div>
       )}
     </>
