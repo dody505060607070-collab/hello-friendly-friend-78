@@ -54,6 +54,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function ContractViewPage() {
   const { contractId } = Route.useParams();
   const navigate = useNavigate();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [alsoOwner, setAlsoOwner] = useState(false);
+
+
 
   const contract = useQuery({
     queryKey: ["contract-view", contractId],
