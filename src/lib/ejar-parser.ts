@@ -69,6 +69,9 @@ const LABELS = [
   "Floor No.",
   "Unit Area",
   "Annual Rent:",
+  "Annual Rent",
+  "Last Rent Payment:",
+
   "Total Contract value",
   "VAT on rental value:",
   "Security Deposit (Not included in total contract amount):",
