@@ -231,7 +231,15 @@ export function parseEjarContract(rawText: string): EjarParsed | null {
   }
 
   const g = (sec: Sec, key: string) => get[sec]?.[key] ?? "";
+  const anySec = (key: string) => {
+    for (const bucket of Object.values(get)) {
+      const v = bucket?.[key];
+      if (v) return v;
+    }
+    return "";
+  };
   const contract = (k: string) => g("contract", k);
+
 
   // جدول الدفعات: صفوف بترتيب معكوس (RTL) — نموذجان مختلفان للتخطيط
   const payments: EjarPayment[] = [];
