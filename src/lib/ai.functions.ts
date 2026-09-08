@@ -8,25 +8,56 @@ const MODEL = "openai/gpt-5.6-sol";
 type Part = { type: "input_text"; text: string } | { type: "input_file"; filename: string; file_data: string };
 type Item = { role: "system" | "user" | "assistant"; content: Part[] };
 
+/**
+ * The Responses API only accepts `output_text` parts on assistant items;
+ * `input_text` on an assistant turn fails with 400 invalid_value.
+ */
+function normalize(input: Item[]) {
+  return input.map((item) => ({
+    role: item.role,
+    content: item.content.map((part) =>
+      item.role === "assistant" && part.type === "input_text"
+        ? { type: "output_text", text: part.text }
+        : part,
+    ),
+  }));
+}
+
+const FALLBACK_MODELS = [MODEL, "openai/gpt-5.5", "google/gemini-3.8-flash"];
+
 async function callGateway(input: Item[]): Promise<string> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("خدمة الذكاء الاصطناعي غير مهيأة على الخادم.");
 
-  const res = await fetch(GATEWAY, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
-      "Lovable-API-Key": key,
-    },
-    body: JSON.stringify({ model: MODEL, input }),
-  });
+  const payloadInput = normalize(input);
+  let res: Response | null = null;
+  let lastBody = "";
+  let lastStatus = 0;
 
-  if (!res.ok) {
-    const body = await res.text();
-    if (res.status === 402) throw new Error("انتهى رصيد الذكاء الاصطناعي. أضِف رصيدًا للمتابعة.");
-    if (res.status === 429) throw new Error("عدد الطلبات كبير الآن، حاول بعد لحظات.");
-    throw new Error(`فشل طلب الذكاء الاصطناعي (${res.status}): ${body.slice(0, 240)}`);
+  for (const model of FALLBACK_MODELS) {
+    const attempt = await fetch(GATEWAY, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+        "Lovable-API-Key": key,
+      },
+      body: JSON.stringify({ model, input: payloadInput, store: false }),
+    });
+    if (attempt.ok) {
+      res = attempt;
+      break;
+    }
+    lastStatus = attempt.status;
+    lastBody = await attempt.text();
+    // 400 = بنية الطلب خاطئة، تغيير النموذج لن يفيد.
+    if (attempt.status === 400 || attempt.status === 401) break;
+  }
+
+  if (!res) {
+    if (lastStatus === 402) throw new Error("انتهى رصيد الذكاء الاصطناعي. أضِف رصيدًا للمتابعة.");
+    if (lastStatus === 429) throw new Error("عدد الطلبات كبير الآن، حاول بعد لحظات.");
+    throw new Error(`فشل طلب الذكاء الاصطناعي (${lastStatus}): ${lastBody.slice(0, 240)}`);
   }
 
   const json = (await res.json()) as {
