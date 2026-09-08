@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireUnlocked } from "./kill-switch.server";
 
 type Extraction = Record<string, unknown>;
 
