@@ -198,13 +198,15 @@ function AuthPage() {
         ) : null}
 
 
-        <button
-          type="button"
-          className="mt-6 w-full text-[13px] text-primary underline-offset-4 hover:underline"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-        >
-          {mode === "signin" ? "ليس لديك حساب؟ إنشاء حساب" : "لدي حساب بالفعل — تسجيل الدخول"}
-        </button>
+        {audience === "staff" ? (
+          <button
+            type="button"
+            className="mt-6 w-full text-[13px] text-primary underline-offset-4 hover:underline"
+            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+          >
+            {mode === "signin" ? "ليس لديك حساب؟ إنشاء حساب" : "لدي حساب بالفعل — تسجيل الدخول"}
+          </button>
+        ) : null}
       </div>
     </main>
   );
