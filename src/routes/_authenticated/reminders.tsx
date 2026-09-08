@@ -128,6 +128,13 @@ function RemindersPage() {
 
   const selectedContact = (contacts.data ?? []).find((c) => c.id === contactId);
   const phone = selectedContact?.whatsapp ?? selectedContact?.phone ?? "";
+  const selectedContract = (contracts.data ?? []).find((c) => c.id === contractId);
+
+  const fillTemplate = (text: string) =>
+    text
+      .replaceAll("{{name}}", selectedContact?.full_name ?? "")
+      .replaceAll("{{contract}}", selectedContract?.contract_number ?? "")
+      .replaceAll("{{date}}", new Date().toISOString().slice(0, 10));
 
   const schedule = useMutation({
     mutationFn: async () => {
