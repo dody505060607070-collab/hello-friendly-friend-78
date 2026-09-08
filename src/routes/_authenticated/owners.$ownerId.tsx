@@ -524,7 +524,6 @@ function OwnerDetailPage() {
           {stats.nearest.map((p) => {
             const contract = data.contracts.find((c) => c.id === p.contract_id);
             const late = daysBetween(p.due_date) < 0;
-            const link = reminderLink(contract, p);
             return (
               <div
                 key={p.id}
@@ -544,17 +543,15 @@ function OwnerDetailPage() {
                   <Chip tone={paymentTone(p)}>
                     {late ? `متأخرة منذ ${Math.abs(daysBetween(p.due_date))} يوم` : `خلال ${daysBetween(p.due_date)} يوم`}
                   </Chip>
-                  {link ? (
-                    <a
-                      href={link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="grid size-8 place-items-center rounded-lg border border-border text-muted-foreground hover:text-success"
-                      title="إرسال تذكير واتساب"
-                    >
-                      <MessageCircle className="size-4" />
-                    </a>
-                  ) : null}
+                  <Link
+                    to="/payment-reminder/$paymentId"
+                    params={{ paymentId: p.id }}
+                    className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2.5 text-[12px] font-semibold text-muted-foreground hover:text-success"
+                    title="إرسال تذكير"
+                  >
+                    <MessageCircle className="size-3.5" />
+                    إرسال تذكير
+                  </Link>
                 </div>
               </div>
             );
@@ -728,19 +725,15 @@ function OwnerDetailPage() {
                                             )}
                                           </td>
                                           <td className="p-2">
-                                            {payLink ? (
-                                              <a
-                                                href={payLink}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="grid size-8 place-items-center rounded-lg border border-border text-muted-foreground hover:text-success"
-                                                title="تذكير واتساب"
-                                              >
-                                                <MessageCircle className="size-4" />
-                                              </a>
-                                            ) : (
-                                              "—"
-                                            )}
+                                            <Link
+                                              to="/payment-reminder/$paymentId"
+                                              params={{ paymentId: p.id }}
+                                              className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2.5 text-[12px] font-semibold text-muted-foreground hover:text-success"
+                                              title="إرسال تذكير"
+                                            >
+                                              <MessageCircle className="size-3.5" />
+                                              إرسال تذكير
+                                            </Link>
                                           </td>
                                         </tr>
                                       );
