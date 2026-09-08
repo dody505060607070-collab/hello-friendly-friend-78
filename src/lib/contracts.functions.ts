@@ -471,7 +471,21 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
           approved_at: new Date().toISOString(),
         })
         .eq("id", data.importId);
+    } else {
+      // نحفظ نسخة كاملة من البيانات المستخرجة حتى تظهر كل تفاصيل العقد في صفحته.
+      await db.from("contract_imports").insert({
+        file_path: data.filePath ?? "",
+        file_name: (data.filePath ?? "contract.pdf").split("/").pop() ?? "contract.pdf",
+        status: warnings.length ? "needs_review" : "approved",
+        extraction: e as never,
+        warnings: warnings as never,
+        contract_id: contractId,
+        uploaded_by: context.userId,
+        approved_by: context.userId,
+        approved_at: new Date().toISOString(),
+      });
     }
+
 
     await db.from("activity_log").insert({
       actor_id: context.userId,
