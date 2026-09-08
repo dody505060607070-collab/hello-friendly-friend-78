@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { FileText, FileUp, Loader2, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Eye, FileText, FileUp, Loader2, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -410,6 +410,14 @@ function ContractsPage() {
               header: "إجراءات",
               cell: (r) => (
                 <span className="inline-flex items-center gap-3">
+                  <Link
+                    to="/contracts/$contractId"
+                    params={{ contractId: r.id }}
+                    className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-foreground"
+                  >
+                    <Eye className="size-4" />
+                    عرض
+                  </Link>
                   <button
                     type="button"
                     onClick={() => openEdit(r)}

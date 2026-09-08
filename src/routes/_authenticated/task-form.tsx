@@ -10,6 +10,7 @@ import {
   Trash2,
   UploadCloud,
   Users,
+  MapPin,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -50,6 +51,9 @@ const emptyForm = {
   due_time: "",
   property_id: "",
   contact_id: "",
+  location_text: "",
+  location_lat: "",
+  location_lng: "",
 };
 
 type FormState = typeof emptyForm;
@@ -180,6 +184,9 @@ function TaskFormPage() {
       due_time: row.due_time ?? "",
       property_id: row.property_id ?? "",
       contact_id: row.contact_id ?? "",
+      location_text: (row as Record<string, unknown>)["location_text"]?.toString() ?? "",
+      location_lat: (row as Record<string, unknown>)["location_lat"]?.toString() ?? "",
+      location_lng: (row as Record<string, unknown>)["location_lng"]?.toString() ?? "",
     });
   }, [task.data]);
 
@@ -200,6 +207,9 @@ function TaskFormPage() {
         due_time: form.due_time || null,
         property_id: form.property_id || null,
         contact_id: form.contact_id || null,
+        location_text: form.location_text.trim() || null,
+        location_lat: form.location_lat ? Number(form.location_lat) : null,
+        location_lng: form.location_lng ? Number(form.location_lng) : null,
       };
       let taskId = id;
       if (taskId) {
@@ -448,6 +458,64 @@ function TaskFormPage() {
           </Field>
         </div>
       </SectionCard>
+
+      <SectionCard
+        title="موقع المهمة"
+        subtitle="حدد وصف الموقع والإحداثيات؛ تظهر خريطة مصغّرة للموظف مع إمكانية فتح الاتجاهات."
+        icon={MapPin}
+      >
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="وصف الموقع" className="sm:col-span-3">
+            <input
+              className={inputClass}
+              value={form.location_text}
+              onChange={(e) => set({ location_text: e.target.value })}
+              placeholder="مثال: حي الملقا - شارع أنس بن مالك"
+            />
+          </Field>
+          <Field label="خط العرض (Lat)">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.location_lat}
+              onChange={(e) => set({ location_lat: e.target.value })}
+              placeholder="24.7136"
+            />
+          </Field>
+          <Field label="خط الطول (Lng)">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.location_lng}
+              onChange={(e) => set({ location_lng: e.target.value })}
+              placeholder="46.6753"
+            />
+          </Field>
+          <Field label="اتجاهات">
+            {form.location_lat && form.location_lng ? (
+              <a
+                className="inline-flex h-10 items-center rounded-lg border border-border px-3 text-[13px] font-semibold text-primary"
+                href={`https://www.google.com/maps/dir/?api=1&destination=${form.location_lat},${form.location_lng}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                فتح في خرائط Google
+              </a>
+            ) : (
+              <p className="text-[12.5px] text-muted-foreground">أدخل الإحداثيات لعرض الخريطة.</p>
+            )}
+          </Field>
+        </div>
+        {form.location_lat && form.location_lng ? (
+          <iframe
+            title="خريطة موقع المهمة"
+            className="mt-4 h-56 w-full rounded-xl border border-border"
+            loading="lazy"
+            src={`https://www.google.com/maps?q=${form.location_lat},${form.location_lng}&z=15&output=embed`}
+          />
+        ) : null}
+      </SectionCard>
+
 
       <SectionCard
         title="الموظفون المكلّفون"

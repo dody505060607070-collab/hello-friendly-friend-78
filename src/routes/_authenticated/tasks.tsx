@@ -31,7 +31,20 @@ type Row = {
   due_time: string | null;
   property_id: string | null;
   property: { name: string } | null;
+  location_text: string | null;
+  location_lat: number | null;
+  location_lng: number | null;
   created_at: string;
+};
+
+const STATUS_STYLE: Record<string, string> = {
+  new: "border-sky-300 bg-sky-50 text-sky-700",
+  in_progress: "border-amber-300 bg-amber-50 text-amber-800",
+  submitted: "border-violet-300 bg-violet-50 text-violet-700",
+  approved: "border-emerald-300 bg-emerald-50 text-emerald-700",
+  done: "border-emerald-300 bg-emerald-50 text-emerald-700",
+  rejected: "border-rose-300 bg-rose-50 text-rose-700",
+  cancelled: "border-slate-300 bg-slate-100 text-slate-600",
 };
 
 export const Route = createFileRoute("/_authenticated/tasks")({
@@ -52,7 +65,7 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 });
 
 const SELECT =
-  "id, title, details, task_type, priority, status, due_date, due_time, property_id, created_at, property:property_id(name)";
+  "id, title, details, task_type, priority, status, due_date, due_time, property_id, created_at, location_text, location_lat, location_lng, property:property_id(name)";
 
 const statusOrder = ["new", "in_progress", "submitted", "approved", "rejected", "done", "cancelled"];
 

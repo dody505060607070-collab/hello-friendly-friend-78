@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Field, inputClass, textareaClass } from "@/components/kit/Modal";
+import { SOCIAL_PLATFORMS, SocialGlyph } from "@/components/site/SocialIcons";
 import { PageHero } from "@/components/kit/PageHero";
 import { Toggle } from "@/components/kit/Toggle";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,6 +67,13 @@ const emptyForm = {
   latitude: "",
   longitude: "",
   whatsapp_number: "",
+  link_youtube: "",
+  link_tiktok: "",
+  link_instagram: "",
+  link_snapchat: "",
+  link_x: "",
+  link_facebook: "",
+  link_tour: "",
   sort_order: "0",
   internal_notes: "",
   is_visible: true,
@@ -196,6 +204,13 @@ function PropertyFormPage() {
       latitude: row.latitude != null ? String(row.latitude) : "",
       longitude: row.longitude != null ? String(row.longitude) : "",
       whatsapp_number: row.whatsapp_number ?? "",
+      link_youtube: row.link_youtube ?? "",
+      link_tiktok: row.link_tiktok ?? "",
+      link_instagram: row.link_instagram ?? "",
+      link_snapchat: row.link_snapchat ?? "",
+      link_x: row.link_x ?? "",
+      link_facebook: row.link_facebook ?? "",
+      link_tour: row.link_tour ?? "",
       sort_order: String(row.sort_order ?? 0),
       internal_notes: row.internal_notes ?? "",
       is_visible: Boolean(row.is_visible),
@@ -258,6 +273,9 @@ function PropertyFormPage() {
         latitude: form.latitude ? Number(form.latitude) : null,
         longitude: form.longitude ? Number(form.longitude) : null,
         whatsapp_number: form.whatsapp_number.trim() || null,
+        ...Object.fromEntries(
+          SOCIAL_PLATFORMS.map((p) => [p.key, (form[p.key] as string).trim() || null]),
+        ),
         sort_order: Number(form.sort_order) || 0,
         internal_notes: form.internal_notes.trim() || null,
         owner_id: ownerId || null,
@@ -649,6 +667,34 @@ function PropertyFormPage() {
               placeholder="43.9750"
             />
           </Field>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="روابط التواصل والوسائط"
+        subtitle="كل منصة لها خانة مستقلة، وتظهر بأيقونتها الحقيقية في صفحة العقار على الموقع."
+        icon={Film}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          {SOCIAL_PLATFORMS.map((p) => (
+            <Field key={p.key} label={p.label}>
+              <div className="flex items-center gap-2">
+                <span
+                  className="grid size-9 shrink-0 place-items-center rounded-lg border border-border"
+                  style={{ color: p.color }}
+                >
+                  <SocialGlyph platform={p.key} />
+                </span>
+                <input
+                  className={inputClass}
+                  dir="ltr"
+                  value={form[p.key]}
+                  onChange={(e) => set({ [p.key]: e.target.value } as Partial<FormState>)}
+                  placeholder={p.placeholder}
+                />
+              </div>
+            </Field>
+          ))}
         </div>
       </SectionCard>
 

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { FavoriteButton } from "@/components/site/FavoriteButton";
 import { PropertyCard } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { SOCIAL_PLATFORMS, SocialGlyph } from "@/components/site/SocialIcons";
 import { recordView } from "@/lib/favorites";
 import {
   COMPANY_PHONE,
@@ -229,6 +230,29 @@ function PropertyPage() {
                   <Share2 className="size-4" />
                   مشاركة العقار
                 </button>
+                {SOCIAL_PLATFORMS.some((p) => property[p.key]) ? (
+                  <div className="rounded-xl border border-border p-3">
+                    <p className="mb-2.5 text-[12.5px] font-semibold text-muted-foreground">
+                      شاهد العقار على
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {SOCIAL_PLATFORMS.filter((p) => property[p.key]).map((p) => (
+                        <a
+                          key={p.key}
+                          href={property[p.key] as string}
+                          target="_blank"
+                          rel="noreferrer"
+                          title={p.label}
+                          aria-label={p.label}
+                          className="grid size-10 place-items-center rounded-lg border border-border transition hover:scale-105 hover:shadow-sm"
+                          style={{ color: p.color }}
+                        >
+                          <SocialGlyph platform={p.key} className="size-5" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
                 {property.map_url ? (
                   <a
                     href={property.map_url}
