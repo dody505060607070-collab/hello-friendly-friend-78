@@ -140,17 +140,20 @@ export function AppShell({ children }: { children: ReactNode }) {
           <NotificationsBell />
         </div>
 
-        <Link to="/dashboard" className="absolute left-1/2 -translate-x-1/2">
+        <Link
+          to="/dashboard"
+          className="pointer-events-none absolute left-1/2 -translate-x-1/2 md:pointer-events-auto"
+        >
           <img
             src={logoAsset.url}
             alt="مثراء العقارية"
             width={1152}
             height={576}
-            className="h-16 w-auto md:h-[96px]"
+            className="h-9 w-auto md:h-[96px]"
           />
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="relative z-10 flex items-center gap-3">
           <div className="hidden text-end md:block">
             <p className="text-[14px] font-bold leading-tight text-foreground">
               {profile?.full_name ?? "—"}
