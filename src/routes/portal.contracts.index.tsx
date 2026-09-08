@@ -34,7 +34,18 @@ function PortalContracts() {
   if (isLoading) return <p className="text-sm text-muted-foreground">جاري التحميل…</p>;
   if (error) return <p className="text-sm text-destructive">{(error as Error).message}</p>;
 
-  const contracts = data?.contracts ?? [];
+  const contracts = (data?.contracts ?? []) as unknown as {
+    id: string;
+    contract_number: string;
+    status: string;
+    start_date: string | null;
+    end_date: string | null;
+    annual_rent: number | null;
+    payment_cycle: string | null;
+    property: { name: string; city: string | null; district: string | null } | null;
+    unit: { unit_number: string | null; unit_type: string | null } | null;
+    tenant: { full_name: string } | null;
+  }[];
   const payments = data?.payments ?? [];
   const today = new Date().toISOString().slice(0, 10);
 
@@ -42,7 +53,7 @@ function PortalContracts() {
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-bold text-foreground">العقود</h1>
-        <p className="text-sm text-muted-foreground">جميع عقودك مع مثراء العقارية.</p>
+        <p className="text-sm text-muted-foreground">جميع عقوداتك الإيجارية — عرض فقط.</p>
       </div>
 
       {contracts.length === 0 ? (
@@ -53,40 +64,54 @@ function PortalContracts() {
         const own = payments.filter((p) => p.contract_id === c.id);
         const paid = own.filter((p) => p.status === "paid").length;
         const late = own.filter((p) => p.status !== "paid" && p.due_date < today).length;
+        const rest = own.length - paid - late;
         return (
           <article key={c.id} className="rounded-2xl border border-border bg-card p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <p className="text-xs text-muted-foreground">رقم العقد</p>
+                <p className="text-[11px] text-muted-foreground">رقم العقد</p>
                 <p className="text-base font-bold">{c.contract_number}</p>
               </div>
               <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                {c.status === "active" ? "نشط" : c.status}
+                • {c.status === "active" ? "نشط" : c.status}
               </span>
             </div>
 
-            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-4">
+            <div className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
               <div>
-                <dt className="text-xs text-muted-foreground">تاريخ البداية</dt>
-                <dd className="font-semibold">{c.start_date ?? "—"}</dd>
+                <p className="text-[11px] text-muted-foreground">العقار / الوحدة</p>
+                <p className="font-semibold">{c.property?.name ?? "—"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {c.unit?.unit_number ? `${c.unit.unit_type ?? "شقة"} — وحدة ${c.unit.unit_number}` : "—"}
+                </p>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">تاريخ الانتهاء</dt>
-                <dd className="font-semibold">{c.end_date ?? "—"}</dd>
+                <p className="text-[11px] text-muted-foreground">المستأجر</p>
+                <p className="font-semibold">{c.tenant?.full_name ?? "—"}</p>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">دورة الدفع</dt>
-                <dd className="font-semibold">{cycleLabel[c.payment_cycle ?? ""] ?? c.payment_cycle ?? "—"}</dd>
+                <p className="text-[11px] text-muted-foreground">الإيجار السنوي</p>
+                <p className="font-semibold">{Number(c.annual_rent ?? 0).toLocaleString("en-US")} ر.س</p>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">الإيجار السنوي</dt>
-                <dd className="font-semibold">{Number(c.annual_rent ?? 0).toLocaleString("en-US")} ر.س</dd>
+                <p className="text-[11px] text-muted-foreground">تاريخ البداية</p>
+                <p className="font-semibold">{c.start_date ?? "—"}</p>
               </div>
-            </dl>
+              <div>
+                <p className="text-[11px] text-muted-foreground">تاريخ الانتهاء</p>
+                <p className="font-semibold">{c.end_date ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground">دورة الدفع</p>
+                <p className="font-semibold">{cycleLabel[c.payment_cycle ?? ""] ?? c.payment_cycle ?? "غير مسجل"}</p>
+              </div>
+            </div>
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="text-muted-foreground">
-                مسددة {paid} • {late ? <span className="text-destructive">متأخرة {late}</span> : "لا توجد متأخرات"}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+              <span className="flex flex-wrap gap-3 text-muted-foreground">
+                <span>مسددة {paid}</span>
+                {rest > 0 ? <span className="text-amber-600">قادمة {rest}</span> : null}
+                {late > 0 ? <span className="text-destructive">متأخرة {late}</span> : null}
               </span>
               <Link
                 to="/portal/contracts/$contractId"
