@@ -105,6 +105,7 @@ function ListPropertyPage() {
         budget_min: "",
         budget_max: "",
       });
+      void navigate({ to: "/thank-you" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "تعذّر إرسال الطلب، حاول مرة أخرى");
     } finally {
