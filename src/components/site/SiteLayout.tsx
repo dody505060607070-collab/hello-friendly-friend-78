@@ -232,7 +232,7 @@ function CookieBanner() {
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background pb-16 md:pb-0">
+    <div className="flex min-h-screen flex-col bg-background">
       <ScrollProgress />
       <SiteHeader />
       <main className="flex-1">{children}</main>
@@ -240,7 +240,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       <FloatingActions />
       <AiWidget />
       <CookieBanner />
-      <MobileStickyCta />
     </div>
   );
 }
