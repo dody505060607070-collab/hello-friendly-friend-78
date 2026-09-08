@@ -323,12 +323,13 @@ export function parseEjarContract(rawText: string): EjarParsed | null {
     property_name: [propertyType || usage, district].filter(Boolean).join(" — "),
     unit_number: units.map((u) => u.unit_number).filter(Boolean).join("، "),
     units,
-    annual_rent: num(g("financial", "Annual Rent:")),
-    total_value: num(g("financial", "Total Contract value")),
-    vat: num(g("financial", "VAT on rental value:")),
-    deposit: num(g("financial", "Security Deposit (Not included in total contract amount):")),
-    payment_cycle: g("financial", "Rent payment cycle"),
-    payments_count: Number(g("financial", "Number of Rent Payments:")) || payments.length,
+    annual_rent: num(anySec("Annual Rent:") || anySec("Annual Rent")) || num(anySec("Total Contract value")),
+    total_value: num(anySec("Total Contract value")),
+    vat: num(anySec("VAT on rental value:")),
+    deposit: num(anySec("Security Deposit (Not included in total contract amount):")),
+    payment_cycle: cycleLabel(anySec("Rent payment cycle")),
+    payments_count: Number(anySec("Number of Rent Payments:")) || payments.length,
+
     payments,
   };
 }
