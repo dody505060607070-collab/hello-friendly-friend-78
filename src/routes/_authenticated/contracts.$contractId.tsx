@@ -126,7 +126,6 @@ function ContractViewPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             to="/contracts"
-            search={{ edit: contractId }}
             className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 text-[13px] font-semibold hover:bg-muted"
           >
             <Pencil className="size-4" />
