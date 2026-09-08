@@ -119,7 +119,7 @@ function AuthPage() {
         </h1>
         <p className="mt-2 text-center text-[13px] text-muted-foreground">
           {audience === "client"
-            ? "اسم المستخدم هو رقم الهوية، وكلمة المرور رقم جوالك الذي يبدأ بـ 05."
+            ? "اسم المستخدم هو رقم الهوية، ومعه كلمة المرور الخاصة بك."
             : "الوصول للبيانات الداخلية متاح للموظفين المصرّح لهم فقط."}
         </p>
 
@@ -174,7 +174,7 @@ function AuthPage() {
               minLength={audience === "client" ? 6 : 8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={audience === "client" ? "05xxxxxxxx" : undefined}
+              placeholder={undefined}
             />
           </div>
 
