@@ -23,7 +23,7 @@ type Row = {
   contract: { contract_number: string } | null;
 };
 
-export const Route = createFileRoute("/_authenticated/invoices")({
+export const Route = createFileRoute("/_authenticated/invoices/")({
   head: () => ({ meta: [
     { title: "الفواتير | مثراء العقارية" },
     { name: "description", content: "إدارة الفواتير وحالات السداد والمدفوعات." },
