@@ -1,4 +1,4 @@
-import { ArrowUp, MessageCircle } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { whatsappLink } from "@/lib/site-data";
