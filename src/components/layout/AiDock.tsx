@@ -76,11 +76,30 @@ export function AiDock() {
   };
 
   return (
-    <>
+    <div
+      style={{ transform: `translate3d(${pos.x}px, ${pos.y}px, 0)` }}
+      className="fixed bottom-6 end-5 z-50"
+    >
       {/* الزر العائم: مجرّد المرور عليه أثناء السحب يفتح المساعد */}
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onPointerDown={(e) => {
+          (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+          drag.current = { x: e.clientX, y: e.clientY, ox: pos.x, oy: pos.y, moved: false };
+        }}
+        onPointerMove={(e) => {
+          const d = drag.current;
+          if (!d) return;
+          const dx = e.clientX - d.x;
+          const dy = e.clientY - d.y;
+          if (Math.abs(dx) > 4 || Math.abs(dy) > 4) d.moved = true;
+          setPos({ x: d.ox + dx, y: d.oy + dy });
+        }}
+        onPointerUp={() => {
+          const moved = drag.current?.moved;
+          drag.current = null;
+          if (!moved) setOpen((v) => !v);
+        }}
         onDragEnter={() => setOpen(true)}
         onDragOver={(e) => {
           e.preventDefault();
@@ -91,8 +110,9 @@ export function AiDock() {
           receive(e.dataTransfer.getData("text/plain"));
         }}
         aria-label="المساعد الذكي"
+        title="اسحب لتحريك المساعد • اضغط للفتح"
         className={cn(
-          "fixed bottom-6 end-5 z-50 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-[13px] font-bold text-primary-foreground shadow-float transition-transform hover:scale-105",
+          "inline-flex touch-none select-none items-center gap-2 rounded-full bg-primary px-4 py-3 text-[13px] font-bold text-primary-foreground shadow-float transition-transform hover:scale-105",
           dropping && "scale-110 ring-4 ring-primary/25",
         )}
       >
@@ -107,7 +127,7 @@ export function AiDock() {
             e.preventDefault();
             receive(e.dataTransfer.getData("text/plain"));
           }}
-          className="fixed bottom-24 end-4 z-50 flex h-[30rem] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-float"
+          className="absolute bottom-16 end-0 flex h-[30rem] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-float"
         >
           <header className="flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
             <h2 className="flex items-center gap-2 text-[13.5px] font-bold">
