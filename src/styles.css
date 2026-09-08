@@ -301,3 +301,17 @@
   --primary-foreground: 0 0% 100%;
   --ring: 217 91% 45%;
 }
+
+/* تأمين ألوان علامات الخريطة */
+.mithra-map-marker,
+.mithra-map-marker * {
+  background-color: transparent !important;
+}
+
+.mithra-marker-pin > div:first-child {
+  background-color: var(--marker-color, #EF4444) !important;
+}
+
+.mithra-marker-pin > div:last-child {
+  border-top-color: var(--marker-color, #EF4444) !important;
+}
