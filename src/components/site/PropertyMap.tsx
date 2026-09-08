@@ -16,7 +16,7 @@ const filters = [
 
 const colors: Record<string, string> = {
   sale: "#E0A800",
-  rent: "#2563EB",
+  rent: "#DC2626",
 };
 
 export function PropertyMap({
