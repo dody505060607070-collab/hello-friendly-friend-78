@@ -227,6 +227,7 @@ export const askAdminAi = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }) => {
+    const { requireUnlocked } = await import("./kill-switch.server");
     await requireUnlocked();
     const items: Item[] = [{ role: "system", content: [{ type: "input_text", text: SYSTEM_PROMPT }] }];
     const latestQuestion = data.messages.at(-1)?.content ?? "";
