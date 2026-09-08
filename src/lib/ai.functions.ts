@@ -57,8 +57,11 @@ async function callGroq(input: Item[]): Promise<string> {
   return text;
 }
 
+/** خيارات تسريع الاستدعاء (تُستخدم في تحليل العقود). */
+type CallOpts = { json?: boolean; fast?: boolean; maxTokens?: number };
+
 /** المزوّد الاحتياطي الثاني: Gemini (يدعم الملفات). */
-async function callGemini(input: Item[]): Promise<string> {
+async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
   const keys = [process.env["GEMINI_API_KEY"], process.env["GEMINI_BACKUP_API_KEY"]].filter(
     (k): k is string => Boolean(k),
   );
@@ -93,6 +96,13 @@ async function callGemini(input: Item[]): Promise<string> {
         body: JSON.stringify({
           contents,
           ...(systemText ? { system_instruction: { parts: [{ text: systemText }] } } : {}),
+          generationConfig: {
+            temperature: 0,
+            ...(opts.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}),
+            ...(opts.json ? { responseMimeType: "application/json" } : {}),
+            // إيقاف "التفكير" يقلّل زمن الاستجابة بشكل كبير في مهام الاستخراج.
+            ...(opts.fast ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+          },
         }),
       },
     );
@@ -118,10 +128,10 @@ async function callGemini(input: Item[]): Promise<string> {
  * ثم Groq، وأخيرًا بوابة Lovable فقط إن وُجد مفتاحها — حتى يعمل النظام كاملًا على
  * خادم Hostinger VPS بدون أي اعتماد على Lovable.
  */
-async function callGateway(input: Item[]): Promise<string> {
+async function callGateway(input: Item[], opts: CallOpts = {}): Promise<string> {
   const errors: string[] = [];
   try {
-    return await callGemini(input);
+    return await callGemini(input, opts);
   } catch (e) {
     errors.push(e instanceof Error ? e.message : String(e));
   }
@@ -252,16 +262,25 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
 {"contract_number":"","contract_type":"rent|sale","owner_name":"","tenant_name":"","broker_name":"","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD","signed_date":"YYYY-MM-DD","annual_rent":0,"total_value":0,"deposit":0,"fees":0,"payment_cycle":"","payments_count":0,"property_name":"","unit_number":"","city":"","district":"","special_terms":"","warnings":[]}
 اترك أي قيمة غير موجودة فارغة أو null، وأضِف أي ملاحظة مهمة في warnings.`;
 
-    const text = await callGateway([
-      { role: "system", content: [{ type: "input_text", text: SYSTEM_PROMPT }] },
-      {
-        role: "user",
-        content: [
-          { type: "input_text", text: instruction },
-          { type: "input_file", filename: data.fileName, file_data: data.dataUrl },
-        ],
-      },
-    ]);
+    // نظام مختصر + JSON مباشر + بدون "تفكير" = استجابة أسرع بكثير.
+    const text = await callGateway(
+      [
+        {
+          role: "system",
+          content: [
+            { type: "input_text", text: "أنت مستخرج بيانات عقود عقارية. أعد JSON فقط دون أي شرح." },
+          ],
+        },
+        {
+          role: "user",
+          content: [
+            { type: "input_text", text: instruction },
+            { type: "input_file", filename: data.fileName, file_data: data.dataUrl },
+          ],
+        },
+      ],
+      { json: true, fast: true, maxTokens: 1200 },
+    );
 
     const match = text.match(/\{[\s\S]*\}/);
     let extractionJson = "{}";
