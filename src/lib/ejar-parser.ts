@@ -290,10 +290,11 @@ export function parseEjarContract(rawText: string): EjarParsed | null {
 
   const nationalAddress = g("property", "National Address") || g("lessor", "National Address");
   const district = nationalAddress
-    .split(",")
-    .map((s) => s.trim())
-    .filter((s) => s && !/^\d+$/.test(s))
+    .split(/[,،]/)
+    .map((s) => s.replace(/[،,]/g, "").replace(/\d+/g, "").trim())
+    .filter(Boolean)
     .slice(-1)[0] ?? "";
+
 
   const companyName = g("tenant", "Company name/Founder");
   const isCompany = Boolean(companyName || g("tenant", "CR No."));
