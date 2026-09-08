@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { resolveClientLogin } from "@/lib/portal.functions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
