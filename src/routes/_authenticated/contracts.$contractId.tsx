@@ -99,10 +99,8 @@ function ContractViewPage() {
   const c: any = contract.data;
 
   const remove = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("contracts").delete().eq("id", contractId);
-      if (error) throw error;
-    },
+    mutationFn: async (alsoOwner: boolean) =>
+      deleteContractWithOwner(contractId, (c?.owner_id as string | null) ?? null, alsoOwner),
     onSuccess: () => {
       toast.success("تم حذف العقد");
       navigate({ to: "/contracts" });
