@@ -115,6 +115,42 @@ function ContractViewPage() {
 
 
   const c: any = contract.data;
+  const ex: Record<string, any> = (extraction.data?.extraction as Record<string, any>) ?? {};
+  const extractedUnits: any[] = Array.isArray(ex["units"]) ? ex["units"] : [];
+  const importWarnings: string[] = Array.isArray(extraction.data?.warnings)
+    ? (extraction.data?.warnings as string[])
+    : [];
+  const extraFields: { label: string; value: any }[] = [
+    { label: "رقم العقد في إيجار", value: ex["contract_number"] },
+    { label: "تاريخ التوثيق", value: ex["signed_date"] },
+    { label: "مكان التوثيق", value: ex["city"] },
+    { label: "الحي", value: ex["district"] },
+    { label: "نوع العقار", value: ex["property_type"] },
+    { label: "استخدام العقار", value: ex["property_usage"] },
+    { label: "أرقام الوحدات", value: ex["unit_number"] },
+    { label: "المالك", value: ex["owner_name"] },
+    { label: "هوية المالك", value: ex["owner_national_id"] },
+    { label: "جوال المالك", value: ex["owner_phone"] },
+    { label: "بريد المالك", value: ex["owner_email"] },
+    { label: "المستأجر", value: ex["tenant_name"] },
+    { label: "هوية المستأجر", value: ex["tenant_national_id"] },
+    { label: "السجل التجاري", value: ex["tenant_cr_number"] },
+    { label: "ممثل المنشأة", value: ex["tenant_rep_name"] },
+    { label: "هوية الممثل", value: ex["tenant_rep_national_id"] },
+    { label: "جوال الممثل", value: ex["tenant_rep_phone"] },
+    { label: "جوال المستأجر", value: ex["tenant_phone"] },
+    { label: "بريد المستأجر", value: ex["tenant_email"] },
+    { label: "منشأة الوساطة", value: ex["broker_entity_name"] },
+    { label: "الوسيط", value: ex["broker_name"] },
+    { label: "جوال الوسيط", value: ex["broker_phone"] },
+    { label: "الإيجار السنوي", value: ex["annual_rent"] },
+    { label: "القيمة الإجمالية", value: ex["total_value"] },
+    { label: "ضريبة القيمة المضافة", value: ex["vat"] },
+    { label: "التأمين", value: ex["deposit"] },
+    { label: "دورة السداد", value: ex["payment_cycle"] },
+    { label: "عدد الدفعات", value: ex["payments_count"] },
+  ].filter((f) => f.value != null && String(f.value).trim() !== "");
+
 
   const remove = useMutation({
     mutationFn: async (alsoOwner: boolean) =>
