@@ -115,11 +115,12 @@ function ContractViewPage() {
 
 
   const c: any = contract.data;
-  const ex: Record<string, any> = (extraction.data?.extraction as Record<string, any>) ?? {};
+  const ex: Record<string, any> = (extraction.data?.["extraction"] as Record<string, any>) ?? {};
   const extractedUnits: any[] = Array.isArray(ex["units"]) ? ex["units"] : [];
-  const importWarnings: string[] = Array.isArray(extraction.data?.warnings)
-    ? (extraction.data?.warnings as string[])
+  const importWarnings: string[] = Array.isArray(extraction.data?.["warnings"])
+    ? (extraction.data?.["warnings"] as string[])
     : [];
+
   const extraFields: { label: string; value: any }[] = [
     { label: "رقم العقد في إيجار", value: ex["contract_number"] },
     { label: "تاريخ التوثيق", value: ex["signed_date"] },
