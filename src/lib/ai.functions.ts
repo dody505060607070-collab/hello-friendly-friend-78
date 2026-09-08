@@ -25,7 +25,115 @@ function normalize(input: Item[]) {
 
 const FALLBACK_MODELS = [MODEL];
 
+/** يحوّل عناصر Responses إلى نص/أجزاء صالحة لمزوّدي الاحتياط. */
+function toPlainMessages(input: Item[]) {
+  return input.map((item) => ({
+    role: item.role,
+    text: item.content
+      .map((p) => (p.type === "input_text" ? p.text : `[ملف مرفق: ${p.filename}]`))
+      .join("\n"),
+    files: item.content.filter((p): p is Extract<Part, { type: "input_file" }> => p.type === "input_file"),
+  }));
+}
+
+/** المزوّد الاحتياطي الأول: Groq (نصي فقط). */
+async function callGroq(input: Item[]): Promise<string> {
+  const key = process.env["GROQ_API_KEY"];
+  if (!key) throw new Error("GROQ_API_KEY غير مهيأ.");
+  const plain = toPlainMessages(input);
+  if (plain.some((m) => m.files.length)) throw new Error("Groq لا يدعم الملفات.");
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      messages: plain.map((m) => ({ role: m.role, content: m.text })),
+    }),
+  });
+  if (!res.ok) throw new Error(`Groq ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  const text = json.choices?.[0]?.message?.content?.trim();
+  if (!text) throw new Error("Groq: رد فارغ.");
+  return text;
+}
+
+/** المزوّد الاحتياطي الثاني: Gemini (يدعم الملفات). */
+async function callGemini(input: Item[]): Promise<string> {
+  const keys = [process.env["GEMINI_API_KEY"], process.env["GEMINI_BACKUP_API_KEY"]].filter(
+    (k): k is string => Boolean(k),
+  );
+  if (!keys.length) throw new Error("مفاتيح Gemini غير مهيأة.");
+
+  const plain = toPlainMessages(input);
+  const systemText = plain
+    .filter((m) => m.role === "system")
+    .map((m) => m.text)
+    .join("\n");
+  const contents = plain
+    .filter((m) => m.role !== "system")
+    .map((m) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [
+        { text: m.text },
+        ...m.files.map((f) => {
+          const [head = "", b64 = ""] = f.file_data.split(",");
+          const mime = head.match(/data:(.*?);base64/)?.[1] ?? "application/pdf";
+          return { inline_data: { mime_type: mime, data: b64 } };
+        }),
+      ],
+    }));
+
+  let last = "";
+  for (const key of keys) {
+    const res = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-goog-api-key": key },
+        body: JSON.stringify({
+          contents,
+          ...(systemText ? { system_instruction: { parts: [{ text: systemText }] } } : {}),
+        }),
+      },
+    );
+    if (!res.ok) {
+      last = `Gemini ${res.status}: ${(await res.text()).slice(0, 200)}`;
+      continue;
+    }
+    const json = (await res.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    };
+    const text = (json.candidates?.[0]?.content?.parts ?? [])
+      .map((p) => p.text ?? "")
+      .join("")
+      .trim();
+    if (text) return text;
+    last = "Gemini: رد فارغ.";
+  }
+  throw new Error(last || "فشل Gemini.");
+}
+
 async function callGateway(input: Item[]): Promise<string> {
+  const errors: string[] = [];
+  try {
+    return await callLovable(input);
+  } catch (e) {
+    errors.push(e instanceof Error ? e.message : String(e));
+  }
+  try {
+    return await callGroq(input);
+  } catch (e) {
+    errors.push(e instanceof Error ? e.message : String(e));
+  }
+  try {
+    return await callGemini(input);
+  } catch (e) {
+    errors.push(e instanceof Error ? e.message : String(e));
+  }
+  throw new Error(`تعذّر الوصول لأي مزوّد ذكاء اصطناعي. (${errors.join(" | ").slice(0, 400)})`);
+}
+
+async function callLovable(input: Item[]): Promise<string> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("خدمة الذكاء الاصطناعي غير مهيأة على الخادم.");
 
@@ -54,11 +162,7 @@ async function callGateway(input: Item[]): Promise<string> {
     if (attempt.status === 400 || attempt.status === 401) break;
   }
 
-  if (!res) {
-    if (lastStatus === 402) throw new Error("انتهى رصيد الذكاء الاصطناعي. أضِف رصيدًا للمتابعة.");
-    if (lastStatus === 429) throw new Error("عدد الطلبات كبير الآن، حاول بعد لحظات.");
-    throw new Error(`فشل طلب الذكاء الاصطناعي (${lastStatus}): ${lastBody.slice(0, 240)}`);
-  }
+  if (!res) throw new Error(`Lovable ${lastStatus}: ${lastBody.slice(0, 200)}`);
 
   const json = (await res.json()) as {
     output_text?: string;
@@ -68,11 +172,17 @@ async function callGateway(input: Item[]): Promise<string> {
   const parts: string[] = [];
   for (const item of json.output ?? [])
     for (const c of item.content ?? []) if (typeof c.text === "string") parts.push(c.text);
-  return parts.join("\n").trim() || "لم يصل رد من المساعد.";
+  const joined = parts.join("\n").trim();
+  if (!joined) throw new Error("Lovable: رد فارغ.");
+  return joined;
 }
+
+const SCOPE_RULE = `نطاقك محصور في العقارات وأعمال شركة مثراء العقارية (عقارات، ملاك، مستأجرون، عقود، إيجار، بيع، فواتير، مدفوعات، تذكيرات، مهام، عملاء، تقارير، سوق العقار في السعودية).
+إذا سُئلت عن أي موضوع خارج هذا النطاق (طبخ، رياضة، برمجة عامة، سياسة، صحة… إلخ) فاعتذر بلطف بجملة واحدة مثل: «أنا مساعد مختص بالعقارات فقط، كيف أساعدك في عقارك أو طلبك؟» ولا تُجب عن الموضوع الخارجي إطلاقًا.`;
 
 const SYSTEM_PROMPT = `أنت "مساعد مثراء" — مساعد ذكي داخل لوحة تحكم شركة مثراء العقارية في بريدة، السعودية.
 تعرف أقسام اللوحة: لوحة التحكم، العقارات، الطلبات (عرض وتوفير عقار)، الحجوزات، الملاك، العقود واستيراد PDF، الفواتير، التذكيرات، المهام، CRM (العملاء/الفرص/الأنشطة/التقارير)، إعدادات الموقع، الموظفون والصلاحيات، السجلات.
+${SCOPE_RULE}
 أجب دائمًا بالعربية الفصحى المبسطة، بإجابات قصيرة عملية ومرتبة بنقاط عند الحاجة. إن أرسل المستخدم بيانات مسحوبة من جدول، حللها واشرحها واقترح الخطوة التالية.`;
 
 export const askAdminAi = createServerFn({ method: "POST" })
