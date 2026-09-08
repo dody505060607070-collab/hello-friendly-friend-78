@@ -231,11 +231,9 @@ function PropertyPage() {
                   مشاركة العقار
                 </button>
                 {SOCIAL_PLATFORMS.some((p) => property[p.key]) ? (
-                  <div className="rounded-xl border border-border p-3">
-                    <p className="mb-2.5 text-[12.5px] font-semibold text-muted-foreground">
-                      شاهد العقار على
-                    </p>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="rounded-2xl border border-border p-4">
+                    <p className="mb-3 text-[13px] font-bold text-foreground">شاهد العقار على</p>
+                    <div className="flex flex-col gap-2.5">
                       {SOCIAL_PLATFORMS.filter((p) => property[p.key]).map((p) => (
                         <a
                           key={p.key}
@@ -244,10 +242,11 @@ function PropertyPage() {
                           rel="noreferrer"
                           title={p.label}
                           aria-label={p.label}
-                          className="grid size-10 place-items-center rounded-lg border border-border transition hover:scale-105 hover:shadow-sm"
-                          style={{ color: p.color }}
+                          className="flex items-center gap-3 rounded-xl px-4 py-3 text-white shadow-sm transition hover:scale-[1.02] hover:shadow-md"
+                          style={{ backgroundColor: p.color }}
                         >
-                          <SocialGlyph platform={p.key} className="size-5" />
+                          <SocialGlyph platform={p.key} className="size-7 shrink-0" />
+                          <span className="text-[14px] font-bold">{p.label}</span>
                         </a>
                       ))}
                     </div>
