@@ -24,8 +24,14 @@ export function AiWidget() {
     },
   ]);
   const scroller = useRef<HTMLDivElement>(null);
-  const [offsetY, setOffsetY] = useState(0);
-  const dragging = useRef<{ startY: number; startOffset: number; moved: boolean } | null>(null);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const dragging = useRef<{
+    startX: number;
+    startY: number;
+    ox: number;
+    oy: number;
+    moved: boolean;
+  } | null>(null);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
@@ -62,19 +68,25 @@ export function AiWidget() {
   return (
     <>
       <div
-        style={{ transform: `translateY(${offsetY}px)` }}
+        style={{ transform: `translate3d(${pos.x}px, ${pos.y}px, 0)` }}
         className="fixed bottom-20 start-4 z-50 touch-none select-none sm:bottom-28 sm:start-5"
         onPointerDown={(e) => {
           (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-          dragging.current = { startY: e.clientY, startOffset: offsetY, moved: false };
+          dragging.current = {
+            startX: e.clientX,
+            startY: e.clientY,
+            ox: pos.x,
+            oy: pos.y,
+            moved: false,
+          };
         }}
         onPointerMove={(e) => {
           const d = dragging.current;
           if (!d) return;
-          const delta = e.clientY - d.startY;
-          if (Math.abs(delta) > 4) d.moved = true;
-          const next = Math.min(40, Math.max(-(window.innerHeight - 190), d.startOffset + delta));
-          setOffsetY(next);
+          const dx = e.clientX - d.startX;
+          const dy = e.clientY - d.startY;
+          if (Math.abs(dx) > 4 || Math.abs(dy) > 4) d.moved = true;
+          setPos({ x: d.ox + dx, y: d.oy + dy });
         }}
         onPointerUp={() => {
           const moved = dragging.current?.moved;
@@ -109,7 +121,10 @@ export function AiWidget() {
       </div>
 
       {open ? (
-        <section className="glass-panel fixed bottom-44 start-4 z-50 flex h-[min(30rem,70vh)] w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden">
+        <section
+          style={{ transform: `translate3d(${pos.x}px, ${pos.y}px, 0)` }}
+          className="glass-panel fixed bottom-44 start-4 z-50 flex h-[min(30rem,70vh)] w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden"
+        >
           <header className="flex items-center gap-2 bg-primary px-4 py-3 text-primary-foreground">
             <Sparkles className="size-4 text-gold" />
             <h2 className="text-[13.5px] font-bold">مساعد مثراء الذكي</h2>

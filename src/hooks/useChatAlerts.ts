@@ -40,19 +40,32 @@ function playChime() {
   if (!ctx) return;
   try {
     const now = ctx.currentTime;
+
+    // ضاغط بسيط لرفع الصوت المسموع بدون تشويه
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.setValueAtTime(-18, now);
+    comp.ratio.setValueAtTime(12, now);
+    comp.connect(ctx.destination);
+
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.22, now + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
-    gain.connect(ctx.destination);
+    gain.gain.exponentialRampToValueAtTime(1.0, now + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+    gain.connect(comp);
 
-    [880, 1180].forEach((freq, i) => {
+    // نغمتان متكررتان أقوى وأوضح
+    [880, 1180, 880, 1320].forEach((freq, i) => {
+      const t = now + i * 0.16;
       const osc = ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, now + i * 0.13);
-      osc.connect(gain);
-      osc.start(now + i * 0.13);
-      osc.stop(now + i * 0.13 + 0.25);
+      osc.type = i % 2 === 0 ? "triangle" : "square";
+      osc.frequency.setValueAtTime(freq, t);
+      const oGain = ctx.createGain();
+      oGain.gain.setValueAtTime(0.9, t);
+      oGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+      osc.connect(oGain);
+      oGain.connect(gain);
+      osc.start(t);
+      osc.stop(t + 0.32);
     });
   } catch {
     /* تجاهل */
