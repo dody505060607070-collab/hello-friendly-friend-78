@@ -37,3 +37,11 @@ export async function uploadMedia(bucket: string, path: string, file: File): Pro
   const signed = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60 * 24 * 365);
   return { key: `${bucket}/${path}`, url: signed.data?.signedUrl ?? "" };
 }
+
+/** يعيد رابط عرض/تنزيل لملف مخزَّن (محلي أو سحابي). */
+export async function mediaUrl(bucket: string, path: string, expiresSeconds = 300) {
+  if (clientStorageDriver() === "local") return `/api/public/files/${bucket}/${path}`;
+  const signed = await supabase.storage.from(bucket).createSignedUrl(path, expiresSeconds);
+  if (signed.error || !signed.data) throw signed.error ?? new Error("تعذّر إنشاء الرابط");
+  return signed.data.signedUrl;
+}
