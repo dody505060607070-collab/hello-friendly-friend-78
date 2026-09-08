@@ -23,7 +23,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     );
 
   return (
-    <nav className="flex flex-col gap-5 px-4 py-6">
+    <nav dir="rtl" className="flex flex-col gap-5 px-4 py-6 text-right">
       {navGroups.map((group, gi) => {
         const items = group.items.filter((item) => !item.module || can(item.module, "view"));
         if (items.length === 0) return null;
@@ -34,19 +34,19 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             {group.label ? (
               <button
                 type="button"
-                onClick={() => toggle(group.label!)}
+                onClick={() => group.label && toggle(group.label)}
                 className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-[13px] font-semibold text-sidebar-foreground/80 transition-colors hover:text-sidebar-accent-foreground"
               >
+                <span className="flex min-w-0 items-center gap-2 text-right">
+                  {Icon ? <Icon className="size-[18px] shrink-0 text-primary/70" /> : null}
+                  <span>{t(group.label)}</span>
+                </span>
                 <ChevronDown
                   className={cn(
-                    "size-4 text-muted-foreground transition-transform",
+                    "size-4 shrink-0 text-muted-foreground transition-transform",
                     isOpen && "rotate-180",
                   )}
                 />
-                <span className="flex items-center gap-2">
-                  {t(group.label)}
-                  {Icon ? <Icon className="size-[18px] text-primary/70" /> : null}
-                </span>
               </button>
             ) : null}
 
@@ -67,26 +67,26 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                             : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60",
                         )}
                       >
-                        <span className="flex items-center gap-2">
-                          {badge ? (
-                            <span className="rounded-md bg-warning/15 px-1.5 py-0.5 text-[11px] font-bold text-warning-foreground">
-                              {badge}
-                            </span>
-                          ) : null}
-                        </span>
-                        <span className="flex items-center gap-2.5">
+                        <span className="flex min-w-0 items-center gap-2.5 text-right">
                           {group.label ? (
                             <span
                               className={cn(
-                                "size-1.5 rounded-full",
+                                "size-1.5 shrink-0 rounded-full",
                                 active ? "bg-primary" : "bg-border",
                               )}
                             />
                           ) : null}
                           {!group.label && Icon ? (
-                            <Icon className="size-[18px] text-primary/70" />
+                            <Icon className="size-[18px] shrink-0 text-primary/70" />
                           ) : null}
-                          {t(item.label)}
+                          <span>{t(item.label)}</span>
+                        </span>
+                        <span className="flex shrink-0 items-center gap-2">
+                          {badge ? (
+                            <span className="rounded-md bg-warning/15 px-1.5 py-0.5 text-[11px] font-bold text-warning-foreground">
+                              {badge}
+                            </span>
+                          ) : null}
                         </span>
                       </Link>
                     </li>
