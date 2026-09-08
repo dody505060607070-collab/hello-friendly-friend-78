@@ -46,7 +46,7 @@ export function PropertyMap({
         (p) =>
           typeof p.latitude === "number" &&
           typeof p.longitude === "number" &&
-          (active === "all" || p.purpose === active),
+          (active === "all" || normalizePurpose(p.purpose) === active),
       ),
     [properties, active],
   );
