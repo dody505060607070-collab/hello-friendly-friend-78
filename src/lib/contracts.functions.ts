@@ -47,6 +47,7 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
       role: string,
       nationalId?: string,
       phone?: string,
+      kind: "individual" | "organization" = "individual",
     ) => {
       const nid = str(nationalId).replace(/\D/g, "");
       const tel = str(phone).replace(/\s/g, "");
@@ -78,7 +79,7 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
         .from("contacts")
         .insert({
           full_name: name || nid,
-          kind: "individual",
+          kind,
           roles: [role],
           national_id: nid || null,
           phone: tel || null,
@@ -97,19 +98,34 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
 
     const ownerName = str(e["owner_name"]);
     const tenantName = str(e["tenant_name"]);
-    const brokerName = str(e["broker_name"]);
+    const brokerName = str(e["broker_name"]) || str(e["broker_entity_name"]);
+    const tenantIsCompany =
+      e["tenant_is_company"] === true || !!str(e["tenant_cr_number"]);
+    const repName = str(e["tenant_rep_name"]);
+    const repPhone = str(e["tenant_rep_phone"]);
+    const repNid = str(e["tenant_rep_national_id"]);
     const ownerId = await findOrCreateContact(
       ownerName,
       "owner",
       str(e["owner_national_id"]),
       str(e["owner_phone"]),
     );
+    // المستأجر التجاري: المنشأة هي الطرف، وسجلها التجاري هو معرّفها، وجوال ممثلها للتواصل.
     const tenantId = await findOrCreateContact(
       tenantName,
       "tenant",
-      str(e["tenant_national_id"]),
-      str(e["tenant_phone"]),
+      tenantIsCompany
+        ? str(e["tenant_cr_number"]) || str(e["tenant_national_id"])
+        : str(e["tenant_national_id"]),
+      str(e["tenant_phone"]) || repPhone,
+      tenantIsCompany ? "organization" : "individual",
     );
+    if (tenantIsCompany && repName) {
+      await findOrCreateContact(repName, "tenant_representative", repNid, repPhone);
+      warnings.push(
+        `المستأجر منشأة تجارية «${tenantName}» — ممثلها النظامي: ${repName}${repNid ? ` (هوية ${repNid})` : ""}.`,
+      );
+    }
     const brokerId = await findOrCreateContact(brokerName, "broker", "", str(e["broker_phone"]));
     if (!ownerName) warnings.push("لم يُستخرج اسم المالك من الملف.");
     if (!tenantName) warnings.push("لم يُستخرج اسم المستأجر من الملف.");
