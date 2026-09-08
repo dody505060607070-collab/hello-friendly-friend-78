@@ -35,6 +35,15 @@ const typeLabels: Record<string, string> = {
   note: "ملاحظة",
 };
 
+type FormState = {
+  employee_id: string;
+  activity_type: string;
+  subject: string;
+  details: string;
+  related_contact_id: string;
+  notes: string;
+};
+
 type Activity = {
   id: string;
   employee_id: string;
@@ -108,7 +117,7 @@ function ActivitiesPage() {
   const active = (activities.data ?? []).find((a) => a.id === selected) ?? null;
 
   const create = useMutation({
-    mutationFn: async (form: Record<string, string>) => {
+    mutationFn: async (form: FormState) => {
       if (!form.employee_id || !form.subject.trim()) throw new Error("اختر الموظف واكتب الموضوع");
       const { data, error } = await supabase
         .from("employee_activities")
@@ -145,7 +154,7 @@ function ActivitiesPage() {
     mutationFn: async ({ id, outcome }: { id: string; outcome: string }) => {
       const { error } = await supabase
         .from("employee_activities")
-        .update({ status: "closed", outcome: outcome || null, closed_by: userId, closed_at: new Date().toISOString() })
+        .update({ status: "closed", outcome: outcome || null, closed_by: userId ?? null, closed_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;
     },
@@ -263,10 +272,10 @@ function CreateModal({
   employees: { id: string; full_name: string; job_title: string | null }[];
   contacts: { id: string; full_name: string }[];
   onClose: () => void;
-  onSubmit: (f: Record<string, string>) => void;
+  onSubmit: (f: FormState) => void;
   saving: boolean;
 }) {
-  const [f, setF] = useState<Record<string, string>>({
+  const [f, setF] = useState<FormState>({
     employee_id: "",
     activity_type: "task",
     subject: "",
@@ -274,10 +283,10 @@ function CreateModal({
     related_contact_id: "",
     notes: "",
   });
-  const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }));
+  const set = (k: keyof FormState, v: string) => setF((p) => ({ ...p, [k]: v }));
 
   return (
-    <Modal title="تسجيل نشاط لموظف" onClose={onClose}>
+    <Modal open title="تسجيل نشاط لموظف" onClose={onClose}>
       <div className="grid gap-3 md:grid-cols-2">
         <Field label="الموظف">
           <select className={inputClass} value={f.employee_id} onChange={(e) => set("employee_id", e.target.value)}>
