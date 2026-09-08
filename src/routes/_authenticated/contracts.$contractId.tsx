@@ -247,15 +247,50 @@ function ContractViewPage() {
             </Section>
           </div>
 
-          <Section title="العقار">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Row label="الكود" value={c.property?.code} />
-              <Row label="الاسم" value={c.property?.name} />
-              <Row label="النوع" value={c.property?.property_type} />
-              <Row label="المدينة" value={c.property?.city} />
-              <Row label="الحي" value={c.property?.district} />
+          <Section title="العقارات والوحدات">
+            {c.property ? (
+              <Link
+                to="/properties"
+                className="mb-3 block rounded-xl border border-border p-3 transition hover:bg-accent/40"
+              >
+                <p className="text-[13.5px] font-bold text-foreground">{c.property.name}</p>
+                <p className="text-[12px] text-muted-foreground">
+                  {[c.property.code, c.property.property_type, c.property.city, c.property.district]
+                    .filter(Boolean)
+                    .join(" · ") || "—"}
+                </p>
+              </Link>
+            ) : (
+              <p className="mb-3 rounded-xl bg-secondary/60 p-3 text-[12.5px] text-muted-foreground">
+                لا يوجد عقار مسجّل مرتبط بهذا العقد — أضف العقار يدويًا أو أعد استيراد الملف.
+              </p>
+            )}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(extractedUnits.length
+                ? extractedUnits
+                : c.unit
+                  ? [c.unit]
+                  : []
+              ).map((u: any, i: number) => (
+                <div key={u.id ?? `${u.unit_number}-${i}`} className="rounded-xl border border-border p-3">
+                  <p className="text-[13px] font-bold text-foreground">
+                    وحدة رقم {u.unit_number || "—"}
+                  </p>
+                  <p className="text-[12px] text-muted-foreground">
+                    {[u.unit_type, u.floor ? `الدور ${u.floor}` : null, u.area ? `${u.area} م²` : null]
+                      .filter(Boolean)
+                      .join(" · ") || "—"}
+                  </p>
+                </div>
+              ))}
+              {!extractedUnits.length && !c.unit ? (
+                <p className="p-2 text-[12.5px] text-muted-foreground">
+                  لم تُذكر وحدات مستقلة في هذا العقد.
+                </p>
+              ) : null}
             </div>
           </Section>
+
 
           <Section title={`جدول الأقساط (${payments.data?.length ?? 0})`}>
             <div className="overflow-x-auto">
