@@ -100,7 +100,7 @@ function AuthPage() {
   return (
     <main className="grid min-h-screen place-items-center bg-background px-4 py-10">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-sm">
-        <img src={logoAsset.url} alt="مثراء العقارية" className="mx-auto h-14 w-auto" />
+        <img src={logoAsset.url} alt="مثراء العقارية" className="mx-auto h-28 w-auto sm:h-36" />
         <div className="mt-6 grid grid-cols-2 gap-1 rounded-xl bg-muted p-1 text-sm font-semibold">
           {(["staff", "client"] as const).map((a) => (
             <button
