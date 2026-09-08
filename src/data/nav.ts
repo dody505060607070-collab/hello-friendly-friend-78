@@ -64,6 +64,7 @@ export const navGroups: NavGroup[] = [
       { label: "العملاء", to: "/clients", countKey: "contacts", module: "contacts" },
       { label: "الفرص", to: "/opportunities", countKey: "opportunities", module: "crm" },
       { label: "المتابعات والأنشطة", to: "/activities", module: "crm" },
+      { label: "شات الموظفين", to: "/team-chat" },
       { label: "التقارير", to: "/reports", module: "crm" },
     ],
   },

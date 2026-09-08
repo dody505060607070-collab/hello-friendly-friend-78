@@ -1,51 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2, PhoneCall, Plus, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CheckCircle2, Loader2, MessageSquare, Plus, Send, Users } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Chip } from "@/components/kit/Chip";
-import { DataTable } from "@/components/kit/DataTable";
-import { EmptyState, formatDate, useTableRows } from "@/components/kit/LiveTable";
-import {
-  Field,
-  GhostButton,
-  Modal,
-  PrimaryButton,
-  inputClass,
-  textareaClass,
-} from "@/components/kit/Modal";
+import { Field, GhostButton, Modal, PrimaryButton, inputClass, textareaClass } from "@/components/kit/Modal";
 import { PageHero } from "@/components/kit/PageHero";
-import { Pills } from "@/components/kit/Pills";
+import { useCurrentUser } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-
-type Row = {
-  id: string;
-  activity_type: string;
-  subject: string | null;
-  outcome: string | null;
-  happened_at: string | null;
-  next_follow_up: string | null;
-  contact_id: string | null;
-  contact: { full_name: string } | null;
-};
-
-const typeLabels: Record<string, string> = {
-  call: "مكالمة",
-  whatsapp: "واتساب",
-  meeting: "اجتماع",
-  visit: "معاينة",
-  note: "ملاحظة",
-  email: "بريد",
-};
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/activities")({
   head: () => ({
     meta: [
       { title: "المتابعات والأنشطة | مثراء العقارية" },
-      { name: "description", content: "سجل المكالمات والمعاينات والمتابعات مع العملاء." },
+      { name: "description", content: "إسناد الأنشطة للموظفين ومحادثة خاصة لمتابعة النتيجة." },
       { property: "og:title", content: "المتابعات والأنشطة | مثراء العقارية" },
-      { property: "og:description", content: "سجل المكالمات والمعاينات والمتابعات مع العملاء." },
+      { property: "og:description", content: "إسناد الأنشطة للموظفين ومحادثة خاصة لمتابعة النتيجة." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -53,301 +25,480 @@ export const Route = createFileRoute("/_authenticated/activities")({
   component: ActivitiesPage,
 });
 
-const SELECT =
-  "id, activity_type, subject, outcome, happened_at, next_follow_up, contact_id, contact:contact_id(full_name)";
+const typeLabels: Record<string, string> = {
+  task: "مهمة متابعة",
+  call: "مكالمة",
+  whatsapp: "واتساب",
+  meeting: "اجتماع",
+  visit: "معاينة",
+  collection: "تحصيل",
+  note: "ملاحظة",
+};
 
 type FormState = {
-  contact_id: string;
+  employee_id: string;
   activity_type: string;
   subject: string;
-  outcome: string;
-  happened_at: string;
-  next_follow_up: string;
+  details: string;
+  related_contact_id: string;
+  notes: string;
 };
 
-const emptyForm: FormState = {
-  contact_id: "",
-  activity_type: "call",
-  subject: "",
-  outcome: "",
-  happened_at: new Date().toISOString().slice(0, 16),
-  next_follow_up: "",
+type Activity = {
+  id: string;
+  employee_id: string;
+  created_by: string | null;
+  activity_type: string;
+  subject: string;
+  details: string | null;
+  notes: string | null;
+  related_contact_id: string | null;
+  status: string;
+  outcome: string | null;
+  closed_at: string | null;
+  created_at: string;
+  employee: { full_name: string; job_title: string | null } | null;
+  contact: { full_name: string } | null;
 };
+
+const SELECT =
+  "id, employee_id, created_by, activity_type, subject, details, notes, related_contact_id, status, outcome, closed_at, created_at, employee:employee_id(full_name, job_title), contact:related_contact_id(full_name)";
 
 function ActivitiesPage() {
-  const queryClient = useQueryClient();
-  const [tab, setTab] = useState("all");
+  const qc = useQueryClient();
+  const { userId, isSuperAdmin } = useCurrentUser();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<FormState>(emptyForm);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [tab, setTab] = useState<"open" | "closed">("open");
 
-  const { data, isLoading } = useTableRows<Row>({
-    table: "crm_activities",
-    select: SELECT,
-    orderBy: { column: "happened_at" },
-    queryKey: ["crm-activities"],
+  const activities = useQuery({
+    queryKey: ["employee-activities"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employee_activities")
+        .select(SELECT)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as Activity[];
+    },
+  });
+
+  const employees = useQuery({
+    queryKey: ["staff-profiles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, job_title")
+        .eq("is_active", true)
+        .order("full_name");
+      if (error) throw error;
+      return data ?? [];
+    },
   });
 
   const contacts = useQuery({
-    queryKey: ["contacts", "select"],
+    queryKey: ["contacts-mini"],
     queryFn: async () => {
-      const { data: rows, error } = await supabase
+      const { data, error } = await supabase
         .from("contacts")
         .select("id, full_name")
         .order("full_name")
-        .limit(300);
+        .limit(500);
       if (error) throw error;
-      return rows ?? [];
+      return data ?? [];
     },
   });
 
-  const rows = data ?? [];
-  const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
-
-  const save = useMutation({
-    mutationFn: async () => {
-      if (!form.contact_id) throw new Error("اختر العميل");
-      const { error } = await supabase.from("crm_activities").insert({
-        contact_id: form.contact_id,
-        activity_type: form.activity_type,
-        subject: form.subject.trim() || null,
-        outcome: form.outcome.trim() || null,
-        happened_at: form.happened_at ? new Date(form.happened_at).toISOString() : new Date().toISOString(),
-        next_follow_up: form.next_follow_up || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["crm-activities"] });
-      toast.success("تم تسجيل النشاط");
-      setOpen(false);
-      setForm(emptyForm);
-    },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
-  });
-
-  const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("crm_activities").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["crm-activities"] });
-      toast.success("تم حذف النشاط");
-    },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحذف"),
-  });
-
-  const today = new Date().toISOString().slice(0, 10);
-  const counts = useMemo(
-    () => ({
-      all: rows.length,
-      due: rows.filter((r) => r.next_follow_up && r.next_follow_up <= today).length,
-      calls: rows.filter((r) => r.activity_type === "call").length,
-      visits: rows.filter((r) => r.activity_type === "visit").length,
-    }),
-    [rows, today],
+  const rows = useMemo(
+    () => (activities.data ?? []).filter((a) => (tab === "open" ? a.status !== "closed" : a.status === "closed")),
+    [activities.data, tab],
   );
 
-  const filtered =
-    tab === "all"
-      ? rows
-      : tab === "due"
-        ? rows.filter((r) => r.next_follow_up && r.next_follow_up <= today)
-        : rows.filter((r) => r.activity_type === tab);
+  const active = (activities.data ?? []).find((a) => a.id === selected) ?? null;
+
+  const create = useMutation({
+    mutationFn: async (form: FormState) => {
+      if (!form.employee_id || !form.subject.trim()) throw new Error("اختر الموظف واكتب الموضوع");
+      const { data, error } = await supabase
+        .from("employee_activities")
+        .insert({
+          employee_id: form.employee_id,
+          created_by: userId ?? null,
+          activity_type: form.activity_type || "task",
+          subject: form.subject.trim(),
+          details: form.details || null,
+          notes: form.notes || null,
+          related_contact_id: form.related_contact_id || null,
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      await supabase.from("notifications").insert({
+        user_id: form.employee_id,
+        title: "نشاط جديد مُسند إليك",
+        body: form.subject.trim(),
+        link: "/activities",
+      });
+      return data;
+    },
+    onSuccess: (d) => {
+      toast.success("تم إسناد النشاط للموظف");
+      setOpen(false);
+      setSelected(d?.id ?? null);
+      qc.invalidateQueries({ queryKey: ["employee-activities"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const close = useMutation({
+    mutationFn: async ({ id, outcome }: { id: string; outcome: string }) => {
+      const { error } = await supabase
+        .from("employee_activities")
+        .update({ status: "closed", outcome: outcome || null, closed_by: userId ?? null, closed_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تم إغلاق النشاط");
+      qc.invalidateQueries({ queryKey: ["employee-activities"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
     <>
       <PageHero
         title="المتابعات والأنشطة"
-        subtitle="كل تواصل مسجّل مع العملاء — ومنه يُحدَّد موعد المتابعة القادمة حتى لا يضيع أي عميل."
-        icon={PhoneCall}
+        subtitle="يختار المدير العام الموظف ونوع النشاط، وتبقى المحادثة مفتوحة بينهما حتى إغلاقها."
+        icon={Users}
         stats={[
-          { value: String(counts.all), label: "نشاط مسجّل" },
-          { value: String(counts.due), label: "متابعة مستحقة" },
-          { value: String(counts.calls), label: "مكالمة" },
+          { value: String((activities.data ?? []).filter((a) => a.status !== "closed").length), label: "أنشطة مفتوحة" },
+          { value: String((activities.data ?? []).filter((a) => a.status === "closed").length), label: "منتهية" },
         ]}
       />
 
-      <div className="surface-card px-5 py-4 text-[12.5px] leading-6 text-muted-foreground">
-        <strong className="text-foreground">كيف يعمل هذا القسم؟</strong> بعد كل مكالمة أو زيارة، سجّل
-        نشاطًا: نوعه، موضوعه، ونتيجته، ثم حدّد «المتابعة القادمة». الأنشطة المستحقة تظهر في تبويب
-        «متابعات مستحقة» ليبدأ الفريق يومه منها، وكل نشاط يبقى مرتبطًا بملف العميل وفرصته.
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground hover:opacity-90"
-        >
-          <Plus className="size-4" />
-          تسجيل نشاط
-        </button>
-      </div>
-
-      <Pills
-        variant="card"
-        defaultKey="all"
-        onChange={setTab}
-        items={[
-          { key: "all", label: "الكل", count: counts.all },
-          { key: "due", label: "متابعات مستحقة", count: counts.due },
-          { key: "call", label: "مكالمات", count: counts.calls },
-          { key: "visit", label: "معاينات", count: counts.visits },
-        ]}
-      />
-
-      {isLoading ? (
-        <div className="surface-card grid place-items-center px-6 py-16">
-          <Loader2 className="size-6 animate-spin text-primary" />
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
+        <div className="flex min-w-0 gap-2">
+          {(["open", "closed"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={cn(
+                "rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition-colors",
+                tab === t ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground",
+              )}
+            >
+              {t === "open" ? "مفتوحة" : "منتهية"}
+            </button>
+          ))}
         </div>
-      ) : (
-        <DataTable<Row>
-          rows={filtered}
-          draggableRows
-          dragLabel="نشاط"
-          showColumnsButton
-          searchPlaceholder="بحث بالعميل أو الموضوع"
-          rowClassName={(r) =>
-            r.next_follow_up && r.next_follow_up <= today ? "bg-destructive/5" : undefined
-          }
-          emptyState={
-            <EmptyState
-              text="لا توجد أنشطة مسجلة"
-              hint="سجّل مكالمة أو معاينة مع عميل ليظهر النشاط هنا."
-            />
-          }
-          columns={[
-            {
-              header: "العميل",
-              sortable: true,
-              value: (r) => r.contact?.full_name ?? "",
-              cell: (r) => r.contact?.full_name ?? "—",
-              className: "font-semibold",
-            },
-            {
-              header: "النوع",
-              cell: (r) => <Chip tone="primary">{typeLabels[r.activity_type] ?? r.activity_type}</Chip>,
-            },
-            { header: "الموضوع", cell: (r) => r.subject ?? "—" },
-            { header: "النتيجة", cell: (r) => r.outcome ?? "—" },
-            {
-              header: "التاريخ",
-              sortable: true,
-              value: (r) => r.happened_at ?? "",
-              cell: (r) => formatDate(r.happened_at),
-            },
-            {
-              header: "المتابعة القادمة",
-              sortable: true,
-              value: (r) => r.next_follow_up ?? "",
-              cell: (r) =>
-                r.next_follow_up ? (
-                  <Chip tone={r.next_follow_up <= today ? "danger" : "success"}>
-                    {formatDate(r.next_follow_up)}
+        {isSuperAdmin ? (
+          <PrimaryButton onClick={() => setOpen(true)}>
+            <Plus className="size-4" /> تسجيل نشاط
+          </PrimaryButton>
+        ) : null}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[380px_minmax(0,1fr)]">
+        <div className="space-y-2">
+          {activities.isLoading ? (
+            <div className="surface-card grid h-32 place-items-center text-muted-foreground">
+              <Loader2 className="size-5 animate-spin" />
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="surface-card p-6 text-center text-[13px] text-muted-foreground">لا توجد أنشطة.</div>
+          ) : (
+            rows.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => setSelected(a.id)}
+                className={cn(
+                  "w-full rounded-xl border bg-card p-3 text-start transition-colors",
+                  selected === a.id ? "border-primary shadow-card" : "border-border hover:bg-accent/40",
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <Chip tone={a.status === "closed" ? "neutral" : "success"}>
+                    {a.status === "closed" ? "منتهٍ" : "مفتوح"}
                   </Chip>
-                ) : (
-                  "—"
-                ),
-            },
-            {
-              header: "إجراءات",
-              cell: (r) => (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (window.confirm("حذف هذا النشاط؟")) remove.mutate(r.id);
-                  }}
-                  className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-destructive"
-                >
-                  <Trash2 className="size-4" />
-                  حذف
-                </button>
-              ),
-            },
-          ]}
-        />
-      )}
+                  <span className="truncate text-[13.5px] font-bold text-foreground">{a.subject}</span>
+                </div>
+                <p className="mt-1 text-end text-[12px] text-muted-foreground">
+                  {a.employee?.full_name ?? "—"} • {typeLabels[a.activity_type] ?? a.activity_type}
+                </p>
+              </button>
+            ))
+          )}
+        </div>
 
-      <Modal
-        open={open}
-        onClose={() => setOpen(false)}
-        title="تسجيل نشاط جديد"
-        subtitle="سجّل ما حدث مع العميل، وحدّد موعد المتابعة القادمة."
-        footer={
-          <>
-            <PrimaryButton onClick={() => save.mutate()} disabled={save.isPending}>
-              {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              حفظ
-            </PrimaryButton>
-            <GhostButton onClick={() => setOpen(false)}>إلغاء</GhostButton>
-          </>
-        }
-      >
-        <div className="grid gap-4">
-          <Field label="العميل">
-            <select
-              className={inputClass}
-              value={form.contact_id}
-              onChange={(e) => set({ contact_id: e.target.value })}
-            >
-              <option value="">— اختر العميل —</option>
-              {(contacts.data ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.full_name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="نوع النشاط">
-            <select
-              className={inputClass}
-              value={form.activity_type}
-              onChange={(e) => set({ activity_type: e.target.value })}
-            >
-              {Object.entries(typeLabels).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="الموضوع">
-            <input
-              className={inputClass}
-              value={form.subject}
-              onChange={(e) => set({ subject: e.target.value })}
-              placeholder="مثال: عرض شقة حي الرحاب"
+        <div className="min-w-0">
+          {active ? (
+            <ActivityPanel
+              activity={active}
+              canClose={isSuperAdmin}
+              onClose={(outcome) => close.mutate({ id: active.id, outcome })}
+              closing={close.isPending}
             />
-          </Field>
-          <Field label="النتيجة">
-            <textarea
-              className={textareaClass}
-              value={form.outcome}
-              onChange={(e) => set({ outcome: e.target.value })}
-              placeholder="ما خرجت به من التواصل"
-            />
-          </Field>
-          <Field label="تاريخ ووقت النشاط">
-            <input
-              type="datetime-local"
-              className={inputClass}
-              dir="ltr"
-              value={form.happened_at}
-              onChange={(e) => set({ happened_at: e.target.value })}
-            />
-          </Field>
-          <Field label="المتابعة القادمة">
-            <input
-              type="date"
-              className={inputClass}
-              dir="ltr"
-              value={form.next_follow_up}
-              onChange={(e) => set({ next_follow_up: e.target.value })}
-            />
+          ) : (
+            <div className="surface-card grid h-full min-h-56 place-items-center p-8 text-center text-[13px] text-muted-foreground">
+              اختر نشاطًا لعرض المحادثة الخاصة بينك وبين الموظف.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {open ? (
+        <CreateModal
+          employees={employees.data ?? []}
+          contacts={contacts.data ?? []}
+          onClose={() => setOpen(false)}
+          onSubmit={(f) => create.mutate(f)}
+          saving={create.isPending}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function CreateModal({
+  employees,
+  contacts,
+  onClose,
+  onSubmit,
+  saving,
+}: {
+  employees: { id: string; full_name: string; job_title: string | null }[];
+  contacts: { id: string; full_name: string }[];
+  onClose: () => void;
+  onSubmit: (f: FormState) => void;
+  saving: boolean;
+}) {
+  const [f, setF] = useState<FormState>({
+    employee_id: "",
+    activity_type: "task",
+    subject: "",
+    details: "",
+    related_contact_id: "",
+    notes: "",
+  });
+  const set = (k: keyof FormState, v: string) => setF((p) => ({ ...p, [k]: v }));
+
+  return (
+    <Modal open title="تسجيل نشاط لموظف" onClose={onClose}>
+      <div className="grid gap-3 md:grid-cols-2">
+        <Field label="الموظف">
+          <select className={inputClass} value={f.employee_id} onChange={(e) => set("employee_id", e.target.value)}>
+            <option value="">اختر الموظف…</option>
+            {employees.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.full_name} {e.job_title ? `— ${e.job_title}` : ""}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="نوع النشاط">
+          <select className={inputClass} value={f.activity_type} onChange={(e) => set("activity_type", e.target.value)}>
+            {Object.entries(typeLabels).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="موضوع النشاط">
+          <input className={inputClass} value={f.subject} onChange={(e) => set("subject", e.target.value)} />
+        </Field>
+        <Field label="الجهة المرتبطة (اختياري)">
+          <select
+            className={inputClass}
+            value={f.related_contact_id}
+            onChange={(e) => set("related_contact_id", e.target.value)}
+          >
+            <option value="">بدون</option>
+            {contacts.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.full_name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <div className="md:col-span-2">
+          <Field label="تفاصيل النشاط">
+            <textarea className={textareaClass} value={f.details} onChange={(e) => set("details", e.target.value)} />
           </Field>
         </div>
-      </Modal>
-    </>
+        <div className="md:col-span-2">
+          <Field label="ملاحظات إضافية">
+            <textarea className={textareaClass} value={f.notes} onChange={(e) => set("notes", e.target.value)} />
+          </Field>
+        </div>
+      </div>
+      <div className="mt-4 flex justify-start gap-2">
+        <PrimaryButton onClick={() => onSubmit(f)} disabled={saving}>
+          {saving ? <Loader2 className="size-4 animate-spin" /> : null} إسناد النشاط
+        </PrimaryButton>
+        <GhostButton onClick={onClose}>إلغاء</GhostButton>
+      </div>
+    </Modal>
+  );
+}
+
+function ActivityPanel({
+  activity,
+  canClose,
+  onClose,
+  closing,
+}: {
+  activity: Activity;
+  canClose: boolean;
+  onClose: (outcome: string) => void;
+  closing: boolean;
+}) {
+  const qc = useQueryClient();
+  const { userId } = useCurrentUser();
+  const [body, setBody] = useState("");
+  const [outcome, setOutcome] = useState("");
+  const bottom = useRef<HTMLDivElement>(null);
+
+  const messages = useQuery({
+    queryKey: ["activity-messages", activity.id],
+    refetchInterval: 5000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("activity_messages")
+        .select("id, body, sender_id, created_at, sender:sender_id(full_name)")
+        .eq("activity_id", activity.id)
+        .order("created_at");
+      if (error) throw error;
+      return (data ?? []) as unknown as {
+        id: string;
+        body: string;
+        sender_id: string;
+        created_at: string;
+        sender: { full_name: string } | null;
+      }[];
+    },
+  });
+
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ block: "end" });
+  }, [messages.data?.length]);
+
+  const send = useMutation({
+    mutationFn: async () => {
+      const text = body.trim();
+      if (!text) return;
+      const { error } = await supabase
+        .from("activity_messages")
+        .insert({ activity_id: activity.id, sender_id: userId!, body: text });
+      if (error) throw error;
+      const target = userId === activity.employee_id ? activity.created_by : activity.employee_id;
+      if (target) {
+        await supabase.from("notifications").insert({
+          user_id: target,
+          title: "رسالة جديدة في نشاط",
+          body: `${activity.subject}: ${text.slice(0, 80)}`,
+          link: "/activities",
+        });
+      }
+    },
+    onSuccess: () => {
+      setBody("");
+      qc.invalidateQueries({ queryKey: ["activity-messages", activity.id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const closed = activity.status === "closed";
+
+  return (
+    <section className="surface-card flex h-full flex-col overflow-hidden">
+      <header className="border-b border-border bg-accent/40 px-4 py-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <div className="min-w-0">
+            <h2 className="truncate text-[15px] font-bold text-foreground">{activity.subject}</h2>
+            <p className="text-[12px] text-muted-foreground">
+              {activity.employee?.full_name ?? "—"} • {typeLabels[activity.activity_type] ?? activity.activity_type}
+              {activity.contact ? ` • ${activity.contact.full_name}` : ""}
+            </p>
+          </div>
+          <Chip tone={closed ? "neutral" : "success"}>{closed ? "منتهٍ" : "مفتوح"}</Chip>
+        </div>
+        {activity.details ? (
+          <p className="mt-2 whitespace-pre-wrap text-[13px] text-foreground/80">{activity.details}</p>
+        ) : null}
+      </header>
+
+      <div className="flex-1 space-y-2 overflow-y-auto p-4" style={{ maxHeight: 420 }}>
+        {(messages.data ?? []).length === 0 ? (
+          <p className="py-8 text-center text-[13px] text-muted-foreground">
+            <MessageSquare className="mx-auto mb-2 size-5" />
+            لا توجد رسائل بعد.
+          </p>
+        ) : (
+          (messages.data ?? []).map((m) => {
+            const mine = m.sender_id === userId;
+            return (
+              <div key={m.id} className={cn("flex", mine ? "justify-start" : "justify-end")}>
+                <div
+                  className={cn(
+                    "max-w-[80%] rounded-2xl px-3 py-2 text-[13.5px]",
+                    mine ? "bg-primary text-primary-foreground" : "bg-accent text-foreground",
+                  )}
+                >
+                  <p className="mb-0.5 text-[11px] opacity-70">{m.sender?.full_name ?? "—"}</p>
+                  <p className="whitespace-pre-wrap">{m.body}</p>
+                  <p className="mt-1 text-[10.5px] opacity-60">
+                    {new Date(m.created_at).toLocaleString("ar-SA")}
+                  </p>
+                </div>
+              </div>
+            );
+          })
+        )}
+        <div ref={bottom} />
+      </div>
+
+      {closed ? (
+        <footer className="border-t border-border bg-accent/30 px-4 py-3 text-[13px] text-muted-foreground">
+          تم إغلاق النشاط. النتيجة: {activity.outcome || "—"}
+        </footer>
+      ) : (
+        <footer className="space-y-2 border-t border-border p-3">
+          <div className="flex gap-2">
+            <input
+              className={inputClass}
+              placeholder="اكتب رسالة…"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send.mutate();
+                }
+              }}
+            />
+            <PrimaryButton onClick={() => send.mutate()} disabled={send.isPending}>
+              <Send className="size-4" />
+            </PrimaryButton>
+          </div>
+          {canClose ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                className={inputClass}
+                placeholder="نتيجة النشاط قبل الإغلاق (اختياري)"
+                value={outcome}
+                onChange={(e) => setOutcome(e.target.value)}
+              />
+              <GhostButton onClick={() => onClose(outcome)} disabled={closing}>
+                <CheckCircle2 className="size-4" /> إنهاء النشاط
+              </GhostButton>
+            </div>
+          ) : null}
+        </footer>
+      )}
+    </section>
   );
 }

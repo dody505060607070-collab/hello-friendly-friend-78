@@ -33,7 +33,7 @@ type Row = {
   created_at: string;
 };
 
-export const Route = createFileRoute("/_authenticated/owners")({
+export const Route = createFileRoute("/_authenticated/owners/")({
   head: () => ({
     meta: [
       { title: "الملاك | مثراء العقارية" },

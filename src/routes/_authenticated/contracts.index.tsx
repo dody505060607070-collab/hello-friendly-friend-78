@@ -54,7 +54,7 @@ type ImportRow = {
   created_at: string;
 };
 
-export const Route = createFileRoute("/_authenticated/contracts")({
+export const Route = createFileRoute("/_authenticated/contracts/")({
   head: () => ({
     meta: [
       { title: "إدارة العقود | مثراء العقارية" },
