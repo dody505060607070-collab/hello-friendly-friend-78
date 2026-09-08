@@ -128,10 +128,10 @@ async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
  * ثم Groq، وأخيرًا بوابة Lovable فقط إن وُجد مفتاحها — حتى يعمل النظام كاملًا على
  * خادم Hostinger VPS بدون أي اعتماد على Lovable.
  */
-async function callGateway(input: Item[]): Promise<string> {
+async function callGateway(input: Item[], opts: CallOpts = {}): Promise<string> {
   const errors: string[] = [];
   try {
-    return await callGemini(input);
+    return await callGemini(input, opts);
   } catch (e) {
     errors.push(e instanceof Error ? e.message : String(e));
   }
