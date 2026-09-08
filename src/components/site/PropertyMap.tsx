@@ -16,7 +16,7 @@ const filters = [
 
 const colors: Record<string, string> = {
   sale: "#F59E0B",
-  rent: "#3B82F6",
+  rent: "var(--primary)",
 };
 
 function normalizePurpose(p?: string | null): "sale" | "rent" {
@@ -28,7 +28,7 @@ function normalizePurpose(p?: string | null): "sale" | "rent" {
 export function PropertyMap({
   properties,
   title = "العقارات على الخريطة",
-  description = "اضغط على أي نقطة لعرض تفاصيل العقار — الأصفر للبيع والأحمر للإيجار.",
+  description = "اضغط على أي نقطة لعرض تفاصيل العقار — الأصفر للبيع والأزرق للإيجار.",
 }: {
   properties: MapProperty[] | undefined;
   title?: string;
@@ -173,8 +173,7 @@ export function PropertyMap({
           للبيع
         </span>
         <span className="flex items-center gap-2">
-          <span className="size-3 rounded-full" style={{ background: colors["rent"] }} /> عقارات
-          للإيجار
+          <span className="size-3 rounded-full" style={{ background: colors["rent"] }} /> عقارات للإيجار
         </span>
         <span>{points.length} عقار على الخريطة</span>
       </div>
