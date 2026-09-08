@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -37,6 +37,7 @@ type Mode = "offer" | "request";
 
 function ListPropertyPage() {
   const [mode, setMode] = useState<Mode>("offer");
+  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
