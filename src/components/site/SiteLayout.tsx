@@ -42,7 +42,7 @@ function SiteHeader() {
           </Link>
           <Link
             to={session ? "/dashboard" : "/auth"}
-            className="hidden rounded-lg bg-gold px-4 py-2 text-[13px] font-bold text-gold-foreground transition-opacity hover:opacity-90 sm:inline-flex"
+            className="inline-flex shrink-0 whitespace-nowrap rounded-lg bg-gold px-3 py-2 text-[12px] font-bold text-gold-foreground transition-opacity hover:opacity-90 sm:px-4 sm:text-[13px]"
           >
             {session ? "لوحة التحكم" : "تسجيل الدخول"}
           </Link>
@@ -229,26 +229,6 @@ function CookieBanner() {
   );
 }
 
-/** شريط إجراء ثابت أسفل الشاشة على الجوال فقط. */
-function MobileStickyCta() {
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-40 flex items-stretch gap-2 border-t border-border bg-card/95 px-3 py-2.5 shadow-float backdrop-blur md:hidden">
-      <a
-        href={`tel:${COMPANY_PHONE}`}
-        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border py-2.5 text-[13px] font-bold text-foreground"
-      >
-        <Phone className="size-4 text-primary" />
-        اتصال
-      </a>
-      <Link
-        to="/list-property"
-        className="flex flex-[1.4] items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-[13px] font-bold text-primary-foreground"
-      >
-        اعرض | اطلب عقارك
-      </Link>
-    </div>
-  );
-}
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   return (
