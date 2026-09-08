@@ -35,7 +35,7 @@ export const Route = createFileRoute("/api/public/twilio-whatsapp")({
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           await supabaseAdmin.from("activity_log").insert({
             action: "whatsapp_webhook",
-            entity: "whatsapp",
+            entity_type: "whatsapp",
             details: {
               from: params["From"] ?? null,
               to: params["To"] ?? null,
