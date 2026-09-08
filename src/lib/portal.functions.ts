@@ -82,6 +82,127 @@ export const ensureClientAccount = createServerFn({ method: "POST" })
     return { ok: true as const, username, password, created: true };
   });
 
+function randomDigits(length: number): string {
+  let out = "";
+  for (let i = 0; i < length; i += 1) out += String(Math.floor(Math.random() * 10));
+  return out;
+}
+
+/** يعرض بيانات دخول العميل الحالية للموظف (اسم المستخدم فقط — كلمة المرور تُعاد بإصدار جديد). */
+export const getClientAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { contactId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const staff = await context.supabase.rpc("is_staff", { _user_id: context.userId });
+    if (!staff.data) throw new Error("غير مصرّح.");
+    const db = await admin();
+    const [account, contact] = await Promise.all([
+      db
+        .from("client_accounts")
+        .select("username, login_email, created_at")
+        .eq("contact_id", data.contactId)
+        .maybeSingle(),
+      db
+        .from("contacts")
+        .select("national_id, phone, whatsapp")
+        .eq("id", data.contactId)
+        .maybeSingle(),
+    ]);
+    return {
+      account: account.data ?? null,
+      suggestedUsername: clientUsername(contact.data?.national_id),
+      suggestedPassword: localPhone(contact.data?.phone ?? contact.data?.whatsapp),
+    };
+  });
+
+/**
+ * ينشئ أو يُعيد إصدار بيانات دخول العميل ويُرجعها للموظف.
+ * لو العقد/الملف ما فيهش رقم هوية أو جوال، النظام يولّد اسم مستخدم وكلمة مرور تلقائيًا.
+ */
+export const issueClientAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { contactId: string; username?: string; password?: string }) => input)
+  .handler(async ({ data, context }) => {
+    const staff = await context.supabase.rpc("is_staff", { _user_id: context.userId });
+    if (!staff.data) throw new Error("غير مصرّح.");
+
+    const db = await admin();
+    const { data: contact, error } = await db
+      .from("contacts")
+      .select("id, full_name, national_id, phone, whatsapp")
+      .eq("id", data.contactId)
+      .single();
+    if (error || !contact) throw new Error("العميل غير موجود.");
+
+    const existing = await db
+      .from("client_accounts")
+      .select("id, user_id, username, login_email")
+      .eq("contact_id", contact.id)
+      .maybeSingle();
+
+    // اسم المستخدم: المُدخل يدويًا → الحساب الحالي → رقم الهوية → رقم تلقائي فريد
+    let username = clientUsername(data.username) || existing.data?.username || clientUsername(contact.national_id);
+    if (!username) {
+      for (let i = 0; i < 12; i += 1) {
+        const candidate = `9${randomDigits(9)}`;
+        const taken = await db
+          .from("client_accounts")
+          .select("id")
+          .eq("username", candidate)
+          .maybeSingle();
+        if (!taken.data) {
+          username = candidate;
+          break;
+        }
+      }
+    }
+    if (!username) throw new Error("تعذّر توليد اسم مستخدم.");
+
+    const manualPassword = String(data.password ?? "").trim();
+    let password = manualPassword || localPhone(contact.phone ?? contact.whatsapp);
+    let generated = false;
+    if (password.length < 6) {
+      password = `05${randomDigits(8)}`;
+      generated = true;
+    }
+
+    const loginEmail = existing.data?.login_email ?? `${username}@${EMAIL_DOMAIN}`;
+
+    if (existing.data) {
+      const upd = await db.auth.admin.updateUserById(existing.data.user_id, { password });
+      if (upd.error) throw new Error(upd.error.message);
+      if (existing.data.username !== username) {
+        await db.from("client_accounts").update({ username }).eq("id", existing.data.id);
+      }
+      return { username, password, loginEmail, created: false, generated };
+    }
+
+    const created = await db.auth.admin.createUser({
+      email: loginEmail,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: contact.full_name, client_contact_id: contact.id, portal: true },
+    });
+
+    let userId = created.data.user?.id;
+    if (!userId) {
+      const list = await db.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      userId = list.data.users.find((u) => u.email === loginEmail)?.id;
+      if (userId) await db.auth.admin.updateUserById(userId, { password });
+    }
+    if (!userId) throw new Error(created.error?.message ?? "تعذّر إنشاء حساب العميل.");
+
+    const up = await db
+      .from("client_accounts")
+      .upsert(
+        { contact_id: contact.id, user_id: userId, username, login_email: loginEmail },
+        { onConflict: "contact_id" },
+      );
+    if (up.error) throw new Error(up.error.message);
+
+    return { username, password, loginEmail, created: true, generated };
+  });
+
 /** يحوّل اسم المستخدم (رقم الهوية) إلى بريد الدخول الداخلي. */
 export const resolveClientLogin = createServerFn({ method: "POST" })
   .inputValidator((input: { username: string }) => input)
