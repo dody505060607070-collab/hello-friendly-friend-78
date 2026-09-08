@@ -280,17 +280,28 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
     const { requireUnlocked } = await import("./kill-switch.server");
     await requireUnlocked();
     const instruction = `استخرج بيانات عقد الإيجار/البيع من الملف المرفق وأعد JSON فقط دون أي نص إضافي بالمفاتيح التالية:
-{"contract_number":"","contract_type":"rent|sale","owner_name":"","owner_national_id":"","owner_phone":"","tenant_name":"","tenant_national_id":"","tenant_phone":"","broker_name":"","broker_phone":"","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD","signed_date":"YYYY-MM-DD","annual_rent":0,"total_value":0,"deposit":0,"fees":0,"payment_cycle":"","payments_count":0,"property_name":"","unit_number":"","city":"","district":"","special_terms":"","warnings":[]}
+{"contract_number":"","contract_type":"rent|sale","owner_name":"","owner_national_id":"","owner_phone":"","owner_email":"","tenant_is_company":false,"tenant_name":"","tenant_national_id":"","tenant_phone":"","tenant_cr_number":"","tenant_rep_name":"","tenant_rep_national_id":"","tenant_rep_phone":"","broker_name":"","broker_phone":"","broker_entity_name":"","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD","signed_date":"YYYY-MM-DD","annual_rent":0,"total_value":0,"vat":0,"deposit":0,"fees":0,"payment_cycle":"","payments_count":0,"property_name":"","property_usage":"","property_type":"","unit_number":"","units":[{"unit_number":"","unit_type":"","floor":"","area":0}],"payments":[{"no":1,"rent":0,"vat":0,"services":0,"total":0,"issue_date":"YYYY-MM-DD","due_date":"YYYY-MM-DD"}],"city":"","district":"","special_terms":"","warnings":[]}
+
+هذا غالبًا نموذج «إيجار» الرسمي (الهيئة العامة للعقار) وقد يكون عقدًا تجاريًا. اعتمد على أرقام البنود:
+- البند ١ بيانات العقد: «رقم سجل العقد» = contract_number (انسخه كاملًا كما هو مثل 20633964658 / 1-0)، «تاريخ إبرام العقد» = signed_date، «تاريخ بداية/نهاية مدّة الإيجار» = start_date/end_date، «مكان إبرام العقد» = city.
+- البند ٢ بيانات المؤجّر = المالك (owner). لا تأخذ اسم المالك من أي بند آخر.
+- البند ٤ بيانات المستأجر: إذا ورد «اسم الشركة/المؤسسة» أو «رقم السجل التجاري» فالمستأجر منشأة: اجعل tenant_is_company=true، tenant_name = اسم الشركة/المؤسسة كاملًا كما هو، tenant_cr_number = رقم السجل التجاري، واترك tenant_national_id فارغًا.
+- البند ٥ بيانات ممثّل المستأجر: هذا شخص مختلف عن المنشأة → tenant_rep_name / tenant_rep_national_id / tenant_rep_phone. لا تضع اسم الممثّل في tenant_name أبدًا.
+- البند ٦ المنشأة العقارية والوسيط: broker_entity_name = اسم منشأة الوساطة، broker_name = الممثل النظامي للمنشأة، broker_phone = جوّاله.
+- البند ٨ بيانات العقار: property_usage (تجاري/سكني)، property_type (نوع البناء)، والعنوان الوطني للحي district.
+- البند ٩ الوحدات الإيجارية: أدرج كل وحدة في units (رقم الوحدة، نوعها، الطابق، المساحة). إن تعددت الوحدات اجعل unit_number = أرقامها مفصولة بفاصلة.
+- البند ١١ البيانات المالية: annual_rent = «القيمة السنوية للإيجار»، total_value = «إجمالي قيمة العقد»، vat = ضريبة القيمة المضافة، deposit = «مبلغ الضمان» أو العربون، payment_cycle = «دورة سداد الإيجار»، payments_count = «عدد دفعات الإيجار».
+- البند ١٢ جدول سداد الدفعات: انسخ كل صف في payments بقيمه وتواريخه الميلادية كما هي. عددها قد يخالف payments_count — إن اختلفا أضف تنبيهًا في warnings.
 
 قواعد إلزامية للدقة:
-1) انسخ القيم كما وردت حرفيًا في العقد ولا تخمّن ولا تُكمل أي قيمة ناقصة؛ إن لم تجدها اتركها "" أو null وأضف سببًا في warnings.
-2) رقم العقد: انسخه بالضبط كما هو مطبوع (بما فيه الشرطات والأصفار البادئة). لا تختصره ولا تُنشئ رقمًا.
-3) الأرقام: حوّل الأرقام العربية (٠١٢٣…) إلى إنجليزية، واحذف الفواصل ورمز العملة، وأعد الأرقام كأرقام لا كنص. فرّق بين الإيجار السنوي وإجمالي قيمة العقد والتأمين والعمولة ولا تخلط بينها.
-4) التواريخ: أعدها ميلادية بصيغة YYYY-MM-DD. إن كان التاريخ هجريًا حوّله بدقة وأضف ملاحظة في warnings تذكر التاريخ الهجري الأصلي.
-5) الأطراف: ميّز المالك/المؤجّر عن المستأجر عن الوسيط حسب صياغة العقد. استخرج رقم الهوية (10 أرقام) والجوال (يبدأ بـ05 أو +9665) لكل طرف إن وُجد.
-6) دورة السداد: شهري/ربع سنوي/نصف سنوي/سنوي حسب النص، وعدد الدفعات كما هو منصوص عليه أو كما يُستنتج من جدول الدفعات المذكور فقط.
-7) لا تدمج عقدين ولا تنقل بيانات من مثال أو عقد سابق؛ استخرج من هذا الملف فقط.
-8) راجع الناتج مرة أخيرة قبل الإخراج وتأكد أن كل قيمة موجودة فعلًا في نص العقد.`;
+1) انسخ القيم حرفيًا ولا تخمّن؛ إن لم تجد قيمة اتركها "" أو 0 وأضف سببًا في warnings.
+2) الأسماء العربية تُنسخ بالكامل بترتيبها الصحيح (اسم، أب، جد، عائلة) دون اختصار أو تصحيح إملائي أو ترجمة.
+3) الأرقام: حوّل الأرقام العربية إلى إنجليزية، واحذف الفواصل ورمز العملة (﷼ / ر.س)، وأعدها كأرقام. لا تخلط بين الإيجار السنوي وإجمالي العقد والضريبة والتأمين.
+4) التواريخ ميلادية YYYY-MM-DD. إن وُجد تاريخ هجري وميلادي معًا خذ الميلادي.
+5) الهوية 10 أرقام، والجوال بصيغته الواردة (+9665… أو 05…). لا تتبادل بيانات الأطراف.
+6) contract_type = "rent" لعقود الإيجار حتى لو كان الاستخدام تجاريًا؛ "sale" فقط لعقود البيع.
+7) استخرج من هذا الملف فقط، ولا تنقل شيئًا من عقد آخر.
+8) راجع الناتج قبل الإخراج وتأكد أن كل قيمة موجودة فعلًا في نص العقد.`;
 
     const extractedText = data.extractedText?.trim().slice(0, 80_000) ?? "";
     const userContent: Part[] = [
