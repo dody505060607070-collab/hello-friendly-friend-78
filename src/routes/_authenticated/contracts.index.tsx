@@ -615,7 +615,7 @@ function ContractsPage() {
   );
 }
 
-function ImportDialog({
+export function ImportDialog({
   open,
   onClose,
   onExtracted,
