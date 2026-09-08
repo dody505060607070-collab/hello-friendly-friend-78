@@ -338,6 +338,7 @@ ${SCOPE_RULE}
 export const askPublicAi = createServerFn({ method: "POST" })
   .inputValidator((input: { messages: { role: "user" | "assistant"; content: string }[] }) => input)
   .handler(async ({ data }) => {
+    const { requireUnlocked } = await import("./kill-switch.server");
     await requireUnlocked();
     const items: Item[] = [
       { role: "system", content: [{ type: "input_text", text: PUBLIC_PROMPT }] },
