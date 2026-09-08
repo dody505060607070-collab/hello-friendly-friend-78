@@ -193,10 +193,9 @@ function PaymentReminderPage() {
       }
     },
     onSuccess: () => {
-      window.open(whatsappLink(phone, message), "_blank", "noopener");
       queryClient.invalidateQueries({ queryKey: ["payment-reminder-log", paymentId] });
       queryClient.invalidateQueries({ queryKey: ["reminder_followups"] });
-      toast.success("تم فتح واتساب وتسجيل التذكير في سجل الرسائل");
+      toast.success("تم إرسال التذكير عبر واتساب مباشرة وتسجيله في سجل الرسائل");
     },
     onError: (e: Error) => toast.error(e.message),
   });
