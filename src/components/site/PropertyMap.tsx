@@ -85,23 +85,36 @@ export function PropertyMap({
       const lng = Number(property.longitude);
       bounds.push([lat, lng]);
       const color = colors[property.purpose] ?? "#B01C2E";
-      L.circleMarker([lat, lng], {
-        radius: 9,
-        color: "#ffffff",
-        weight: 2,
-        fillColor: color,
-        fillOpacity: 1,
-      })
+      const priceLabel = property.price_text ?? "عند التواصل";
+      const icon = L.divIcon({
+        className: "",
+        iconSize: [40, 52],
+        iconAnchor: [20, 50],
+        popupAnchor: [0, -46],
+        html: `<div style="display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35))">
+          <div style="background:${color};border:2px solid #fff;border-radius:12px;width:36px;height:36px;display:flex;align-items:center;justify-content:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/>
+            </svg>
+          </div>
+          <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid ${color};margin-top:-1px"></div>
+        </div>`,
+      });
+      L.marker([lat, lng], { icon, title: property.name })
         .bindPopup(
-          `<div dir="rtl" style="min-width:180px;font-family:inherit">
+          `<div dir="rtl" style="min-width:210px;font-family:inherit">
+            <span style="display:inline-block;background:${color};color:#fff;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;margin-bottom:6px">${
+              property.purpose === "sale" ? "للبيع" : "للإيجار"
+            }</span>
             <strong style="display:block;margin-bottom:4px">${property.name}</strong>
             <span style="color:#666;font-size:12px">${property.district ?? ""}${
               property.city ? `، ${property.city}` : ""
             }</span><br/>
-            <span style="color:${color};font-weight:700;font-size:12px">${
-              property.price_text ?? "عند التواصل"
-            }</span><br/>
-            <a href="/properties/${property.code}" style="color:#B01C2E;font-weight:700;font-size:12px">عرض التفاصيل</a>
+            <span style="color:${color};font-weight:700;font-size:13px">${priceLabel}</span>
+            <div style="display:flex;gap:10px;margin-top:8px">
+              <a href="/properties/${property.code}" style="color:#B01C2E;font-weight:700;font-size:12px">عرض التفاصيل</a>
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" rel="noopener" style="color:#0a7d33;font-weight:700;font-size:12px">الاتجاهات</a>
+            </div>
           </div>`,
         )
         .addTo(layer);
