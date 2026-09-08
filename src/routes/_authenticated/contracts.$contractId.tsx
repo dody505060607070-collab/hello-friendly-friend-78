@@ -65,7 +65,7 @@ function ContractViewPage() {
       const { data, error } = await supabase
         .from("contracts")
         .select(
-          "*, owner:contacts!contracts_owner_id_fkey(full_name, phone, national_id, email), tenant:contacts!contracts_tenant_id_fkey(full_name, phone, national_id, email), property:properties(code, name, city, district, property_type)",
+          "*, owner:contacts!contracts_owner_id_fkey(full_name, phone, national_id, email), tenant:contacts!contracts_tenant_id_fkey(full_name, phone, national_id, email), broker:contacts!contracts_broker_id_fkey(full_name, phone), property:properties(id, code, name, city, district, property_type), unit:units(id, unit_number, unit_type, floor, area, status)",
         )
         .eq("id", contractId)
         .maybeSingle();
@@ -100,7 +100,58 @@ function ContractViewPage() {
     },
   });
 
+  const extraction = useQuery({
+    queryKey: ["contract-view-extraction", contractId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("contract_imports")
+        .select("extraction, warnings, file_name, created_at")
+        .eq("contract_id", contractId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      return (data?.[0] ?? null) as Record<string, any> | null;
+    },
+  });
+
+
   const c: any = contract.data;
+  const ex: Record<string, any> = (extraction.data?.["extraction"] as Record<string, any>) ?? {};
+  const extractedUnits: any[] = Array.isArray(ex["units"]) ? ex["units"] : [];
+  const importWarnings: string[] = Array.isArray(extraction.data?.["warnings"])
+    ? (extraction.data?.["warnings"] as string[])
+    : [];
+
+  const extraFields: { label: string; value: any }[] = [
+    { label: "رقم العقد في إيجار", value: ex["contract_number"] },
+    { label: "تاريخ التوثيق", value: ex["signed_date"] },
+    { label: "مكان التوثيق", value: ex["city"] },
+    { label: "الحي", value: ex["district"] },
+    { label: "نوع العقار", value: ex["property_type"] },
+    { label: "استخدام العقار", value: ex["property_usage"] },
+    { label: "أرقام الوحدات", value: ex["unit_number"] },
+    { label: "المالك", value: ex["owner_name"] },
+    { label: "هوية المالك", value: ex["owner_national_id"] },
+    { label: "جوال المالك", value: ex["owner_phone"] },
+    { label: "بريد المالك", value: ex["owner_email"] },
+    { label: "المستأجر", value: ex["tenant_name"] },
+    { label: "هوية المستأجر", value: ex["tenant_national_id"] },
+    { label: "السجل التجاري", value: ex["tenant_cr_number"] },
+    { label: "ممثل المنشأة", value: ex["tenant_rep_name"] },
+    { label: "هوية الممثل", value: ex["tenant_rep_national_id"] },
+    { label: "جوال الممثل", value: ex["tenant_rep_phone"] },
+    { label: "جوال المستأجر", value: ex["tenant_phone"] },
+    { label: "بريد المستأجر", value: ex["tenant_email"] },
+    { label: "منشأة الوساطة", value: ex["broker_entity_name"] },
+    { label: "الوسيط", value: ex["broker_name"] },
+    { label: "جوال الوسيط", value: ex["broker_phone"] },
+    { label: "الإيجار السنوي", value: ex["annual_rent"] },
+    { label: "القيمة الإجمالية", value: ex["total_value"] },
+    { label: "ضريبة القيمة المضافة", value: ex["vat"] },
+    { label: "التأمين", value: ex["deposit"] },
+    { label: "دورة السداد", value: ex["payment_cycle"] },
+    { label: "عدد الدفعات", value: ex["payments_count"] },
+  ].filter((f) => f.value != null && String(f.value).trim() !== "");
+
 
   const remove = useMutation({
     mutationFn: async (alsoOwner: boolean) =>
@@ -233,15 +284,50 @@ function ContractViewPage() {
             </Section>
           </div>
 
-          <Section title="العقار">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Row label="الكود" value={c.property?.code} />
-              <Row label="الاسم" value={c.property?.name} />
-              <Row label="النوع" value={c.property?.property_type} />
-              <Row label="المدينة" value={c.property?.city} />
-              <Row label="الحي" value={c.property?.district} />
+          <Section title="العقارات والوحدات">
+            {c.property ? (
+              <Link
+                to="/properties"
+                className="mb-3 block rounded-xl border border-border p-3 transition hover:bg-accent/40"
+              >
+                <p className="text-[13.5px] font-bold text-foreground">{c.property.name}</p>
+                <p className="text-[12px] text-muted-foreground">
+                  {[c.property.code, c.property.property_type, c.property.city, c.property.district]
+                    .filter(Boolean)
+                    .join(" · ") || "—"}
+                </p>
+              </Link>
+            ) : (
+              <p className="mb-3 rounded-xl bg-secondary/60 p-3 text-[12.5px] text-muted-foreground">
+                لا يوجد عقار مسجّل مرتبط بهذا العقد — أضف العقار يدويًا أو أعد استيراد الملف.
+              </p>
+            )}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(extractedUnits.length
+                ? extractedUnits
+                : c.unit
+                  ? [c.unit]
+                  : []
+              ).map((u: any, i: number) => (
+                <div key={u.id ?? `${u.unit_number}-${i}`} className="rounded-xl border border-border p-3">
+                  <p className="text-[13px] font-bold text-foreground">
+                    وحدة رقم {u.unit_number || "—"}
+                  </p>
+                  <p className="text-[12px] text-muted-foreground">
+                    {[u.unit_type, u.floor ? `الدور ${u.floor}` : null, u.area ? `${u.area} م²` : null]
+                      .filter(Boolean)
+                      .join(" · ") || "—"}
+                  </p>
+                </div>
+              ))}
+              {!extractedUnits.length && !c.unit ? (
+                <p className="p-2 text-[12.5px] text-muted-foreground">
+                  لم تُذكر وحدات مستقلة في هذا العقد.
+                </p>
+              ) : null}
             </div>
           </Section>
+
 
           <Section title={`جدول الأقساط (${payments.data?.length ?? 0})`}>
             <div className="overflow-x-auto">
@@ -313,6 +399,29 @@ function ContractViewPage() {
               ) : null}
             </div>
           </Section>
+
+          {extraFields.length || importWarnings.length ? (
+            <Section title="كل بيانات العقد كما وردت في الملف">
+              {extraction.data?.["file_name"] ? (
+                <p className="mb-3 text-[12px] text-muted-foreground">
+                  المصدر: {String(extraction.data["file_name"])}
+                </p>
+              ) : null}
+              <div className="grid gap-3 sm:grid-cols-3">
+                {extraFields.map((f) => (
+                  <Row key={f.label} label={f.label} value={String(f.value)} />
+                ))}
+              </div>
+              {importWarnings.length ? (
+                <ul className="mt-4 space-y-1 rounded-xl bg-amber-50 p-3 text-[12.5px] text-amber-900">
+                  {importWarnings.map((w) => (
+                    <li key={w}>• {w}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </Section>
+          ) : null}
+
         </div>
       )}
     </>
