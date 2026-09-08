@@ -34,7 +34,9 @@ function ControlPage() {
     setBusy(true);
     setStatus(null);
     try {
-      const res = await run({ data: { code, locked, message: message || undefined } });
+      const res = await run({
+        data: message ? { code, locked, message } : { code, locked },
+      });
       if (res.ok) {
         setStatus(locked ? "تم قفل الموقع" : "تم تشغيل الموقع");
         setCode("");

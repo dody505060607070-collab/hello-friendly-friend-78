@@ -20,13 +20,11 @@ export const setKillSwitch = createServerFn({ method: "POST" })
       return { ok: false as const, error: "الكود غير صحيح" };
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = {
-      locked: data.locked,
-      updated_at: new Date().toISOString(),
-    };
-    if (typeof data.message === "string" && data.message.trim().length > 0) {
-      patch["message"] = data.message.trim();
-    }
+    const trimmed = typeof data.message === "string" ? data.message.trim() : "";
+    const patch =
+      trimmed.length > 0
+        ? { locked: data.locked, updated_at: new Date().toISOString(), message: trimmed }
+        : { locked: data.locked, updated_at: new Date().toISOString() };
     const { error } = await supabaseAdmin
       .from("site_kill_switch")
       .update(patch)

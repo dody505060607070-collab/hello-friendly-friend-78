@@ -21,6 +21,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RentRouteImport } from './routes/rent'
 import { Route as SaleRouteImport } from './routes/sale'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SysX9k2ControlRouteImport } from './routes/sys-x9k2-control'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ThankYouRouteImport } from './routes/thank-you'
 import { Route as AuthenticatedActivitiesRouteImport } from './routes/_authenticated/activities'
@@ -121,6 +122,11 @@ const SaleRoute = SaleRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SysX9k2ControlRoute = SysX9k2ControlRouteImport.update({
+  id: '/sys-x9k2-control',
+  path: '/sys-x9k2-control',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -360,6 +366,7 @@ export interface FileRoutesByFullPath {
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sys-x9k2-control': typeof SysX9k2ControlRoute
   '/terms': typeof TermsRoute
   '/thank-you': typeof ThankYouRoute
   '/activities': typeof AuthenticatedActivitiesRoute
@@ -414,6 +421,7 @@ export interface FileRoutesByTo {
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sys-x9k2-control': typeof SysX9k2ControlRoute
   '/terms': typeof TermsRoute
   '/thank-you': typeof ThankYouRoute
   '/activities': typeof AuthenticatedActivitiesRoute
@@ -471,6 +479,7 @@ export interface FileRoutesById {
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sys-x9k2-control': typeof SysX9k2ControlRoute
   '/terms': typeof TermsRoute
   '/thank-you': typeof ThankYouRoute
   '/_authenticated/activities': typeof AuthenticatedActivitiesRoute
@@ -528,6 +537,7 @@ export interface FileRouteTypes {
     | '/rent'
     | '/sale'
     | '/sitemap.xml'
+    | '/sys-x9k2-control'
     | '/terms'
     | '/thank-you'
     | '/activities'
@@ -582,6 +592,7 @@ export interface FileRouteTypes {
     | '/rent'
     | '/sale'
     | '/sitemap.xml'
+    | '/sys-x9k2-control'
     | '/terms'
     | '/thank-you'
     | '/activities'
@@ -638,6 +649,7 @@ export interface FileRouteTypes {
     | '/rent'
     | '/sale'
     | '/sitemap.xml'
+    | '/sys-x9k2-control'
     | '/terms'
     | '/thank-you'
     | '/_authenticated/activities'
@@ -695,6 +707,7 @@ export interface RootRouteChildren {
   RentRoute: typeof RentRoute
   SaleRoute: typeof SaleRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SysX9k2ControlRoute: typeof SysX9k2ControlRoute
   TermsRoute: typeof TermsRoute
   ThankYouRoute: typeof ThankYouRoute
   PropertiesCodeRoute: typeof PropertiesCodeRoute
@@ -786,6 +799,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sys-x9k2-control': {
+      id: '/sys-x9k2-control'
+      path: '/sys-x9k2-control'
+      fullPath: '/sys-x9k2-control'
+      preLoaderRoute: typeof SysX9k2ControlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -1190,6 +1210,7 @@ const rootRouteChildren: RootRouteChildren = {
   RentRoute: RentRoute,
   SaleRoute: SaleRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SysX9k2ControlRoute: SysX9k2ControlRoute,
   TermsRoute: TermsRoute,
   ThankYouRoute: ThankYouRoute,
   PropertiesCodeRoute: PropertiesCodeRoute,
