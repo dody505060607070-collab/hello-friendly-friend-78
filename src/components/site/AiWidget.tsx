@@ -63,7 +63,7 @@ export function AiWidget() {
     <>
       <div
         style={{ transform: `translateY(${offsetY}px)` }}
-        className="fixed bottom-28 start-5 z-50 touch-none select-none"
+        className="fixed bottom-20 start-4 z-50 touch-none select-none sm:bottom-28 sm:start-5"
         onPointerDown={(e) => {
           (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
           dragging.current = { startY: e.clientY, startOffset: offsetY, moved: false };

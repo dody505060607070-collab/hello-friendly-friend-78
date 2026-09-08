@@ -117,8 +117,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 flex h-24 items-center justify-between border-b border-border bg-card px-3 md:px-6">
-        <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-3 md:h-24 md:px-6">
+        <div className="relative z-10 flex items-center gap-1 md:gap-2">
           <button
             type="button"
             className="grid size-9 place-items-center rounded-full bg-primary text-[13px] font-bold text-primary-foreground"
