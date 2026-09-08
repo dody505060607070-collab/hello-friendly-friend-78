@@ -42,7 +42,15 @@ export type Database = {
           entity_type?: string | null
           id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       app_settings: {
         Row: {
@@ -2403,6 +2411,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bootstrap_current_user: { Args: never; Returns: undefined }
       has_perm: {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
