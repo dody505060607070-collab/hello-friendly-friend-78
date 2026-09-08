@@ -89,42 +89,55 @@ async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
       ],
     }));
 
+  // نماذج بديلة عند ازدحام النموذج الأساسي (503/429)
+  const models = ["gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-2.5-flash"];
   let last = "";
-  for (const key of keys) {
-    const res = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-goog-api-key": key },
-        body: JSON.stringify({
-          contents,
-          ...(systemText ? { system_instruction: { parts: [{ text: systemText }] } } : {}),
-          generationConfig: {
-            temperature: 0,
-            ...(opts.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}),
-            ...(opts.json ? { responseMimeType: "application/json" } : {}),
-            // إيقاف "التفكير" يقلّل زمن الاستجابة بشكل كبير في مهام الاستخراج.
-            ...(opts.fast ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+  for (const model of models) {
+    for (const key of keys) {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-goog-api-key": key },
+            body: JSON.stringify({
+              contents,
+              ...(systemText ? { system_instruction: { parts: [{ text: systemText }] } } : {}),
+              generationConfig: {
+                temperature: 0,
+                ...(opts.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}),
+                ...(opts.json ? { responseMimeType: "application/json" } : {}),
+                // إيقاف "التفكير" يقلّل زمن الاستجابة بشكل كبير في مهام الاستخراج.
+                ...(opts.fast ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+              },
+            }),
           },
-        }),
-      },
-    );
-    if (!res.ok) {
-      last = `Gemini ${res.status}: ${(await res.text()).slice(0, 200)}`;
-      continue;
+        );
+        if (!res.ok) {
+          last = `Gemini ${res.status}: ${(await res.text()).slice(0, 200)}`;
+          // 503/429 مؤقتة: أعد المحاولة مرة واحدة ثم انتقل للمفتاح/النموذج التالي
+          if ((res.status === 503 || res.status === 429) && attempt === 0) {
+            await new Promise((r) => setTimeout(r, 1500));
+            continue;
+          }
+          break;
+        }
+        const json = (await res.json()) as {
+          candidates?: { content?: { parts?: { text?: string }[] } }[];
+        };
+        const text = (json.candidates?.[0]?.content?.parts ?? [])
+          .map((p) => p.text ?? "")
+          .join("")
+          .trim();
+        if (text) return text;
+        last = "Gemini: رد فارغ.";
+        break;
+      }
     }
-    const json = (await res.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
-    };
-    const text = (json.candidates?.[0]?.content?.parts ?? [])
-      .map((p) => p.text ?? "")
-      .join("")
-      .trim();
-    if (text) return text;
-    last = "Gemini: رد فارغ.";
   }
   throw new Error(last || "فشل Gemini.");
 }
+
 
 /**
  * ترتيب المزوّدين: Google Gemini أولًا (مفتاح مباشر لا يعتمد على منصة الاستضافة)،
