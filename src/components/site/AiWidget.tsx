@@ -68,19 +68,25 @@ export function AiWidget() {
   return (
     <>
       <div
-        style={{ transform: `translateY(${offsetY}px)` }}
+        style={{ transform: `translate3d(${pos.x}px, ${pos.y}px, 0)` }}
         className="fixed bottom-20 start-4 z-50 touch-none select-none sm:bottom-28 sm:start-5"
         onPointerDown={(e) => {
           (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-          dragging.current = { startY: e.clientY, startOffset: offsetY, moved: false };
+          dragging.current = {
+            startX: e.clientX,
+            startY: e.clientY,
+            ox: pos.x,
+            oy: pos.y,
+            moved: false,
+          };
         }}
         onPointerMove={(e) => {
           const d = dragging.current;
           if (!d) return;
-          const delta = e.clientY - d.startY;
-          if (Math.abs(delta) > 4) d.moved = true;
-          const next = Math.min(40, Math.max(-(window.innerHeight - 190), d.startOffset + delta));
-          setOffsetY(next);
+          const dx = e.clientX - d.startX;
+          const dy = e.clientY - d.startY;
+          if (Math.abs(dx) > 4 || Math.abs(dy) > 4) d.moved = true;
+          setPos({ x: d.ox + dx, y: d.oy + dy });
         }}
         onPointerUp={() => {
           const moved = dragging.current?.moved;
