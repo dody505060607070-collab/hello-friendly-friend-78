@@ -173,8 +173,7 @@ export function PropertyMap({
           للبيع
         </span>
         <span className="flex items-center gap-2">
-          <span className="size-3 rounded-full" style={{ background: colors["rent"] }} /> عقارات
-          للإيجار
+          <span className="size-3 rounded-full" style={{ background: colors["rent"] }} /> عقارات للإيجار
         </span>
         <span>{points.length} عقار على الخريطة</span>
       </div>
