@@ -22,7 +22,7 @@ const colors: Record<string, string> = {
 export function PropertyMap({
   properties,
   title = "العقارات على الخريطة",
-  description = "اضغط على أي نقطة لعرض تفاصيل العقار — الأصفر للبيع والأحمر للإيجار.",
+  description = "اضغط على أي نقطة لعرض تفاصيل العقار — الأصفر للبيع والأزرق للإيجار.",
 }: {
   properties: MapProperty[] | undefined;
   title?: string;
