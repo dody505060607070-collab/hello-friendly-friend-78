@@ -329,7 +329,9 @@ export function parseEjarContract(rawText: string): EjarParsed | null {
     broker_phone: g("broker", "Mobile No.").replace(/\s/g, ""),
     property_usage: usage,
     property_type: propertyType,
-    property_name: [propertyType || usage, district].filter(Boolean).join(" — "),
+    property_name: [propertyType || usage, contract("Contract Sealing Location") || district]
+      .filter(Boolean)
+      .join(" — "),
     unit_number: units.map((u) => u.unit_number).filter(Boolean).join("، "),
     units,
     annual_rent: num(anySec("Annual Rent:") || anySec("Annual Rent")) || num(anySec("Total Contract value")),
