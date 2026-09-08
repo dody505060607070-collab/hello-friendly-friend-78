@@ -79,7 +79,7 @@ function OwnersPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [deleteTarget, setDeleteTarget] = useState<{ rows: Row[]; clear?: () => void } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ rows: Row[]; clear?: (() => void) | undefined } | null>(null);
   const [withContracts, setWithContracts] = useState(true);
 
   const { data, isLoading } = useTableRows<Row>({
