@@ -45,7 +45,7 @@ export function KillSwitchGate({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Always let the hidden control route render so the owner can unlock.
+  // Always let the hidden control route render immediately so the owner can unlock.
   if (pathname.startsWith(CONTROL_PATH)) return <>{children}</>;
 
   if (state.loading) {
