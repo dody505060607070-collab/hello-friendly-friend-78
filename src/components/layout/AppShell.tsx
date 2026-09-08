@@ -15,6 +15,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const [closed, setClosed] = useState<string[]>([]);
   const { can } = useCurrentUser();
   const { data: counts } = useQuery(navCountsQuery);
+  const { t } = useI18n();
 
   const toggle = (label: string) =>
     setClosed((prev) =>
