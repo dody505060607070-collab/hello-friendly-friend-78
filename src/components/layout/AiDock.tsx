@@ -20,6 +20,10 @@ export function AiDock() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const scroller = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const drag = useRef<{ x: number; y: number; ox: number; oy: number; moved: boolean } | null>(
+    null,
+  );
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
