@@ -19,6 +19,7 @@ import { PageHero } from "@/components/kit/PageHero";
 import { Pills } from "@/components/kit/Pills";
 import { supabase } from "@/integrations/supabase/client";
 import { analyzeContractPdf } from "@/lib/ai.functions";
+import { ensureClientAccount } from "@/lib/portal.functions";
 import { contractStatusLabels, importStatusLabels } from "@/lib/labels";
 
 type Row = {
