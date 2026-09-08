@@ -37,7 +37,7 @@ function toPlainMessages(input: Item[]) {
 }
 
 /** المزوّد الاحتياطي الأول: Groq (نصي فقط). */
-async function callGroq(input: Item[]): Promise<string> {
+async function callGroq(input: Item[], opts: CallOpts = {}): Promise<string> {
   const key = process.env["GROQ_API_KEY"];
   if (!key) throw new Error("GROQ_API_KEY غير مهيأ.");
   const plain = toPlainMessages(input);
@@ -48,6 +48,9 @@ async function callGroq(input: Item[]): Promise<string> {
     body: JSON.stringify({
       model: "openai/gpt-oss-120b",
       messages: plain.map((m) => ({ role: m.role, content: m.text })),
+      temperature: 0,
+      ...(opts.maxTokens ? { max_completion_tokens: opts.maxTokens } : {}),
+      ...(opts.json ? { response_format: { type: "json_object" } } : {}),
     }),
   });
   if (!res.ok) throw new Error(`Groq ${res.status}: ${(await res.text()).slice(0, 200)}`);
@@ -136,7 +139,7 @@ async function callGateway(input: Item[], opts: CallOpts = {}): Promise<string> 
     errors.push(e instanceof Error ? e.message : String(e));
   }
   try {
-    return await callGroq(input);
+    return await callGroq(input, opts);
   } catch (e) {
     errors.push(e instanceof Error ? e.message : String(e));
   }
@@ -256,15 +259,25 @@ export const askAdminAi = createServerFn({ method: "POST" })
   });
 
 export const analyzeContractPdf = createServerFn({ method: "POST" })
-  .inputValidator((input: { fileName: string; dataUrl: string }) => input)
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { fileName: string; dataUrl?: string; extractedText?: string }) => input)
   .handler(async ({ data }) => {
     const instruction = `استخرج بيانات عقد الإيجار/البيع من الملف المرفق وأعد JSON فقط دون أي نص إضافي بالمفاتيح التال:
 {"contract_number":"","contract_type":"rent|sale","owner_name":"","tenant_name":"","broker_name":"","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD","signed_date":"YYYY-MM-DD","annual_rent":0,"total_value":0,"deposit":0,"fees":0,"payment_cycle":"","payments_count":0,"property_name":"","unit_number":"","city":"","district":"","special_terms":"","warnings":[]}
 اترك أي قيمة غير موجودة فارغة أو null، وأضِف أي ملاحظة مهمة في warnings.`;
 
-    // نظام مختصر + JSON مباشر + بدون "تفكير" = استجابة أسرع بكثير.
-    const text = await callGateway(
-      [
+    const extractedText = data.extractedText?.trim().slice(0, 80_000) ?? "";
+    const userContent: Part[] = [
+      { type: "input_text", text: instruction },
+      ...(extractedText
+        ? [{ type: "input_text" as const, text: `نص العقد المستخرج من ملف PDF:\n${extractedText}` }]
+        : data.dataUrl
+          ? [{ type: "input_file" as const, filename: data.fileName, file_data: data.dataUrl }]
+          : []),
+    ];
+    if (userContent.length === 1) throw new Error("تعذّر استخراج نص أو صور من ملف العقد.");
+
+    const items: Item[] = [
         {
           role: "system",
           content: [
@@ -273,14 +286,22 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
         },
         {
           role: "user",
-          content: [
-            { type: "input_text", text: instruction },
-            { type: "input_file", filename: data.fileName, file_data: data.dataUrl },
-          ],
+          content: userContent,
         },
-      ],
-      { json: true, fast: true, maxTokens: 1200 },
-    );
+      ];
+
+    // العقود النصية تذهب إلى Groq مباشرة؛ إرسال النص أصغر وأسرع كثيرًا من رفع
+    // PDF كامل إلى نموذج بصري. العقود المصوّرة فقط تستخدم Gemini OCR.
+    let text: string;
+    if (extractedText) {
+      try {
+        text = await callGroq(items, { json: true, fast: true, maxTokens: 1200 });
+      } catch {
+        text = await callGemini(items, { json: true, fast: true, maxTokens: 1200 });
+      }
+    } else {
+      text = await callGemini(items, { json: true, fast: true, maxTokens: 1200 });
+    }
 
     const match = text.match(/\{[\s\S]*\}/);
     let extractionJson = "{}";

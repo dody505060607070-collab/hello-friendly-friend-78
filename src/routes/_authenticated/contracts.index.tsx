@@ -622,6 +622,7 @@ function ImportDialog({
   const [importId, setImportId] = useState<string | null>(null);
   const [filePath, setFilePath] = useState<string | null>(null);
   const [report, setReport] = useState<{ created: string[]; warnings: string[] } | null>(null);
+  const [analysisStage, setAnalysisStage] = useState("");
   const queryClient = useQueryClient();
 
   const finalize = useMutation({
@@ -655,6 +656,32 @@ function ImportDialog({
 
   const analyze = useMutation({
     mutationFn: async (f: File) => {
+      setAnalysisStage("جاري قراءة نص العقد…");
+      let extractedText = "";
+      try {
+        const pdfjs = await import("pdfjs-dist");
+        pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+          "pdfjs-dist/build/pdf.worker.min.mjs",
+          import.meta.url,
+        ).toString();
+        const document = await pdfjs.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
+        const pages: string[] = [];
+        for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+          const page = await document.getPage(pageNumber);
+          const content = await page.getTextContent();
+          pages.push(
+            content.items
+              .map((item) => ("str" in item ? item.str : ""))
+              .filter(Boolean)
+              .join(" "),
+          );
+        }
+        extractedText = pages.join("\n").trim();
+      } catch {
+        extractedText = "";
+      }
+
+      setAnalysisStage("جاري حفظ نسخة العقد…");
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result));
@@ -666,8 +693,13 @@ function ImportDialog({
       const upload = await supabase.storage.from("contract-files").upload(path, f, { upsert: true });
       if (upload.error) throw new Error("تعذّر رفع الملف إلى المخزن الخاص");
 
+      setAnalysisStage(extractedText.length >= 300 ? "جاري استخراج البيانات من النص…" : "العقد مصوّر — جاري قراءة الصفحات…");
       const { extractionJson } = await analyzeContractPdf({
-        data: { fileName: f.name, dataUrl },
+        data: {
+          fileName: f.name,
+          extractedText: extractedText.length >= 300 ? extractedText : undefined,
+          dataUrl: extractedText.length >= 300 ? undefined : dataUrl,
+        },
       });
       const extraction = JSON.parse(extractionJson) as Record<string, unknown>;
 
@@ -687,6 +719,7 @@ function ImportDialog({
       return { extraction, path, importId: saved.data?.id ?? null };
     },
     onSuccess: ({ extraction, path, importId: id }) => {
+      setAnalysisStage("");
       setResult(extraction);
       setFilePath(path);
       setImportId(id);
@@ -695,7 +728,10 @@ function ImportDialog({
       queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
       toast.success("تم تحليل الملف بالذكاء الاصطناعي");
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر تحليل الملف"),
+    onError: (err) => {
+      setAnalysisStage("");
+      toast.error(err instanceof Error ? err.message : "تعذّر تحليل الملف");
+    },
   });
 
   const str = (key: string) => {
@@ -753,7 +789,7 @@ function ImportDialog({
         ) : (
           <PrimaryButton onClick={() => file && analyze.mutate(file)} disabled={!file || analyze.isPending}>
             {analyze.isPending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-            تحليل الملف
+              {analyze.isPending ? analysisStage || "جاري تحليل الملف…" : "تحليل الملف"}
           </PrimaryButton>
         )
       }
