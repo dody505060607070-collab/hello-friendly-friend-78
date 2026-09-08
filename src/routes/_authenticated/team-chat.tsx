@@ -106,7 +106,7 @@ function TeamChatPage() {
   });
 
   const patch = useMutation({
-    mutationFn: async ({ id, values }: { id: string; values: Record<string, unknown> }) => {
+    mutationFn: async ({ id, values }: { id: string; values: { is_pinned?: boolean; deleted_at?: string | null } }) => {
       const { error } = await supabase.from("group_messages").update(values).eq("id", id);
       if (error) throw error;
     },

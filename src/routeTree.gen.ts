@@ -44,6 +44,7 @@ import { Route as AuthenticatedServicesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTaskFormRouteImport } from './routes/_authenticated/task-form'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
+import { Route as AuthenticatedTeamChatRouteImport } from './routes/_authenticated/team-chat'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as PropertiesCodeRouteImport } from './routes/properties.$code'
 import { Route as AuthenticatedContractsIndexRouteImport } from './routes/_authenticated/contracts.index'
@@ -238,6 +239,11 @@ const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
   path: '/tasks',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTeamChatRoute = AuthenticatedTeamChatRouteImport.update({
+  id: '/team-chat',
+  path: '/team-chat',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const PortalIndexRoute = PortalIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -341,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/task-form': typeof AuthenticatedTaskFormRoute
   '/tasks': typeof AuthenticatedTasksRoute
+  '/team-chat': typeof AuthenticatedTeamChatRoute
   '/properties/$code': typeof PropertiesCodeRoute
   '/portal/': typeof PortalIndexRoute
   '/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
@@ -388,6 +395,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/task-form': typeof AuthenticatedTaskFormRoute
   '/tasks': typeof AuthenticatedTasksRoute
+  '/team-chat': typeof AuthenticatedTeamChatRoute
   '/properties/$code': typeof PropertiesCodeRoute
   '/portal': typeof PortalIndexRoute
   '/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
@@ -438,6 +446,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/task-form': typeof AuthenticatedTaskFormRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
+  '/_authenticated/team-chat': typeof AuthenticatedTeamChatRoute
   '/properties/$code': typeof PropertiesCodeRoute
   '/portal/': typeof PortalIndexRoute
   '/_authenticated/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
@@ -488,6 +497,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/task-form'
     | '/tasks'
+    | '/team-chat'
     | '/properties/$code'
     | '/portal/'
     | '/contracts/$contractId'
@@ -535,6 +545,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/task-form'
     | '/tasks'
+    | '/team-chat'
     | '/properties/$code'
     | '/portal'
     | '/contracts/$contractId'
@@ -584,6 +595,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/task-form'
     | '/_authenticated/tasks'
+    | '/_authenticated/team-chat'
     | '/properties/$code'
     | '/portal/'
     | '/_authenticated/contracts/$contractId'
@@ -859,6 +871,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTasksRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/team-chat': {
+      id: '/_authenticated/team-chat'
+      path: '/team-chat'
+      fullPath: '/team-chat'
+      preLoaderRoute: typeof AuthenticatedTeamChatRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/portal/': {
       id: '/portal/'
       path: '/'
@@ -972,6 +991,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedTaskFormRoute: typeof AuthenticatedTaskFormRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
+  AuthenticatedTeamChatRoute: typeof AuthenticatedTeamChatRoute
   AuthenticatedContractsContractIdRoute: typeof AuthenticatedContractsContractIdRoute
   AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
   AuthenticatedOwnersOwnerIdRoute: typeof AuthenticatedOwnersOwnerIdRoute
@@ -1006,6 +1026,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedTaskFormRoute: AuthenticatedTaskFormRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
+  AuthenticatedTeamChatRoute: AuthenticatedTeamChatRoute,
   AuthenticatedContractsContractIdRoute: AuthenticatedContractsContractIdRoute,
   AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
   AuthenticatedOwnersOwnerIdRoute: AuthenticatedOwnersOwnerIdRoute,
