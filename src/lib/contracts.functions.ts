@@ -123,11 +123,28 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
           : "annual";
     const paymentsCount = Math.min(Math.max(Number(num(e["payments_count"]) ?? 1), 1), 60);
 
+    // منع تكرار رقم العقد لنفس النوع
+    const contractType = isSale ? "sale" : "rent";
+    let contractNumber = str(e["contract_number"]) || `C-${Date.now().toString(36).toUpperCase()}`;
+    const dup = await db
+      .from("contracts")
+      .select("id")
+      .eq("contract_number", contractNumber)
+      .eq("contract_type", contractType)
+      .maybeSingle();
+    if (dup.data) {
+      const suffix = `-${Date.now().toString(36).toUpperCase().slice(-4)}`;
+      warnings.push(
+        `رقم العقد ${contractNumber} مسجَّل مسبقًا — تم حفظ العقد برقم ${contractNumber}${suffix} للمراجعة.`,
+      );
+      contractNumber = `${contractNumber}${suffix}`;
+    }
+
     const contractIns = await db
       .from("contracts")
       .insert({
-        contract_number: str(e["contract_number"]) || `C-${Date.now().toString(36).toUpperCase()}`,
-        contract_type: isSale ? "sale" : "rent",
+        contract_number: contractNumber,
+        contract_type: contractType,
         owner_id: ownerId,
         tenant_id: tenantId,
         broker_id: brokerId,
