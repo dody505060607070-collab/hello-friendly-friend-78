@@ -229,32 +229,43 @@ async function currentClient(userId: string) {
   return { db, contactId: account.data.contact_id };
 }
 
+/** كل عقود العميل: سواء كان مستأجرًا أو مالكًا أو وسيطًا في العقد. */
+const partyFilter = (id: string) => `tenant_id.eq.${id},owner_id.eq.${id},broker_id.eq.${id}`;
+
 export const getPortalOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { db, contactId } = await currentClient(context.userId);
-    const [contact, contracts, invoices] = await Promise.all([
+    const [contact, contracts] = await Promise.all([
       db.from("contacts").select("id, full_name, national_id, phone, email").eq("id", contactId).single(),
       db
         .from("contracts")
         .select("id, contract_number, contract_type, start_date, end_date, annual_rent, total_value, payment_cycle, payments_count, status")
-        .eq("tenant_id", contactId)
+        .or(partyFilter(contactId))
         .order("start_date", { ascending: false }),
-      db
-        .from("invoices")
-        .select("id, invoice_number, issue_date, due_date, total, status")
-        .eq("contact_id", contactId)
-        .order("issue_date", { ascending: false }),
     ]);
 
     const contractIds = (contracts.data ?? []).map((c) => c.id);
-    const payments = contractIds.length
-      ? await db
-          .from("contract_payments")
-          .select("id, contract_id, payment_number, due_date, amount_due, amount_paid, status")
-          .in("contract_id", contractIds)
-          .order("due_date", { ascending: true })
-      : { data: [] as never[] };
+
+    // الفواتير: الصادرة باسم العميل أو المرتبطة بأي من عقوده
+    const invoiceFilter = contractIds.length
+      ? `contact_id.eq.${contactId},contract_id.in.(${contractIds.join(",")})`
+      : `contact_id.eq.${contactId}`;
+
+    const [invoices, payments] = await Promise.all([
+      db
+        .from("invoices")
+        .select("id, invoice_number, issue_date, due_date, total, status")
+        .or(invoiceFilter)
+        .order("issue_date", { ascending: false }),
+      contractIds.length
+        ? db
+            .from("contract_payments")
+            .select("id, contract_id, payment_number, due_date, amount_due, amount_paid, status")
+            .in("contract_id", contractIds)
+            .order("due_date", { ascending: true })
+        : Promise.resolve({ data: [] as never[] }),
+    ]);
 
     return {
       contact: contact.data,
@@ -280,10 +291,10 @@ export const getPortalContract = createServerFn({ method: "POST" })
     const contract = await db
       .from("contracts")
       .select(
-        "id, contract_number, contract_type, start_date, end_date, annual_rent, total_value, deposit, payment_cycle, payments_count, status, property:property_id(name, city, district), unit:unit_id(unit_number, unit_type)",
+        "id, contract_number, contract_type, start_date, end_date, annual_rent, total_value, deposit, payment_cycle, payments_count, status, tenant:tenant_id(full_name), property:property_id(name, city, district), unit:unit_id(unit_number, unit_type)",
       )
       .eq("id", data.contractId)
-      .eq("tenant_id", contactId)
+      .or(partyFilter(contactId))
       .maybeSingle();
     if (!contract.data) throw new Error("العقد غير متاح.");
 
@@ -296,18 +307,25 @@ export const getPortalContract = createServerFn({ method: "POST" })
     return { contract: contract.data, payments: payments.data ?? [] };
   });
 
+
 export const getPortalInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { invoiceId: string }) => input)
   .handler(async ({ data, context }) => {
     const { db, contactId } = await currentClient(context.userId);
+    const mine = await db.from("contracts").select("id").or(partyFilter(contactId));
+    const contractIds = (mine.data ?? []).map((c) => c.id);
+    const filter = contractIds.length
+      ? `contact_id.eq.${contactId},contract_id.in.(${contractIds.join(",")})`
+      : `contact_id.eq.${contactId}`;
     const invoice = await db
       .from("invoices")
       .select("id, invoice_number, issue_date, due_date, status, subtotal, vat_amount, total, notes, contact:contact_id(full_name, national_id, phone)")
       .eq("id", data.invoiceId)
-      .eq("contact_id", contactId)
+      .or(filter)
       .maybeSingle();
     if (!invoice.data) throw new Error("الفاتورة غير متاحة.");
+
     const items = await db
       .from("invoice_items")
       .select("id, description, quantity, unit_price, total, sort_order")
