@@ -162,8 +162,7 @@ function TeamChatPage() {
     setUploading(true);
     try {
       const path = `team-chat/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
-      const up = await supabase.storage.from("internal-files").upload(path, file, { upsert: true });
-      if (up.error) throw up.error;
+      await uploadMedia("internal-files", path, file);
       const { error } = await supabase.from("group_messages").insert({
         sender_id: userId!,
         body: body.trim() || null,

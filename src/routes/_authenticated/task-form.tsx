@@ -259,8 +259,7 @@ function TaskFormPage() {
     try {
       for (const file of Array.from(files)) {
         const path = `tasks/${id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
-        const up = await supabase.storage.from("internal-files").upload(path, file, { upsert: true });
-        if (up.error) throw up.error;
+        await uploadMedia("internal-files", path, file);
         const { error } = await supabase.from("task_attachments").insert({
           task_id: id,
           file_path: path,

@@ -393,15 +393,8 @@ function PropertyFormPage() {
     try {
       for (const file of Array.from(files)) {
         const path = `${id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
-        const up = await supabase.storage.from("property-media").upload(path, file, {
-          upsert: true,
-        });
-        if (up.error) throw up.error;
-        const signed = await supabase.storage
-          .from("property-media")
-          .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
-        if (signed.error) throw signed.error;
-        await addImage.mutateAsync(signed.data.signedUrl);
+        const { url } = await uploadMedia("property-media", path, file);
+        await addImage.mutateAsync(url);
       }
       toast.success("تم رفع الصور");
     } catch (err) {
