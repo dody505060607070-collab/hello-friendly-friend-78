@@ -20,6 +20,7 @@ import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RentRouteImport } from './routes/rent'
 import { Route as SaleRouteImport } from './routes/sale'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ThankYouRouteImport } from './routes/thank-you'
 import { Route as AuthenticatedActivitiesRouteImport } from './routes/_authenticated/activities'
@@ -113,6 +114,11 @@ const RentRoute = RentRouteImport.update({
 const SaleRoute = SaleRouteImport.update({
   id: '/sale',
   path: '/sale',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -341,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/thank-you': typeof ThankYouRoute
   '/activities': typeof AuthenticatedActivitiesRoute
@@ -392,6 +399,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/thank-you': typeof ThankYouRoute
   '/activities': typeof AuthenticatedActivitiesRoute
@@ -446,6 +454,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/thank-you': typeof ThankYouRoute
   '/_authenticated/activities': typeof AuthenticatedActivitiesRoute
@@ -500,6 +509,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/rent'
     | '/sale'
+    | '/sitemap.xml'
     | '/terms'
     | '/thank-you'
     | '/activities'
@@ -551,6 +561,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/rent'
     | '/sale'
+    | '/sitemap.xml'
     | '/terms'
     | '/thank-you'
     | '/activities'
@@ -604,6 +615,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/rent'
     | '/sale'
+    | '/sitemap.xml'
     | '/terms'
     | '/thank-you'
     | '/_authenticated/activities'
@@ -658,6 +670,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   RentRoute: typeof RentRoute
   SaleRoute: typeof SaleRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   ThankYouRoute: typeof ThankYouRoute
   PropertiesCodeRoute: typeof PropertiesCodeRoute
@@ -740,6 +753,13 @@ declare module '@tanstack/react-router' {
       path: '/sale'
       fullPath: '/sale'
       preLoaderRoute: typeof SaleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -1129,6 +1149,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   RentRoute: RentRoute,
   SaleRoute: SaleRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   ThankYouRoute: ThankYouRoute,
   PropertiesCodeRoute: PropertiesCodeRoute,
