@@ -365,11 +365,23 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
     let extractionJson = "{}";
     if (match) {
       try {
-        extractionJson = JSON.stringify(JSON.parse(match[0]));
+        const parsed = JSON.parse(match[0]) as Record<string, unknown>;
+        if (deterministic) {
+          // القيم المقروءة حرفيًا من العقد تتفوق دائمًا على تخمين الذكاء الاصطناعي.
+          for (const [key, value] of Object.entries(deterministic)) {
+            const filled =
+              (typeof value === "string" && value.trim()) ||
+              (typeof value === "number" && value > 0) ||
+              (Array.isArray(value) && value.length > 0);
+            if (filled) parsed[key] = value;
+          }
+        }
+        extractionJson = JSON.stringify(parsed);
       } catch {
         extractionJson = "{}";
       }
     }
+
     return { extractionJson, raw: text };
   });
 
