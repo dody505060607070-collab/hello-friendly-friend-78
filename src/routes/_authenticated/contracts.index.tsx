@@ -368,7 +368,15 @@ function ContractsPage() {
               header: "رقم العقد",
               sortable: true,
               value: (r) => r.contract_number ?? "",
-              cell: (r) => r.contract_number ?? "—",
+              cell: (r) => (
+                <Link
+                  to="/contracts/$contractId"
+                  params={{ contractId: r.id }}
+                  className="font-bold text-primary hover:underline"
+                >
+                  {r.contract_number ?? "—"}
+                </Link>
+              ),
               className: "font-semibold",
             },
             { header: "النوع", cell: (r) => (r.contract_type === "sale" ? "بيع" : "إيجار") },
