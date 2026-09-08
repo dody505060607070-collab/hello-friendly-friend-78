@@ -16,31 +16,27 @@ async function fetchKillSwitch() {
 
 export function KillSwitchGate({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [state, setState] = useState<{ locked: boolean; message: string; loading: boolean }>({
+  const [mounted, setMounted] = useState(false);
+  const [state, setState] = useState<{ locked: boolean; message: string }>({
     locked: false,
     message: "",
-    loading: true,
   });
 
   useEffect(() => {
-    let mounted = true;
-    fetchKillSwitch()
-      .then((data) => {
-        if (!mounted) return;
-        setState({ locked: Boolean(data.locked), message: data.message || "", loading: false });
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setState({ locked: false, message: "", loading: false });
-      });
+    setMounted(true);
+    let active = true;
+    fetchKillSwitch().then((data) => {
+      if (!active) return;
+      setState({ locked: Boolean(data.locked), message: data.message || "" });
+    });
     const id = setInterval(() => {
       fetchKillSwitch().then((data) => {
-        if (!mounted) return;
-        setState({ locked: Boolean(data.locked), message: data.message || "", loading: false });
+        if (!active) return;
+        setState({ locked: Boolean(data.locked), message: data.message || "" });
       });
     }, 15_000);
     return () => {
-      mounted = false;
+      active = false;
       clearInterval(id);
     };
   }, []);
@@ -48,16 +44,9 @@ export function KillSwitchGate({ children }: { children: ReactNode }) {
   // Always let the hidden control route render immediately so the owner can unlock.
   if (pathname.startsWith(CONTROL_PATH)) return <>{children}</>;
 
-  if (state.loading) {
-    return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black text-white">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-          <p className="text-sm text-white/70">جاري التحقق...</p>
-        </div>
-      </div>
-    );
-  }
+  // During SSR and the first client paint, render children to avoid hydration mismatch.
+  // The gate takes over after hydration.
+  if (!mounted) return <>{children}</>;
 
   if (state.locked) {
     return (
