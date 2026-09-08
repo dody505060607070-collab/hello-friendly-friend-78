@@ -164,7 +164,13 @@ function SiteFooter() {
         </div>
 
         <nav className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[13px] text-white/80">
-          {[...navLinks.slice(1), { to: "/list-property", label: "اعرض | اطلب عقارك" }, { to: "/favorites", label: "المفضلة" }].map(
+          {[
+            ...navLinks.slice(1),
+            { to: "/list-property", label: "اعرض | اطلب عقارك" },
+            { to: "/favorites", label: "المفضلة" },
+            { to: "/privacy", label: "سياسة الخصوصية" },
+            { to: "/terms", label: "الشروط والأحكام" },
+          ].map(
             (item) => (
               <Link key={item.to} to={item.to} className="hover:text-gold">
                 {item.label}
