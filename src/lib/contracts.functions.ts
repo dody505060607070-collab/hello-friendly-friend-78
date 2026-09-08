@@ -256,16 +256,20 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
     // جدول الدفعات
     const base = startDate ? new Date(startDate) : new Date();
     const amountEach = total ? Math.round((total / paymentsCount) * 100) / 100 : 0;
-    if (!amountEach) warnings.push("قيمة العقد غير واضحة — أُنشئت الدفعات بقيمة صفر للمراجعة.");
-    const payments = Array.from({ length: paymentsCount }, (_, i) => ({
-      contract_id: contractId,
-      payment_number: i + 1,
-      due_date: addCycle(base, cycle, i),
-      amount_due: amountEach,
-      amount_paid: 0,
-      status: "pending",
-      is_derived: true,
-    }));
+    if (!amountEach && !scheduleRows.length)
+      warnings.push("قيمة العقد غير واضحة — أُنشئت الدفعات بقيمة صفر للمراجعة.");
+    const payments = Array.from({ length: paymentsCount }, (_, i) => {
+      const row = scheduleRows[i];
+      return {
+        contract_id: contractId,
+        payment_number: i + 1,
+        due_date: row?.due ?? addCycle(base, cycle, i),
+        amount_due: row?.amount ?? amountEach,
+        amount_paid: 0,
+        status: "pending",
+        is_derived: !row,
+      };
+    });
     const payIns = await db.from("contract_payments").insert(payments).select("id, due_date, amount_due, payment_number");
     if (payIns.error) warnings.push(`تعذّر إنشاء جدول الدفعات: ${payIns.error.message}`);
     else created.push(`${payIns.data.length} دفعة مجدولة`);
