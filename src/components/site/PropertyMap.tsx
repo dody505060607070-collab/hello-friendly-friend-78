@@ -90,7 +90,8 @@ export function PropertyMap({
       const lat = Number(property.latitude);
       const lng = Number(property.longitude);
       bounds.push([lat, lng]);
-      const color = colors[property.purpose] ?? "#B01C2E";
+      const purposeKey = normalizePurpose(property.purpose);
+      const color = colors[purposeKey];
       const priceLabel = property.price_text ?? "عند التواصل";
       const icon = L.divIcon({
         className: "",
@@ -110,7 +111,7 @@ export function PropertyMap({
         .bindPopup(
           `<div dir="rtl" style="min-width:210px;font-family:inherit">
             <span style="display:inline-block;background:${color};color:#fff;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;margin-bottom:6px">${
-              property.purpose === "sale" ? "للبيع" : "للإيجار"
+              purposeKey === "sale" ? "للبيع" : "للإيجار"
             }</span>
             <strong style="display:block;margin-bottom:4px">${property.name}</strong>
             <span style="color:#666;font-size:12px">${property.district ?? ""}${
