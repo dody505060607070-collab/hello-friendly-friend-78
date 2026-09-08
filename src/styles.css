@@ -294,3 +294,10 @@
 @utility animate-pop-in {
   animation: pop-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* بوابة العميل: هوية زرقاء */
+.portal-theme {
+  --primary: 217 91% 45%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 217 91% 45%;
+}

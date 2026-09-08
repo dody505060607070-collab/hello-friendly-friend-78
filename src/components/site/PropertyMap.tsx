@@ -16,13 +16,13 @@ const filters = [
 
 const colors: Record<string, string> = {
   sale: "#E0A800",
-  rent: "#2563EB",
+  rent: "#DC2626",
 };
 
 export function PropertyMap({
   properties,
   title = "العقارات على الخريطة",
-  description = "اضغط على أي نقطة لعرض تفاصيل العقار — الأصفر للبيع والأزرق للإيجار.",
+  description = "اضغط على أي نقطة لعرض تفاصيل العقار — الأصفر للبيع والأحمر للإيجار.",
 }: {
   properties: MapProperty[] | undefined;
   title?: string;
