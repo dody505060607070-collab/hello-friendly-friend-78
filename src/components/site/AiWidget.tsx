@@ -63,7 +63,7 @@ export function AiWidget() {
     <>
       <div
         style={{ transform: `translateY(${offsetY}px)` }}
-        className="fixed bottom-28 start-5 z-50 touch-none select-none"
+        className="fixed bottom-20 start-4 z-50 touch-none select-none sm:bottom-28 sm:start-5"
         onPointerDown={(e) => {
           (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
           dragging.current = { startY: e.clientY, startOffset: offsetY, moved: false };
@@ -86,11 +86,11 @@ export function AiWidget() {
         <button
           type="button"
           aria-label="مثراء AI — المساعد الذكي"
-          className="glass shine group flex flex-col items-center gap-1 rounded-3xl px-3 pb-2 pt-3 shadow-float"
+          className="glass shine group flex flex-col items-center gap-0.5 rounded-2xl px-2 pb-1.5 pt-2 shadow-float sm:gap-1 sm:rounded-3xl sm:px-3 sm:pb-2 sm:pt-3"
         >
-          <span className="grid size-14 place-items-center rounded-2xl bg-white/70 ring-1 ring-primary/15">
+          <span className="grid size-9 place-items-center rounded-xl bg-white/70 ring-1 ring-primary/15 sm:size-14 sm:rounded-2xl">
             {open ? (
-              <X className="size-6 text-primary" />
+              <X className="size-4 text-primary sm:size-6" />
             ) : (
               <img
                 src={markAsset.url}
@@ -98,11 +98,13 @@ export function AiWidget() {
                 width={680}
                 height={360}
                 loading="lazy"
-                className="h-9 w-auto animate-float-slow"
+                className="h-6 w-auto animate-float-slow sm:h-9"
               />
             )}
           </span>
-          <span className="text-[11px] font-extrabold tracking-wide text-primary">مثراء AI</span>
+          <span className="text-[9px] font-extrabold tracking-wide text-primary sm:text-[11px]">
+            مثراء AI
+          </span>
         </button>
       </div>
 

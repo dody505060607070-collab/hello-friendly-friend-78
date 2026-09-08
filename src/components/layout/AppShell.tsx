@@ -117,8 +117,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 flex h-24 items-center justify-between border-b border-border bg-card px-3 md:px-6">
-        <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-3 md:h-24 md:px-6">
+        <div className="relative z-10 flex items-center gap-1 md:gap-2">
           <button
             type="button"
             className="grid size-9 place-items-center rounded-full bg-primary text-[13px] font-bold text-primary-foreground"
@@ -140,17 +140,20 @@ export function AppShell({ children }: { children: ReactNode }) {
           <NotificationsBell />
         </div>
 
-        <Link to="/dashboard" className="absolute left-1/2 -translate-x-1/2">
+        <Link
+          to="/dashboard"
+          className="pointer-events-none absolute left-1/2 -translate-x-1/2 md:pointer-events-auto"
+        >
           <img
             src={logoAsset.url}
             alt="مثراء العقارية"
             width={1152}
             height={576}
-            className="h-16 w-auto md:h-[96px]"
+            className="h-9 w-auto md:h-[96px]"
           />
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="relative z-10 flex items-center gap-3">
           <div className="hidden text-end md:block">
             <p className="text-[14px] font-bold leading-tight text-foreground">
               {profile?.full_name ?? "—"}
@@ -176,7 +179,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </aside>
 
         {open ? (
-          <div className="fixed inset-0 top-24 z-20 lg:hidden">
+          <div className="fixed inset-0 top-16 z-20 md:top-24 lg:hidden">
             <button
               type="button"
               aria-label="إغلاق القائمة"

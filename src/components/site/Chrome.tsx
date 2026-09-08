@@ -36,15 +36,15 @@ export function FloatingActions() {
   }, []);
 
   return (
-    <div className="fixed bottom-28 end-5 z-40 flex flex-col items-center gap-3">
+    <div className="fixed bottom-20 end-4 z-40 flex flex-col items-center gap-2 sm:bottom-28 sm:end-5 sm:gap-3">
       {show ? (
         <button
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           aria-label="الرجوع لأعلى"
-          className="glass grid size-11 place-items-center rounded-full text-foreground shadow-float transition-transform hover:-translate-y-1"
+          className="glass grid size-8 place-items-center rounded-full text-foreground shadow-float transition-transform hover:-translate-y-1 sm:size-11"
         >
-          <ArrowUp className="size-5" />
+          <ArrowUp className="size-4 sm:size-5" />
         </button>
       ) : null}
       <a
@@ -52,9 +52,9 @@ export function FloatingActions() {
         target="_blank"
         rel="noreferrer"
         aria-label="تواصل واتساب"
-        className="grid size-13 place-items-center rounded-full bg-[#25D366] text-white shadow-float transition-transform hover:scale-105"
+        className="grid size-10 place-items-center rounded-full bg-[#25D366] text-white shadow-float transition-transform hover:scale-105 sm:size-13"
       >
-        <MessageCircle className="size-6" />
+        <MessageCircle className="size-5 sm:size-6" />
       </a>
     </div>
   );
