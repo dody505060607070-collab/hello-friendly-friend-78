@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Eye, Loader2, Pencil, Plus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -73,6 +73,7 @@ const emptyForm: FormState = {
 };
 
 function OwnersPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
@@ -218,6 +219,7 @@ function OwnersPage() {
       ) : (
         <DataTable<Row>
           rows={rows}
+          onRowClick={(r) => navigate({ to: "/owners/$ownerId", params: { ownerId: r.id } })}
           selectable
           showColumnsButton
           draggableRows

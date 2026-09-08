@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Eye, FileText, FileUp, Loader2, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -115,6 +115,7 @@ const cycleLabels: Record<string, string> = {
 };
 
 function ContractsPage() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState("all");
   const [formOpen, setFormOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -353,6 +354,7 @@ function ContractsPage() {
       ) : (
         <DataTable<Row>
           rows={filtered}
+          onRowClick={(r) => navigate({ to: "/contracts/$contractId", params: { contractId: r.id } })}
           draggableRows
           dragLabel="عقد"
           showColumnsButton

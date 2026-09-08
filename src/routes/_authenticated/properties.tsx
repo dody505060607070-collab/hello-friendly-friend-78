@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Building2, ChevronLeft, Loader2, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -103,6 +103,7 @@ const emptyForm: FormState = {
 };
 
 function PropertiesPage() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState("all");
   const [editing, setEditing] = useState<PropertyRow | null>(null);
   const [open, setOpen] = useState(false);
@@ -299,6 +300,7 @@ function PropertiesPage() {
       ) : (
         <DataTable<PropertyRow>
           rows={filtered}
+          onRowClick={(r) => navigate({ to: "/property-form", search: { id: r.id } })}
           selectable
           showColumnsButton
           draggableRows
