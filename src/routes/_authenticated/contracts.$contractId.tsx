@@ -100,6 +100,20 @@ function ContractViewPage() {
     },
   });
 
+  const extraction = useQuery({
+    queryKey: ["contract-view-extraction", contractId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("contract_imports")
+        .select("extraction, warnings, file_name, created_at")
+        .eq("contract_id", contractId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      return (data?.[0] ?? null) as Record<string, any> | null;
+    },
+  });
+
+
   const c: any = contract.data;
 
   const remove = useMutation({
