@@ -330,10 +330,10 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
     // Gemini أسرع مسار؛ وعند ازدحامه نستخدم Groq للنص المستخرج.
     let text: string;
     try {
-      text = await callGemini(items, { json: true, fast: true, maxTokens: 1200 });
+      text = await callGemini(items, { json: true, fast: true, maxTokens: 3000 });
     } catch (e) {
       if (!extractedText) throw e;
-      text = await callGroq(items, { json: true, maxTokens: 1200 });
+      text = await callGroq(items, { json: true, maxTokens: 3000 });
     }
 
 
