@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Camera, CircleCheck, ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
+import { Camera, MapPin, CircleCheck, ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
