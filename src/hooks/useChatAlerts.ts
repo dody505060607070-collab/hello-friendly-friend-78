@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useAuth";
 
 let sharedCtx: AudioContext | null = null;
+let ringtone: HTMLAudioElement | null = null;
+let ringtoneUrl: string | null = null;
 
 function getCtx(): AudioContext | null {
   try {
@@ -21,51 +23,140 @@ function getCtx(): AudioContext | null {
   }
 }
 
-/** فتح الصوت بعد أول تفاعل من المستخدم حتى يعمل التنبيه لاحقًا والتبويب في الخلفية. */
-function unlockAudio() {
-  const ctx = getCtx();
-  if (!ctx) return;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0.00001, ctx.currentTime);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start();
-  osc.stop(ctx.currentTime + 0.01);
+/** توليد نغمة رنين قوية (WAV) لتشغيلها على الموبايل عبر عنصر <audio>. */
+function buildRingtoneUrl(): string {
+  if (ringtoneUrl) return ringtoneUrl;
+  const rate = 44100;
+  const dur = 1.6;
+  const n = Math.floor(rate * dur);
+  const buf = new ArrayBuffer(44 + n * 2);
+  const view = new DataView(buf);
+  const str = (o: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i));
+  };
+  str(0, "RIFF");
+  view.setUint32(4, 36 + n * 2, true);
+  str(8, "WAVEfmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true);
+  view.setUint32(28, rate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  str(36, "data");
+  view.setUint32(40, n * 2, true);
+
+  // أربع نبضات صاعدة قوية (جرس تنبيه واضح)
+  const notes = [784, 988, 1175, 1568];
+  const noteLen = dur / notes.length;
+  for (let i = 0; i < n; i++) {
+    const t = i / rate;
+    const idx = Math.min(notes.length - 1, Math.floor(t / noteLen));
+    const local = t - idx * noteLen;
+    const f = notes[idx]!;
+    const env = Math.exp(-local * 6) * (local < 0.005 ? local / 0.005 : 1);
+    const sample =
+      (Math.sin(2 * Math.PI * f * t) * 0.6 +
+        Math.sin(2 * Math.PI * f * 2 * t) * 0.25 +
+        Math.sin(2 * Math.PI * f * 3 * t) * 0.15) *
+      env *
+      0.95;
+    view.setInt16(44 + i * 2, Math.max(-1, Math.min(1, sample)) * 32767, true);
+  }
+  ringtoneUrl = URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+  return ringtoneUrl;
 }
 
-/** نغمة تنبيه قصيرة بدون ملفات صوت خارجية. */
+function getRingtone(): HTMLAudioElement | null {
+  try {
+    if (!ringtone) {
+      ringtone = new Audio(buildRingtoneUrl());
+      ringtone.preload = "auto";
+      ringtone.volume = 1;
+    }
+    return ringtone;
+  } catch {
+    return null;
+  }
+}
+
+/** فتح الصوت بعد أول تفاعل من المستخدم — ضروري جدًا على الموبايل. */
+function unlockAudio() {
+  const ctx = getCtx();
+  if (ctx) {
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.00001, ctx.currentTime);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.01);
+    } catch {
+      /* تجاهل */
+    }
+  }
+  const el = getRingtone();
+  if (el) {
+    const prev = el.volume;
+    el.volume = 0;
+    el
+      .play()
+      .then(() => {
+        el.pause();
+        el.currentTime = 0;
+        el.volume = prev;
+      })
+      .catch(() => {
+        el.volume = prev;
+      });
+  }
+}
+
+/** نغمة تنبيه قوية تعمل على الموبايل والكمبيوتر. */
 function playChime() {
+  const el = getRingtone();
+  if (el) {
+    try {
+      el.currentTime = 0;
+      el.volume = 1;
+      void el.play().catch(() => playChimeWebAudio());
+    } catch {
+      playChimeWebAudio();
+    }
+  } else {
+    playChimeWebAudio();
+  }
+  if ("vibrate" in navigator) navigator.vibrate?.([200, 100, 200, 100, 300]);
+}
+
+function playChimeWebAudio() {
   const ctx = getCtx();
   if (!ctx) return;
   try {
     const now = ctx.currentTime;
-
-    // ضاغط بسيط لرفع الصوت المسموع بدون تشويه
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.setValueAtTime(-18, now);
     comp.ratio.setValueAtTime(12, now);
     comp.connect(ctx.destination);
 
     const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(1.0, now + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+    gain.gain.setValueAtTime(1, now);
     gain.connect(comp);
 
-    // نغمتان متكررتان أقوى وأوضح
-    [880, 1180, 880, 1320].forEach((freq, i) => {
-      const t = now + i * 0.16;
+    [784, 988, 1175, 1568].forEach((freq, i) => {
+      const t = now + i * 0.18;
       const osc = ctx.createOscillator();
-      osc.type = i % 2 === 0 ? "triangle" : "square";
+      osc.type = "triangle";
       osc.frequency.setValueAtTime(freq, t);
       const oGain = ctx.createGain();
       oGain.gain.setValueAtTime(0.9, t);
-      oGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+      oGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
       osc.connect(oGain);
       oGain.connect(gain);
       osc.start(t);
-      osc.stop(t + 0.32);
+      osc.stop(t + 0.36);
     });
   } catch {
     /* تجاهل */
