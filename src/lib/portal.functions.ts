@@ -313,13 +313,19 @@ export const getPortalInvoice = createServerFn({ method: "POST" })
   .inputValidator((input: { invoiceId: string }) => input)
   .handler(async ({ data, context }) => {
     const { db, contactId } = await currentClient(context.userId);
+    const mine = await db.from("contracts").select("id").or(partyFilter(contactId));
+    const contractIds = (mine.data ?? []).map((c) => c.id);
+    const filter = contractIds.length
+      ? `contact_id.eq.${contactId},contract_id.in.(${contractIds.join(",")})`
+      : `contact_id.eq.${contactId}`;
     const invoice = await db
       .from("invoices")
       .select("id, invoice_number, issue_date, due_date, status, subtotal, vat_amount, total, notes, contact:contact_id(full_name, national_id, phone)")
       .eq("id", data.invoiceId)
-      .eq("contact_id", contactId)
+      .or(filter)
       .maybeSingle();
     if (!invoice.data) throw new Error("الفاتورة غير متاحة.");
+
     const items = await db
       .from("invoice_items")
       .select("id, description, quantity, unit_price, total, sort_order")
