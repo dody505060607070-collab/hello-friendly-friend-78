@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as ListPropertyRouteImport } from './routes/list-property'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as RentRouteImport } from './routes/rent'
 import { Route as SaleRouteImport } from './routes/sale'
 import { Route as AuthenticatedActivitiesRouteImport } from './routes/_authenticated/activities'
@@ -46,9 +47,14 @@ import { Route as AuthenticatedServicesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTaskFormRouteImport } from './routes/_authenticated/task-form'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
+import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as PropertiesCodeRouteImport } from './routes/properties.$code'
 import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
 import { Route as AuthenticatedOwnersOwnerIdRouteImport } from './routes/_authenticated/owners.$ownerId'
+import { Route as PortalContractsIndexRouteImport } from './routes/portal.contracts.index'
+import { Route as PortalContractsContractIdRouteImport } from './routes/portal.contracts.$contractId'
+import { Route as PortalInvoicesIndexRouteImport } from './routes/portal.invoices.index'
+import { Route as PortalInvoicesInvoiceIdRouteImport } from './routes/portal.invoices.$invoiceId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -82,6 +88,11 @@ const FavoritesRoute = FavoritesRouteImport.update({
 const ListPropertyRoute = ListPropertyRouteImport.update({
   id: '/list-property',
   path: '/list-property',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RentRoute = RentRouteImport.update({
@@ -241,6 +252,11 @@ const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
   path: '/tasks',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalRoute,
+} as any)
 const PropertiesCodeRoute = PropertiesCodeRouteImport.update({
   id: '/properties/$code',
   path: '/properties/$code',
@@ -258,6 +274,27 @@ const AuthenticatedOwnersOwnerIdRoute =
     path: '/$ownerId',
     getParentRoute: () => AuthenticatedOwnersRoute,
   } as any)
+const PortalContractsIndexRoute = PortalContractsIndexRouteImport.update({
+  id: '/contracts/',
+  path: '/contracts/',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalContractsContractIdRoute =
+  PortalContractsContractIdRouteImport.update({
+    id: '/contracts/$contractId',
+    path: '/contracts/$contractId',
+    getParentRoute: () => PortalRoute,
+  } as any)
+const PortalInvoicesIndexRoute = PortalInvoicesIndexRouteImport.update({
+  id: '/invoices/',
+  path: '/invoices/',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalInvoicesInvoiceIdRoute = PortalInvoicesInvoiceIdRouteImport.update({
+  id: '/invoices/$invoiceId',
+  path: '/invoices/$invoiceId',
+  getParentRoute: () => PortalRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -266,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
+  '/portal': typeof PortalRouteWithChildren
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
   '/activities': typeof AuthenticatedActivitiesRoute
@@ -297,8 +335,13 @@ export interface FileRoutesByFullPath {
   '/task-form': typeof AuthenticatedTaskFormRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/properties/$code': typeof PropertiesCodeRoute
+  '/portal/': typeof PortalIndexRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
+  '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
+  '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
+  '/portal/contracts/': typeof PortalContractsIndexRoute
+  '/portal/invoices/': typeof PortalInvoicesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -338,8 +381,13 @@ export interface FileRoutesByTo {
   '/task-form': typeof AuthenticatedTaskFormRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/properties/$code': typeof PropertiesCodeRoute
+  '/portal': typeof PortalIndexRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
+  '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
+  '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
+  '/portal/contracts': typeof PortalContractsIndexRoute
+  '/portal/invoices': typeof PortalInvoicesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -350,6 +398,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
+  '/portal': typeof PortalRouteWithChildren
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
   '/_authenticated/activities': typeof AuthenticatedActivitiesRoute
@@ -381,8 +430,13 @@ export interface FileRoutesById {
   '/_authenticated/task-form': typeof AuthenticatedTaskFormRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/properties/$code': typeof PropertiesCodeRoute
+  '/portal/': typeof PortalIndexRoute
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/_authenticated/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
+  '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
+  '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
+  '/portal/contracts/': typeof PortalContractsIndexRoute
+  '/portal/invoices/': typeof PortalInvoicesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -393,6 +447,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/favorites'
     | '/list-property'
+    | '/portal'
     | '/rent'
     | '/sale'
     | '/activities'
@@ -424,8 +479,13 @@ export interface FileRouteTypes {
     | '/task-form'
     | '/tasks'
     | '/properties/$code'
+    | '/portal/'
     | '/invoices/$invoiceId'
     | '/owners/$ownerId'
+    | '/portal/contracts/$contractId'
+    | '/portal/invoices/$invoiceId'
+    | '/portal/contracts/'
+    | '/portal/invoices/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -465,8 +525,13 @@ export interface FileRouteTypes {
     | '/task-form'
     | '/tasks'
     | '/properties/$code'
+    | '/portal'
     | '/invoices/$invoiceId'
     | '/owners/$ownerId'
+    | '/portal/contracts/$contractId'
+    | '/portal/invoices/$invoiceId'
+    | '/portal/contracts'
+    | '/portal/invoices'
   id:
     | '__root__'
     | '/'
@@ -476,6 +541,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/favorites'
     | '/list-property'
+    | '/portal'
     | '/rent'
     | '/sale'
     | '/_authenticated/activities'
@@ -507,8 +573,13 @@ export interface FileRouteTypes {
     | '/_authenticated/task-form'
     | '/_authenticated/tasks'
     | '/properties/$code'
+    | '/portal/'
     | '/_authenticated/invoices/$invoiceId'
     | '/_authenticated/owners/$ownerId'
+    | '/portal/contracts/$contractId'
+    | '/portal/invoices/$invoiceId'
+    | '/portal/contracts/'
+    | '/portal/invoices/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -519,6 +590,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   FavoritesRoute: typeof FavoritesRoute
   ListPropertyRoute: typeof ListPropertyRoute
+  PortalRoute: typeof PortalRouteWithChildren
   RentRoute: typeof RentRoute
   SaleRoute: typeof SaleRoute
   PropertiesCodeRoute: typeof PropertiesCodeRoute
@@ -573,6 +645,13 @@ declare module '@tanstack/react-router' {
       path: '/list-property'
       fullPath: '/list-property'
       preLoaderRoute: typeof ListPropertyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rent': {
@@ -785,6 +864,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTasksRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/portal/': {
+      id: '/portal/'
+      path: '/'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
     '/properties/$code': {
       id: '/properties/$code'
       path: '/properties/$code'
@@ -805,6 +891,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/owners/$ownerId'
       preLoaderRoute: typeof AuthenticatedOwnersOwnerIdRouteImport
       parentRoute: typeof AuthenticatedOwnersRoute
+    }
+    '/portal/contracts/': {
+      id: '/portal/contracts/'
+      path: '/contracts'
+      fullPath: '/portal/contracts/'
+      preLoaderRoute: typeof PortalContractsIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/contracts/$contractId': {
+      id: '/portal/contracts/$contractId'
+      path: '/contracts/$contractId'
+      fullPath: '/portal/contracts/$contractId'
+      preLoaderRoute: typeof PortalContractsContractIdRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/invoices/': {
+      id: '/portal/invoices/'
+      path: '/invoices'
+      fullPath: '/portal/invoices/'
+      preLoaderRoute: typeof PortalInvoicesIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/invoices/$invoiceId': {
+      id: '/portal/invoices/$invoiceId'
+      path: '/invoices/$invoiceId'
+      fullPath: '/portal/invoices/$invoiceId'
+      preLoaderRoute: typeof PortalInvoicesInvoiceIdRouteImport
+      parentRoute: typeof PortalRoute
     }
   }
 }
@@ -898,6 +1012,25 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface PortalRouteChildren {
+  PortalIndexRoute: typeof PortalIndexRoute
+  PortalContractsContractIdRoute: typeof PortalContractsContractIdRoute
+  PortalInvoicesInvoiceIdRoute: typeof PortalInvoicesInvoiceIdRoute
+  PortalContractsIndexRoute: typeof PortalContractsIndexRoute
+  PortalInvoicesIndexRoute: typeof PortalInvoicesIndexRoute
+}
+
+const PortalRouteChildren: PortalRouteChildren = {
+  PortalIndexRoute: PortalIndexRoute,
+  PortalContractsContractIdRoute: PortalContractsContractIdRoute,
+  PortalInvoicesInvoiceIdRoute: PortalInvoicesInvoiceIdRoute,
+  PortalContractsIndexRoute: PortalContractsIndexRoute,
+  PortalInvoicesIndexRoute: PortalInvoicesIndexRoute,
+}
+
+const PortalRouteWithChildren =
+  PortalRoute._addFileChildren(PortalRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -906,6 +1039,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   FavoritesRoute: FavoritesRoute,
   ListPropertyRoute: ListPropertyRoute,
+  PortalRoute: PortalRouteWithChildren,
   RentRoute: RentRoute,
   SaleRoute: SaleRoute,
   PropertiesCodeRoute: PropertiesCodeRoute,

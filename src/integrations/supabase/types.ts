@@ -216,6 +216,41 @@ export type Database = {
         }
         Relationships: []
       }
+      client_accounts: {
+        Row: {
+          contact_id: string
+          created_at: string
+          id: string
+          login_email: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          id?: string
+          login_email: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          id?: string
+          login_email?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_accounts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: true
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           address: string | null
