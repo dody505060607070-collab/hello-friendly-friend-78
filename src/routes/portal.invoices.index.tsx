@@ -33,6 +33,9 @@ const statusChip: Record<string, { label: string; cls: string }> = {
 function PortalInvoices() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["portal-overview"],
     queryFn: () => getPortalOverview(),
