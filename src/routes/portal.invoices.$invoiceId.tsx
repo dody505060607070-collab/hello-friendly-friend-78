@@ -130,22 +130,45 @@ function InvoiceView() {
             </table>
           </div>
 
-          <dl className="mt-6 max-w-sm space-y-2 text-sm">
-            <div className="flex justify-between border-b border-border pb-2">
-              <dt className="text-muted-foreground">الإجمالي قبل الضريبة</dt>
-              <dd className="font-semibold">{money(Number(inv.subtotal))}</dd>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4">
+              <p className="text-sm font-bold text-primary">رمز التحقق الضريبي</p>
+              <p className="mt-1 text-xs text-muted-foreground">أضف الرقم الضريبي للمنشأة من إعدادات المنصة لإظهار بيانات التحقق.</p>
             </div>
-            <div className="flex justify-between border-b border-border pb-2">
-              <dt className="text-muted-foreground">ضريبة القيمة المضافة</dt>
-              <dd className="font-semibold">{money(Number(inv.vat_amount))}</dd>
-            </div>
-            <div className="flex justify-between border-b-2 border-primary pb-2">
-              <dt className="font-bold">الإجمالي شامل الضريبة</dt>
-              <dd className="text-base font-bold">{money(Number(inv.total))}</dd>
-            </div>
-          </dl>
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between border-b border-border pb-2">
+                <dt className="text-muted-foreground">الإجمالي قبل الضريبة</dt>
+                <dd className="font-semibold">{money(Number(inv.subtotal))}</dd>
+              </div>
+              <div className="flex justify-between border-b border-border pb-2">
+                <dt className="text-muted-foreground">ضريبة القيمة المضافة</dt>
+                <dd className="font-semibold">{money(Number(inv.vat_amount))}</dd>
+              </div>
+              <div className="flex justify-between border-b-2 border-primary pb-2">
+                <dt className="font-bold">الإجمالي شامل الضريبة</dt>
+                <dd className="text-base font-bold">{money(Number(inv.total))}</dd>
+              </div>
+            </dl>
+          </div>
 
           {inv.notes ? <p className="mt-6 text-sm text-muted-foreground">{inv.notes}</p> : null}
+          <p className="mt-2 text-sm text-muted-foreground">يرجى سداد الفاتورة خلال مدة الاستحقاق الموضحة{inv.due_date ? ` — تاريخ الاستحقاق ${inv.due_date}` : ""}.</p>
+
+          <div className="mt-8 grid gap-3 border-t border-border pt-4 text-xs text-muted-foreground sm:grid-cols-3">
+            <div>
+              <p className="font-bold text-foreground">العنوان</p>
+              <p>بريدة، المملكة العربية السعودية</p>
+            </div>
+            <div>
+              <p className="font-bold text-foreground">البريد الإلكتروني</p>
+              <p dir="ltr">info@mithra.sa</p>
+            </div>
+            <div>
+              <p className="font-bold text-foreground">العملة</p>
+              <p>SAR — ريال سعودي</p>
+            </div>
+          </div>
+
         </div>
       </article>
     </div>
