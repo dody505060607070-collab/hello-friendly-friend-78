@@ -222,7 +222,7 @@ export function useChatAlerts() {
       const name = await senderName(senderId);
       const text = (body ?? "مرفق جديد").slice(0, 120);
       playChime();
-      if (document.hidden) systemNotify(`${name} — ${source}`, text);
+      systemNotify(`${name} — ${source}`, text);
       toast.message(`${name} — ${source}`, { description: text });
       qc.invalidateQueries({ queryKey: ["notifications"] });
       qc.invalidateQueries({ queryKey: ["nav-counts"] });
