@@ -26,23 +26,38 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const [audience, setAudience] = useState<"staff" | "client">("staff");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" });
-    });
+    void (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) return;
+      const account = await supabase
+        .from("client_accounts")
+        .select("id")
+        .eq("user_id", data.session.user.id)
+        .maybeSingle();
+      navigate({ to: account.data ? "/portal" : "/dashboard" });
+    })();
   }, [navigate]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "signin") {
+      if (audience === "client") {
+        const { email: loginEmail } = await resolveClientLogin({ data: { username } });
+        if (!loginEmail) throw new Error("لا يوجد حساب عميل بهذا الرقم. تواصل مع الإدارة.");
+        const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+        if (error) throw new Error("رقم الهوية أو رقم الجوال غير صحيح.");
+        navigate({ to: "/portal" });
+      } else if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         navigate({ to: "/dashboard" });
