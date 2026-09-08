@@ -43,10 +43,10 @@ async function senderName(id: string | null | undefined) {
 
 /** إشعار وصوت لأي رسالة جديدة في شات الموظفين أو محادثات الأنشطة. */
 export function useChatAlerts() {
-  const { data: user } = useCurrentUser();
+  const { userId } = useCurrentUser();
   const qc = useQueryClient();
   const meRef = useRef<string | undefined>(undefined);
-  meRef.current = user?.id;
+  meRef.current = userId;
 
   useEffect(() => {
     const notify = async (senderId: string | null, body: string | null, source: string) => {
