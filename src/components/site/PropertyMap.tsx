@@ -16,7 +16,7 @@ const filters = [
 
 const colors: Record<string, string> = {
   sale: "#F59E0B",
-  rent: "#EF4444",
+  rent: "#3B82F6",
 };
 
 function normalizePurpose(p?: string | null): "sale" | "rent" {
