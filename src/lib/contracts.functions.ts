@@ -131,7 +131,10 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
     if (!tenantName) warnings.push("لم يُستخرج اسم المستأجر من الملف.");
 
     // العقار
-    const propertyName = str(e["property_name"]) || str(e["unit_number"]);
+    const propertyName =
+      str(e["property_name"]) ||
+      [str(e["property_type"]), str(e["district"])].filter(Boolean).join(" — ") ||
+      (str(e["unit_number"]) ? `وحدة ${str(e["unit_number"])}` : "");
     let propertyId: string | null = null;
     if (propertyName) {
       const found = await db.from("properties").select("id").ilike("name", propertyName).limit(1);
