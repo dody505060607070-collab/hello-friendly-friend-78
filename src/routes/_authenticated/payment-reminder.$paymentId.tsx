@@ -20,7 +20,8 @@ import { toast } from "sonner";
 import { Chip } from "@/components/kit/Chip";
 import { PageHero } from "@/components/kit/PageHero";
 import { supabase } from "@/integrations/supabase/client";
-import { publicSettingsQuery, whatsappLink } from "@/lib/site-data";
+import { publicSettingsQuery } from "@/lib/site-data";
+import { sendWhatsAppMessage } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/_authenticated/payment-reminder/$paymentId")({
   head: () => ({
@@ -159,6 +160,10 @@ function PaymentReminderPage() {
       if (!phone) throw new Error("لا يوجد رقم جوال محفوظ للمستأجر");
       const option = repeatOptions.find((o) => o.key === repeat) ?? { key: "once", label: "مرة واحدة", hours: 0 };
 
+      // إرسال مباشر عبر Twilio من الرقم الموحّد
+      const result = await sendWhatsAppMessage({ data: { to: phone, body: message } });
+      if (!result.ok) throw new Error(result.error);
+
       const { error: logError } = await supabase.from("message_log").insert({
         recipient_name: tenant?.full_name ?? null,
         recipient_phone: phone,
@@ -166,7 +171,7 @@ function PaymentReminderPage() {
         payment_id: p.id,
         body: message,
         channel: "whatsapp",
-        result: "sent",
+        result: result.sid ? `sent:${result.sid}` : "sent",
         sent_by_system: false,
       });
       if (logError) throw logError;
@@ -188,10 +193,9 @@ function PaymentReminderPage() {
       }
     },
     onSuccess: () => {
-      window.open(whatsappLink(phone, message), "_blank", "noopener");
       queryClient.invalidateQueries({ queryKey: ["payment-reminder-log", paymentId] });
       queryClient.invalidateQueries({ queryKey: ["reminder_followups"] });
-      toast.success("تم فتح واتساب وتسجيل التذكير في سجل الرسائل");
+      toast.success("تم إرسال التذكير عبر واتساب مباشرة وتسجيله في سجل الرسائل");
     },
     onError: (e: Error) => toast.error(e.message),
   });
