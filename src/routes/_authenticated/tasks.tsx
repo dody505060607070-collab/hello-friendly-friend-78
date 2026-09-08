@@ -316,6 +316,23 @@ function TasksPage() {
             },
             { header: "العقار", cell: (r) => r.property?.name ?? "—" },
             {
+              header: "الموقع",
+              cell: (r) =>
+                r.location_lat != null && r.location_lng != null ? (
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${r.location_lat},${r.location_lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-primary"
+                  >
+                    <MapPin className="size-3.5" />
+                    {r.location_text || "عرض على الخريطة"}
+                  </a>
+                ) : (
+                  (r.location_text ?? "—")
+                ),
+            },
+            {
               header: "الموعد",
               sortable: true,
               value: (r) => r.due_date ?? "",
@@ -327,7 +344,9 @@ function TasksPage() {
                 <select
                   value={r.status}
                   onChange={(e) => changeStatus.mutate({ id: r.id, status: e.target.value })}
-                  className="h-9 rounded-lg border border-border bg-card px-2 text-[12.5px] font-semibold text-foreground outline-none"
+                  className={`h-9 rounded-lg border px-2 text-[12.5px] font-semibold outline-none ${
+                    STATUS_STYLE[r.status] ?? "border-border bg-card text-foreground"
+                  }`}
                   aria-label="حالة المهمة"
                 >
                   {statusOrder.map((s) => (
