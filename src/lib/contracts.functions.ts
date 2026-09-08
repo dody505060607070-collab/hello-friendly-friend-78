@@ -31,6 +31,7 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
       input,
   )
   .handler(async ({ data, context }) => {
+    const { requireUnlocked } = await import("./kill-switch.server");
     await requireUnlocked();
     const staff = await context.supabase.rpc("is_staff", { _user_id: context.userId });
     if (!staff.data) throw new Error("غير مصرّح.");
