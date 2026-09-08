@@ -46,8 +46,13 @@ function PortalInvoices() {
 
   const all = data?.invoices ?? [];
   const rows = all.filter(
-    (i) => (!search || i.invoice_number.includes(search)) && (!status || i.status === status),
+    (i) =>
+      (!search || i.invoice_number.includes(search)) &&
+      (!status || i.status === status) &&
+      (!from || i.issue_date >= from) &&
+      (!to || i.issue_date <= to),
   );
+
   const unpaid = all.filter((i) => i.status !== "paid" && i.status !== "cancelled");
 
   return (
