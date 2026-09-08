@@ -56,7 +56,7 @@ function AuthPage() {
         const { email: loginEmail } = await resolveClientLogin({ data: { username } });
         if (!loginEmail) throw new Error("لا يوجد حساب عميل بهذا الرقم. تواصل مع الإدارة.");
         const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-        if (error) throw new Error("رقم الهوية أو رقم الجوال غير صحيح.");
+        if (error) throw new Error("رقم الهوية أو كلمة المرور غير صحيحة.");
         navigate({ to: "/portal" });
       } else if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
