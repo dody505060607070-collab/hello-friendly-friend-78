@@ -5,19 +5,45 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useAuth";
 
-/** نغمة تنبيه قصيرة بدون ملفات صوت خارجية. */
-function playChime() {
+let sharedCtx: AudioContext | null = null;
+
+function getCtx(): AudioContext | null {
   try {
     const Ctx =
       window.AudioContext ??
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
+    if (!Ctx) return null;
+    if (!sharedCtx) sharedCtx = new Ctx();
+    if (sharedCtx.state === "suspended") void sharedCtx.resume();
+    return sharedCtx;
+  } catch {
+    return null;
+  }
+}
+
+/** فتح الصوت بعد أول تفاعل من المستخدم حتى يعمل التنبيه لاحقًا والتبويب في الخلفية. */
+function unlockAudio() {
+  const ctx = getCtx();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.00001, ctx.currentTime);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 0.01);
+}
+
+/** نغمة تنبيه قصيرة بدون ملفات صوت خارجية. */
+function playChime() {
+  const ctx = getCtx();
+  if (!ctx) return;
+  try {
     const now = ctx.currentTime;
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+    gain.gain.exponentialRampToValueAtTime(0.22, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
     gain.connect(ctx.destination);
 
     [880, 1180].forEach((freq, i) => {
@@ -28,10 +54,29 @@ function playChime() {
       osc.start(now + i * 0.13);
       osc.stop(now + i * 0.13 + 0.25);
     });
-
-    window.setTimeout(() => void ctx.close(), 900);
   } catch {
-    /* المتصفح منع الصوت قبل تفاعل المستخدم */
+    /* تجاهل */
+  }
+}
+
+/** إشعار نظام يظهر حتى لو التبويب في الخلفية. */
+function systemNotify(title: string, body: string) {
+  try {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    const n = new Notification(title, {
+      body,
+      icon: "/favicon.png",
+      badge: "/favicon.png",
+      tag: "mithra-chat",
+      silent: false,
+    });
+    n.onclick = () => {
+      window.focus();
+      n.close();
+    };
+    if ("vibrate" in navigator) navigator.vibrate?.([120, 60, 120]);
+  } catch {
+    /* تجاهل */
   }
 }
 
@@ -48,14 +93,28 @@ export function useChatAlerts() {
   const meRef = useRef<string | undefined>(undefined);
   meRef.current = userId;
 
+  // إذن إشعارات المتصفح + فتح الصوت بعد أول تفاعل
+  useEffect(() => {
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      void Notification.requestPermission();
+    }
+    const onInteract = () => unlockAudio();
+    window.addEventListener("pointerdown", onInteract, { once: true });
+    window.addEventListener("keydown", onInteract, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", onInteract);
+      window.removeEventListener("keydown", onInteract);
+    };
+  }, []);
+
   useEffect(() => {
     const notify = async (senderId: string | null, body: string | null, source: string) => {
       if (!senderId || senderId === meRef.current) return;
       const name = await senderName(senderId);
+      const text = (body ?? "مرفق جديد").slice(0, 120);
       playChime();
-      toast.message(`${name} — ${source}`, {
-        description: (body ?? "مرفق جديد").slice(0, 120),
-      });
+      if (document.hidden) systemNotify(`${name} — ${source}`, text);
+      toast.message(`${name} — ${source}`, { description: text });
       qc.invalidateQueries({ queryKey: ["notifications"] });
       qc.invalidateQueries({ queryKey: ["nav-counts"] });
     };
