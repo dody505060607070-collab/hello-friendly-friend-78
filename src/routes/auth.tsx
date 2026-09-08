@@ -165,7 +165,7 @@ function AuthPage() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="password">{audience === "client" ? "رقم الجوال (05…)" : "كلمة المرور"}</Label>
+            <Label htmlFor="password">كلمة المرور</Label>
             <Input
               id="password"
               type="password"
