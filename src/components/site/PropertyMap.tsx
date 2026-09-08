@@ -112,7 +112,7 @@ export function PropertyMap({
             }</span><br/>
             <span style="color:${color};font-weight:700;font-size:13px">${priceLabel}</span>
             <div style="display:flex;gap:10px;margin-top:8px">
-              <a href="/properties/${property.code}" style="color:#B01C2E;font-weight:700;font-size:12px">عرض التفاصيل</a>
+              <a href="/properties/${property.code}" style="color:${color};font-weight:700;font-size:12px">عرض التفاصيل</a>
               <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" rel="noopener" style="color:#0a7d33;font-weight:700;font-size:12px">الاتجاهات</a>
             </div>
           </div>`,
