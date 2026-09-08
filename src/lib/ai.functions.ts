@@ -279,9 +279,18 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { requireUnlocked } = await import("./kill-switch.server");
     await requireUnlocked();
-    const instruction = `استخرج بيانات عقد الإيجار/البيع من الملف المرفق وأعد JSON فقط دون أي نص إضافي بالمفاتيح التال:
-{"contract_number":"","contract_type":"rent|sale","owner_name":"","tenant_name":"","broker_name":"","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD","signed_date":"YYYY-MM-DD","annual_rent":0,"total_value":0,"deposit":0,"fees":0,"payment_cycle":"","payments_count":0,"property_name":"","unit_number":"","city":"","district":"","special_terms":"","warnings":[]}
-اترك أي قيمة غير موجودة فارغة أو null، وأضِف أي ملاحظة مهمة في warnings.`;
+    const instruction = `استخرج بيانات عقد الإيجار/البيع من الملف المرفق وأعد JSON فقط دون أي نص إضافي بالمفاتيح التالية:
+{"contract_number":"","contract_type":"rent|sale","owner_name":"","owner_national_id":"","owner_phone":"","tenant_name":"","tenant_national_id":"","tenant_phone":"","broker_name":"","broker_phone":"","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD","signed_date":"YYYY-MM-DD","annual_rent":0,"total_value":0,"deposit":0,"fees":0,"payment_cycle":"","payments_count":0,"property_name":"","unit_number":"","city":"","district":"","special_terms":"","warnings":[]}
+
+قواعد إلزامية للدقة:
+1) انسخ القيم كما وردت حرفيًا في العقد ولا تخمّن ولا تُكمل أي قيمة ناقصة؛ إن لم تجدها اتركها "" أو null وأضف سببًا في warnings.
+2) رقم العقد: انسخه بالضبط كما هو مطبوع (بما فيه الشرطات والأصفار البادئة). لا تختصره ولا تُنشئ رقمًا.
+3) الأرقام: حوّل الأرقام العربية (٠١٢٣…) إلى إنجليزية، واحذف الفواصل ورمز العملة، وأعد الأرقام كأرقام لا كنص. فرّق بين الإيجار السنوي وإجمالي قيمة العقد والتأمين والعمولة ولا تخلط بينها.
+4) التواريخ: أعدها ميلادية بصيغة YYYY-MM-DD. إن كان التاريخ هجريًا حوّله بدقة وأضف ملاحظة في warnings تذكر التاريخ الهجري الأصلي.
+5) الأطراف: ميّز المالك/المؤجّر عن المستأجر عن الوسيط حسب صياغة العقد. استخرج رقم الهوية (10 أرقام) والجوال (يبدأ بـ05 أو +9665) لكل طرف إن وُجد.
+6) دورة السداد: شهري/ربع سنوي/نصف سنوي/سنوي حسب النص، وعدد الدفعات كما هو منصوص عليه أو كما يُستنتج من جدول الدفعات المذكور فقط.
+7) لا تدمج عقدين ولا تنقل بيانات من مثال أو عقد سابق؛ استخرج من هذا الملف فقط.
+8) راجع الناتج مرة أخيرة قبل الإخراج وتأكد أن كل قيمة موجودة فعلًا في نص العقد.`;
 
     const extractedText = data.extractedText?.trim().slice(0, 80_000) ?? "";
     const userContent: Part[] = [
