@@ -21,6 +21,7 @@ import { Chip } from "@/components/kit/Chip";
 import { PageHero } from "@/components/kit/PageHero";
 import { supabase } from "@/integrations/supabase/client";
 import { publicSettingsQuery, whatsappLink } from "@/lib/site-data";
+import { sendWhatsAppMessage } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/_authenticated/payment-reminder/$paymentId")({
   head: () => ({
