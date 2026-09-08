@@ -11,12 +11,20 @@ export const SOCIAL_PLATFORMS: {
   key: SocialKey;
   label: string;
   color: string;
+  /** لون النص/الأيقونة فوق الخلفية */
+  textColor?: string;
   placeholder: string;
 }[] = [
-  { key: "link_youtube", label: "يوتيوب", color: "#FF0000", placeholder: "https://youtube.com/..." },
+  {
+    key: "link_youtube",
+    label: "يوتيوب",
+    color: "#FFFFFF",
+    textColor: "#FF0000",
+    placeholder: "https://youtube.com/...",
+  },
   { key: "link_tiktok", label: "تيك توك", color: "#010101", placeholder: "https://tiktok.com/@..." },
   { key: "link_instagram", label: "إنستغرام", color: "#E1306C", placeholder: "https://instagram.com/..." },
-  { key: "link_snapchat", label: "سناب شات", color: "#FFFC00", placeholder: "https://snapchat.com/..." },
+  { key: "link_snapchat", label: "سناب شات", color: "#FFFC00", textColor: "#111111", placeholder: "https://snapchat.com/..." },
   { key: "link_x", label: "إكس (تويتر)", color: "#0F1419", placeholder: "https://x.com/..." },
   { key: "link_facebook", label: "فيسبوك", color: "#1877F2", placeholder: "https://facebook.com/..." },
   { key: "link_tour", label: "جولة افتراضية", color: "#0EA5E9", placeholder: "https://..." },

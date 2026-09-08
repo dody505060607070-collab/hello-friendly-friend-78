@@ -37,6 +37,7 @@ export function DataTable<T>({
   draggableRows = true,
   dragLabel,
   onRowClick,
+  bulkActions,
   exportFileName = "بيانات",
 }: {
   columns: Column<T>[];
@@ -53,6 +54,8 @@ export function DataTable<T>({
   dragLabel?: string;
   /** فتح صفحة الصف عند الضغط على أي مكان فيه */
   onRowClick?: (row: T) => void;
+  /** إجراءات جماعية على الصفوف المحددة */
+  bulkActions?: (rows: T[], clear: () => void) => ReactNode;
   /** اسم ملف Excel، ويظهر زر التصدير تلقائيًا لكل جدول */
   exportFileName?: string;
 }) {
@@ -196,9 +199,15 @@ export function DataTable<T>({
           </div>
         ) : null}
         {selected.length ? (
-          <span className="text-[12.5px] font-semibold text-primary">
-            تم تحديد {selected.length}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[12.5px] font-semibold text-primary">
+              تم تحديد {selected.length}
+            </span>
+            {bulkActions?.(
+              selected.map((i) => pageRows[i]).filter(Boolean) as T[],
+              () => setSelected([]),
+            )}
+          </div>
         ) : null}
       </div>
 

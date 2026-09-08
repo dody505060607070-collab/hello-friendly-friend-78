@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Eye, Loader2, Pencil, Plus, Users } from "lucide-react";
+import { Eye, Loader2, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -18,6 +18,7 @@ import {
 import { PageHero } from "@/components/kit/PageHero";
 import { Toggle } from "@/components/kit/Toggle";
 import { supabase } from "@/integrations/supabase/client";
+import { deleteOwners } from "@/lib/delete-helpers";
 
 type Row = {
   id: string;
@@ -78,6 +79,8 @@ function OwnersPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [deleteTarget, setDeleteTarget] = useState<{ rows: Row[]; clear?: (() => void) | undefined } | null>(null);
+  const [withContracts, setWithContracts] = useState(true);
 
   const { data, isLoading } = useTableRows<Row>({
     table: "contacts",
@@ -179,6 +182,24 @@ function OwnersPage() {
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التحديث"),
   });
 
+  const remove = useMutation({
+    mutationFn: async (input: { ids: string[]; withContracts: boolean }) =>
+      deleteOwners(input.ids, input.withContracts),
+    onSuccess: (_d, input) => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["owner-links"] });
+      queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
+      toast.success(`تم حذف ${input.ids.length} مالك`);
+      setDeleteTarget(null);
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحذف"),
+  });
+
+  const askDelete = (targets: Row[], clear?: () => void) =>
+    setDeleteTarget({ rows: targets, clear });
+
+
   const stats = useMemo(
     () => ({
       all: rows.length,
@@ -225,6 +246,16 @@ function OwnersPage() {
           draggableRows
           dragLabel="مالك"
           exportFileName="قائمة الملاك"
+          bulkActions={(selectedRows, clear) => (
+            <button
+              type="button"
+              onClick={() => askDelete(selectedRows, clear)}
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-destructive px-3 text-[12.5px] font-semibold text-destructive-foreground"
+            >
+              <Trash2 className="size-4" />
+              حذف المحدد ({selectedRows.length})
+            </button>
+          )}
           searchPlaceholder="بحث بالاسم أو الجوال أو الهوية"
           emptyState={
             <EmptyState
@@ -303,6 +334,15 @@ function OwnersPage() {
                     title="تعديل"
                   >
                     <Pencil className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => askDelete([r])}
+                    className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    aria-label={`حذف ${r.full_name}`}
+                    title="حذف المالك"
+                  >
+                    <Trash2 className="size-4" />
                   </button>
                 </div>
               ),
@@ -385,6 +425,52 @@ function OwnersPage() {
             <Toggle label="مالك نشط" checked={form.is_active} onChange={(v) => set({ is_active: v })} />
             مالك نشط
           </span>
+        </div>
+      </Modal>
+
+      <Modal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title={
+          deleteTarget && deleteTarget.rows.length > 1
+            ? `حذف ${deleteTarget.rows.length} مالك`
+            : `حذف المالك ${deleteTarget?.rows[0]?.full_name ?? ""}`
+        }
+        subtitle="لا يمكن التراجع عن هذا الإجراء."
+        footer={
+          <>
+            <PrimaryButton
+              onClick={() => {
+                if (!deleteTarget) return;
+                const ids = deleteTarget.rows.map((r) => r.id);
+                const clear = deleteTarget.clear;
+                remove.mutate({ ids, withContracts }, { onSuccess: () => clear?.() });
+              }}
+              disabled={remove.isPending}
+            >
+              {remove.isPending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+              تأكيد الحذف
+            </PrimaryButton>
+            <GhostButton onClick={() => setDeleteTarget(null)}>إلغاء</GhostButton>
+          </>
+        }
+      >
+        <div className="space-y-3 text-[13px]">
+          <p className="text-muted-foreground">
+            سيتم فصل عقارات ووحدات {deleteTarget && deleteTarget.rows.length > 1 ? "الملاك" : "المالك"} عن
+            الملف قبل الحذف.
+          </p>
+          <label className="flex items-center gap-2 font-semibold">
+            <Toggle
+              label="حذف العقود المرتبطة"
+              checked={withContracts}
+              onChange={(v) => setWithContracts(v)}
+            />
+            حذف العقود المرتبطة بالمالك أيضًا
+          </label>
+          <p className="text-[12px] text-muted-foreground">
+            لو أوقفت هذا الخيار سيتم الاحتفاظ بالعقود بدون مالك.
+          </p>
         </div>
       </Modal>
     </>
