@@ -1,11 +1,15 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, FileText, Loader2, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { Chip } from "@/components/kit/Chip";
+import { GhostButton, Modal, PrimaryButton } from "@/components/kit/Modal";
 import { PageHero } from "@/components/kit/PageHero";
+import { Toggle } from "@/components/kit/Toggle";
 import { supabase } from "@/integrations/supabase/client";
+import { deleteContractWithOwner } from "@/lib/delete-helpers";
 
 export const Route = createFileRoute("/_authenticated/contracts/$contractId")({
   component: ContractViewPage,
