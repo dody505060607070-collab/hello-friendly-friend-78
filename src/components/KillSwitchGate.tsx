@@ -1,6 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -17,17 +16,39 @@ async function fetchKillSwitch() {
 
 export function KillSwitchGate({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { data } = useQuery({
-    queryKey: ["site-kill-switch"],
-    queryFn: fetchKillSwitch,
-    refetchInterval: 30_000,
-    staleTime: 15_000,
+  const [mounted, setMounted] = useState(false);
+  const [state, setState] = useState<{ locked: boolean; message: string }>({
+    locked: false,
+    message: "",
   });
 
-  // Always let the hidden control route render so the owner can unlock.
+  useEffect(() => {
+    setMounted(true);
+    let active = true;
+    fetchKillSwitch().then((data) => {
+      if (!active) return;
+      setState({ locked: Boolean(data.locked), message: data.message || "" });
+    });
+    const id = setInterval(() => {
+      fetchKillSwitch().then((data) => {
+        if (!active) return;
+        setState({ locked: Boolean(data.locked), message: data.message || "" });
+      });
+    }, 15_000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, []);
+
+  // Always let the hidden control route render immediately so the owner can unlock.
   if (pathname.startsWith(CONTROL_PATH)) return <>{children}</>;
 
-  if (data?.locked) {
+  // During SSR and the first client paint, render children to avoid hydration mismatch.
+  // The gate takes over after hydration.
+  if (!mounted) return <>{children}</>;
+
+  if (state.locked) {
     return (
       <div
         dir="rtl"
@@ -43,7 +64,7 @@ export function KillSwitchGate({ children }: { children: ReactNode }) {
           </div>
           <h1 className="text-2xl font-bold">الخدمة متوقفة</h1>
           <p className="mt-3 text-sm leading-7 text-white/70">
-            {data.message || "الموقع متوقف مؤقتاً. يرجى التواصل مع المالك."}
+            {state.message || "الموقع متوقف مؤقتاً. يرجى التواصل مع المالك."}
           </p>
         </div>
       </div>

@@ -124,7 +124,8 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        {/* Kill switch wraps the entire application shell so 404, errors and every route are blocked when locked. */}
+        <KillSwitchGate>{children}</KillSwitchGate>
         <Scripts />
       </body>
     </html>
@@ -138,10 +139,8 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <AuthProvider>
-          <KillSwitchGate>
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Outlet />
-          </KillSwitchGate>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
           <Toaster richColors position="top-center" />
         </AuthProvider>
       </LanguageProvider>
