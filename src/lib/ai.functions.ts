@@ -303,9 +303,15 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
         },
       ];
 
-    // Gemini Flash Lite أسرع مسار للنص ويدعم OCR عند الحاجة؛ Groq يبقى
-    // احتياطيًا للمحادثات النصية ولا نستخدم نموذجه الكبير في تحليل العقود.
-    const text = await callGemini(items, { json: true, fast: true, maxTokens: 1200 });
+    // Gemini أسرع مسار؛ وعند ازدحامه نستخدم Groq للنص المستخرج.
+    let text: string;
+    try {
+      text = await callGemini(items, { json: true, fast: true, maxTokens: 1200 });
+    } catch (e) {
+      if (!extractedText) throw e;
+      text = await callGroq(items, { json: true, maxTokens: 1200 });
+    }
+
 
     const match = text.match(/\{[\s\S]*\}/);
     let extractionJson = "{}";
