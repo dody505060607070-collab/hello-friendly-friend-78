@@ -67,9 +67,9 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
       }
 
       if (existingId) {
-        const patch: Record<string, unknown> = {};
-        if (nid) patch["national_id"] = nid;
-        if (tel) patch["phone"] = tel;
+        const patch: { national_id?: string; phone?: string } = {};
+        if (nid) patch.national_id = nid;
+        if (tel) patch.phone = tel;
         if (Object.keys(patch).length) await db.from("contacts").update(patch).eq("id", existingId);
         return existingId;
       }
