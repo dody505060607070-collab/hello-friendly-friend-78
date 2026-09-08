@@ -579,7 +579,132 @@ function ClientsPage() {
             ))}
           </dl>
         ) : null}
+        {detail ? <ClientAccessPanel contactId={detail.id} phone={detail.whatsapp ?? detail.phone} /> : null}
       </Modal>
     </>
+  );
+}
+
+function ClientAccessPanel({ contactId, phone }: { contactId: string; phone: string | null }) {
+  const [issued, setIssued] = useState<{ username: string; password: string } | null>(null);
+  const [manualUser, setManualUser] = useState("");
+  const [manualPass, setManualPass] = useState("");
+
+  const access = useQuery({
+    queryKey: ["client-access", contactId],
+    queryFn: () => getClientAccess({ data: { contactId } }),
+  });
+
+  const issue = useMutation({
+    mutationFn: () =>
+      issueClientAccess({
+        data: {
+          contactId,
+          ...(manualUser.trim() ? { username: manualUser.trim() } : {}),
+          ...(manualPass.trim() ? { password: manualPass.trim() } : {}),
+        },
+      }),
+    onSuccess: (res) => {
+      setIssued({ username: res.username, password: res.password });
+      access.refetch();
+      toast.success(res.created ? "تم إنشاء حساب العميل" : "تم تحديث بيانات الدخول");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "تعذّر إصدار بيانات الدخول"),
+  });
+
+  const shown = issued;
+  const waText = shown
+    ? encodeURIComponent(
+        `بيانات دخول بوابة العميل:\nاسم المستخدم: ${shown.username}\nكلمة المرور: ${shown.password}`,
+      )
+    : "";
+  const waPhone = String(phone ?? "").replace(/\D/g, "");
+
+  return (
+    <div className="mt-4 rounded-xl border border-border p-4">
+      <h3 className="text-[13px] font-bold text-foreground">بيانات دخول بوابة العميل</h3>
+      <p className="mt-1 text-[12px] leading-6 text-muted-foreground">
+        تُنشأ تلقائيًا من العقد (اسم المستخدم = رقم الهوية، كلمة المرور = الجوال 05…). ولو العقد بدون
+        هوية أو جوال يولّد النظام بيانات دخول تلقائية يمكنك تسليمها للعميل.
+      </p>
+
+      <div className="mt-3 text-[12.5px]">
+        {access.isLoading ? (
+          <span className="inline-flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" /> جارٍ التحميل…
+          </span>
+        ) : access.data?.account ? (
+          <p>
+            اسم المستخدم الحالي: <strong dir="ltr">{access.data.account.username}</strong>
+          </p>
+        ) : (
+          <p className="text-muted-foreground">لا يوجد حساب دخول لهذا العميل بعد.</p>
+        )}
+      </div>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <input
+          dir="ltr"
+          className={inputClass}
+          placeholder={`اسم مستخدم (اختياري) ${access.data?.suggestedUsername ?? ""}`}
+          value={manualUser}
+          onChange={(e) => setManualUser(e.target.value)}
+        />
+        <input
+          dir="ltr"
+          className={inputClass}
+          placeholder="كلمة مرور (اختياري — 6 أرقام فأكثر)"
+          value={manualPass}
+          onChange={(e) => setManualPass(e.target.value)}
+        />
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <PrimaryButton onClick={() => issue.mutate()} disabled={issue.isPending}>
+          {access.data?.account ? "إعادة إصدار كلمة المرور" : "إنشاء حساب دخول"}
+        </PrimaryButton>
+        {shown ? (
+          <>
+            <GhostButton
+              onClick={() => {
+                void navigator.clipboard.writeText(
+                  `اسم المستخدم: ${shown.username} - كلمة المرور: ${shown.password}`,
+                );
+                toast.success("تم نسخ بيانات الدخول");
+              }}
+            >
+              نسخ البيانات
+            </GhostButton>
+            {waPhone ? (
+              <a
+                href={`https://wa.me/${waPhone.startsWith("0") ? `966${waPhone.slice(1)}` : waPhone}?text=${waText}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-10 items-center rounded-lg border border-border px-4 text-[12.5px] font-semibold"
+              >
+                إرسال واتساب
+              </a>
+            ) : null}
+          </>
+        ) : null}
+      </div>
+
+      {shown ? (
+        <div className="mt-3 grid gap-2 rounded-lg bg-muted p-3 text-[13px] sm:grid-cols-2">
+          <div>
+            <span className="text-[11.5px] text-muted-foreground">اسم المستخدم</span>
+            <p dir="ltr" className="font-bold">
+              {shown.username}
+            </p>
+          </div>
+          <div>
+            <span className="text-[11.5px] text-muted-foreground">كلمة المرور</span>
+            <p dir="ltr" className="font-bold">
+              {shown.password}
+            </p>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
