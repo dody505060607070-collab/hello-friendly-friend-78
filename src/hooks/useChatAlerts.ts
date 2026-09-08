@@ -197,15 +197,20 @@ export function useChatAlerts() {
   const meRef = useRef<string | undefined>(undefined);
   meRef.current = userId;
 
-  // إذن إشعارات المتصفح + فتح الصوت بعد أول تفاعل
+  // إذن إشعارات المتصفح + فتح الصوت بعد أول تفاعل (الموبايل يشترط تفاعل المستخدم)
   useEffect(() => {
-    if (typeof Notification !== "undefined" && Notification.permission === "default") {
-      void Notification.requestPermission();
-    }
-    const onInteract = () => unlockAudio();
-    window.addEventListener("pointerdown", onInteract, { once: true });
-    window.addEventListener("keydown", onInteract, { once: true });
+    const onInteract = () => {
+      unlockAudio();
+      if (typeof Notification !== "undefined" && Notification.permission === "default") {
+        void Notification.requestPermission();
+      }
+    };
+    // نكرّر المحاولة مع كل تفاعل حتى يفتح المتصفح الصوت فعليًا
+    window.addEventListener("touchstart", onInteract);
+    window.addEventListener("pointerdown", onInteract);
+    window.addEventListener("keydown", onInteract);
     return () => {
+      window.removeEventListener("touchstart", onInteract);
       window.removeEventListener("pointerdown", onInteract);
       window.removeEventListener("keydown", onInteract);
     };
