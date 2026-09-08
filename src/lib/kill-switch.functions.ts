@@ -1,16 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 
-import {
-  getKillSwitchState,
-  killSwitchCodeMatches,
-  requireUnlocked,
-} from "./kill-switch.server";
-
-export { requireUnlocked, getKillSwitchState };
-
 export const setKillSwitch = createServerFn({ method: "POST" })
   .inputValidator((data: { code: string; locked: boolean; message?: string }) => data)
   .handler(async ({ data }) => {
+    const { killSwitchCodeMatches } = await import("./kill-switch.server");
     const expected = process.env["KILL_SWITCH_SECRET"];
     if (!expected) {
       return { ok: false as const, error: "KILL_SWITCH_SECRET غير مضبوط على الخادم" };
