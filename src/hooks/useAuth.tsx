@@ -30,15 +30,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    const bootstrap = async () => {
+      try {
+        await supabase.rpc("bootstrap_current_user");
+        await queryClient.invalidateQueries({ queryKey: ["me"] });
+      } catch {
+        /* تجاهل */
+      }
+    };
+
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setSession(data.session);
       setLoading(false);
+      if (data.session) void bootstrap();
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       setSession(next);
+      if (event === "SIGNED_IN") void bootstrap();
       if (event === "SIGNED_OUT") {
         queryClient.clear();
       } else {
