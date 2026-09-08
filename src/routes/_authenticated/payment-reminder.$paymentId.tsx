@@ -157,7 +157,7 @@ function PaymentReminderPage() {
     mutationFn: async () => {
       if (!p) throw new Error("الدفعة غير موجودة");
       if (!phone) throw new Error("لا يوجد رقم جوال محفوظ للمستأجر");
-      const option = repeatOptions.find((o) => o.key === repeat) ?? repeatOptions[0];
+      const option = repeatOptions.find((o) => o.key === repeat) ?? { key: "once", label: "مرة واحدة", hours: 0 };
 
       const { error: logError } = await supabase.from("message_log").insert({
         recipient_name: tenant?.full_name ?? null,

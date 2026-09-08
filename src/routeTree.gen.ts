@@ -58,6 +58,7 @@ import { Route as AuthenticatedInvoicesIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
 import { Route as AuthenticatedOwnersIndexRouteImport } from './routes/_authenticated/owners.index'
 import { Route as AuthenticatedOwnersOwnerIdRouteImport } from './routes/_authenticated/owners.$ownerId'
+import { Route as AuthenticatedPaymentReminderPaymentIdRouteImport } from './routes/_authenticated/payment-reminder.$paymentId'
 import { Route as ApiPublicTwilioWhatsappRouteImport } from './routes/api/public/twilio-whatsapp'
 import { Route as PortalContractsIndexRouteImport } from './routes/portal.contracts.index'
 import { Route as PortalContractsContractIdRouteImport } from './routes/portal.contracts.$contractId'
@@ -322,6 +323,12 @@ const AuthenticatedOwnersOwnerIdRoute =
     path: '/owners/$ownerId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPaymentReminderPaymentIdRoute =
+  AuthenticatedPaymentReminderPaymentIdRouteImport.update({
+    id: '/payment-reminder/$paymentId',
+    path: '/payment-reminder/$paymentId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicTwilioWhatsappRoute = ApiPublicTwilioWhatsappRouteImport.update({
   id: '/api/public/twilio-whatsapp',
   path: '/api/public/twilio-whatsapp',
@@ -400,6 +407,7 @@ export interface FileRoutesByFullPath {
   '/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
+  '/payment-reminder/$paymentId': typeof AuthenticatedPaymentReminderPaymentIdRoute
   '/api/public/twilio-whatsapp': typeof ApiPublicTwilioWhatsappRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
@@ -455,6 +463,7 @@ export interface FileRoutesByTo {
   '/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
+  '/payment-reminder/$paymentId': typeof AuthenticatedPaymentReminderPaymentIdRoute
   '/api/public/twilio-whatsapp': typeof ApiPublicTwilioWhatsappRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
@@ -513,6 +522,7 @@ export interface FileRoutesById {
   '/_authenticated/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/_authenticated/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
+  '/_authenticated/payment-reminder/$paymentId': typeof AuthenticatedPaymentReminderPaymentIdRoute
   '/api/public/twilio-whatsapp': typeof ApiPublicTwilioWhatsappRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
@@ -571,6 +581,7 @@ export interface FileRouteTypes {
     | '/contracts/$contractId'
     | '/invoices/$invoiceId'
     | '/owners/$ownerId'
+    | '/payment-reminder/$paymentId'
     | '/api/public/twilio-whatsapp'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
@@ -626,6 +637,7 @@ export interface FileRouteTypes {
     | '/contracts/$contractId'
     | '/invoices/$invoiceId'
     | '/owners/$ownerId'
+    | '/payment-reminder/$paymentId'
     | '/api/public/twilio-whatsapp'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
@@ -683,6 +695,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contracts/$contractId'
     | '/_authenticated/invoices/$invoiceId'
     | '/_authenticated/owners/$ownerId'
+    | '/_authenticated/payment-reminder/$paymentId'
     | '/api/public/twilio-whatsapp'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
@@ -1060,6 +1073,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOwnersOwnerIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/payment-reminder/$paymentId': {
+      id: '/_authenticated/payment-reminder/$paymentId'
+      path: '/payment-reminder/$paymentId'
+      fullPath: '/payment-reminder/$paymentId'
+      preLoaderRoute: typeof AuthenticatedPaymentReminderPaymentIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/twilio-whatsapp': {
       id: '/api/public/twilio-whatsapp'
       path: '/api/public/twilio-whatsapp'
@@ -1135,6 +1155,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContractsContractIdRoute: typeof AuthenticatedContractsContractIdRoute
   AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
   AuthenticatedOwnersOwnerIdRoute: typeof AuthenticatedOwnersOwnerIdRoute
+  AuthenticatedPaymentReminderPaymentIdRoute: typeof AuthenticatedPaymentReminderPaymentIdRoute
   AuthenticatedContractsIndexRoute: typeof AuthenticatedContractsIndexRoute
   AuthenticatedInvoicesIndexRoute: typeof AuthenticatedInvoicesIndexRoute
   AuthenticatedOwnersIndexRoute: typeof AuthenticatedOwnersIndexRoute
@@ -1170,6 +1191,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContractsContractIdRoute: AuthenticatedContractsContractIdRoute,
   AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
   AuthenticatedOwnersOwnerIdRoute: AuthenticatedOwnersOwnerIdRoute,
+  AuthenticatedPaymentReminderPaymentIdRoute:
+    AuthenticatedPaymentReminderPaymentIdRoute,
   AuthenticatedContractsIndexRoute: AuthenticatedContractsIndexRoute,
   AuthenticatedInvoicesIndexRoute: AuthenticatedInvoicesIndexRoute,
   AuthenticatedOwnersIndexRoute: AuthenticatedOwnersIndexRoute,
