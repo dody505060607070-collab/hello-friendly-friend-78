@@ -246,6 +246,16 @@ function OwnersPage() {
           draggableRows
           dragLabel="مالك"
           exportFileName="قائمة الملاك"
+          bulkActions={(selectedRows, clear) => (
+            <button
+              type="button"
+              onClick={() => askDelete(selectedRows, clear)}
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-destructive px-3 text-[12.5px] font-semibold text-destructive-foreground"
+            >
+              <Trash2 className="size-4" />
+              حذف المحدد ({selectedRows.length})
+            </button>
+          )}
           searchPlaceholder="بحث بالاسم أو الجوال أو الهوية"
           emptyState={
             <EmptyState
@@ -324,6 +334,15 @@ function OwnersPage() {
                     title="تعديل"
                   >
                     <Pencil className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => askDelete([r])}
+                    className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    aria-label={`حذف ${r.full_name}`}
+                    title="حذف المالك"
+                  >
+                    <Trash2 className="size-4" />
                   </button>
                 </div>
               ),
