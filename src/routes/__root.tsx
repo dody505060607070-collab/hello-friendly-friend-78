@@ -17,20 +17,28 @@ import { LanguageProvider } from "@/lib/i18n";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4" dir="rtl">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+        <h1 className="text-7xl font-extrabold text-primary">404</h1>
+        <h2 className="mt-4 text-xl font-bold text-foreground">الصفحة غير موجودة</h2>
+        <p className="mt-2 text-[13.5px] leading-7 text-muted-foreground">
+          الرابط الذي فتحته غير صحيح أو تم نقل الصفحة. جرّب أحد الأقسام التالية:
         </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+          {[
+            { to: "/", label: "الرئيسية" },
+            { to: "/rent", label: "قسم الإيجار" },
+            { to: "/sale", label: "قسم البيع" },
+            { to: "/contact", label: "تواصل معنا" },
+          ].map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2 text-[13px] font-bold text-foreground transition-colors hover:bg-muted"
+            >
+              {item.label}
+            </Link>
+          ))}
         </div>
       </div>
     </div>

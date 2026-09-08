@@ -164,7 +164,13 @@ function SiteFooter() {
         </div>
 
         <nav className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[13px] text-white/80">
-          {[...navLinks.slice(1), { to: "/list-property", label: "اعرض | اطلب عقارك" }, { to: "/favorites", label: "المفضلة" }].map(
+          {[
+            ...navLinks.slice(1),
+            { to: "/list-property", label: "اعرض | اطلب عقارك" },
+            { to: "/favorites", label: "المفضلة" },
+            { to: "/privacy", label: "سياسة الخصوصية" },
+            { to: "/terms", label: "الشروط والأحكام" },
+          ].map(
             (item) => (
               <Link key={item.to} to={item.to} className="hover:text-gold">
                 {item.label}
@@ -223,9 +229,30 @@ function CookieBanner() {
   );
 }
 
+/** شريط إجراء ثابت أسفل الشاشة على الجوال فقط. */
+function MobileStickyCta() {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 flex items-stretch gap-2 border-t border-border bg-card/95 px-3 py-2.5 shadow-float backdrop-blur md:hidden">
+      <a
+        href={`tel:${COMPANY_PHONE}`}
+        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border py-2.5 text-[13px] font-bold text-foreground"
+      >
+        <Phone className="size-4 text-primary" />
+        اتصال
+      </a>
+      <Link
+        to="/list-property"
+        className="flex flex-[1.4] items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-[13px] font-bold text-primary-foreground"
+      >
+        اعرض | اطلب عقارك
+      </Link>
+    </div>
+  );
+}
+
 export function SiteLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-background pb-16 md:pb-0">
       <ScrollProgress />
       <SiteHeader />
       <main className="flex-1">{children}</main>
@@ -233,7 +260,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       <FloatingActions />
       <AiWidget />
       <CookieBanner />
-
+      <MobileStickyCta />
     </div>
   );
 }
