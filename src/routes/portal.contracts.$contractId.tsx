@@ -39,7 +39,7 @@ function ContractDetail() {
   if (error) return <p className="text-sm text-destructive">{(error as Error).message}</p>;
   if (!data) return null;
 
-  const c = data.contract as Record<string, never> & {
+  const c = data.contract as unknown as {
     contract_number: string;
     status: string;
     start_date: string | null;
