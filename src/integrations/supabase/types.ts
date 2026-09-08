@@ -2181,6 +2181,27 @@ export type Database = {
         }
         Relationships: []
       }
+      site_kill_switch: {
+        Row: {
+          id: number
+          locked: boolean
+          message: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          locked?: boolean
+          message?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          locked?: boolean
+          message?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       supply_requests: {
         Row: {
           admin_notes: string | null
