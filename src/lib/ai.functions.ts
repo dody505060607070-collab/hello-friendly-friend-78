@@ -57,8 +57,11 @@ async function callGroq(input: Item[]): Promise<string> {
   return text;
 }
 
+/** خيارات تسريع الاستدعاء (تُستخدم في تحليل العقود). */
+type CallOpts = { json?: boolean; fast?: boolean; maxTokens?: number };
+
 /** المزوّد الاحتياطي الثاني: Gemini (يدعم الملفات). */
-async function callGemini(input: Item[]): Promise<string> {
+async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
   const keys = [process.env["GEMINI_API_KEY"], process.env["GEMINI_BACKUP_API_KEY"]].filter(
     (k): k is string => Boolean(k),
   );
