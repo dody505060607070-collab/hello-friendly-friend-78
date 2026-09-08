@@ -22,7 +22,9 @@ export const Route = createFileRoute("/about")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:url", content: "https://friendly-fellow-kit.lovable.app/about" },
     ],
+    links: [{ rel: "canonical", href: "https://friendly-fellow-kit.lovable.app/about" }],
   }),
   component: AboutPage,
 });

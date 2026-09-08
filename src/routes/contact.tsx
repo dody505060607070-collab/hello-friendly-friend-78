@@ -29,6 +29,7 @@ export const Route = createFileRoute("/contact")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: "https://friendly-fellow-kit.lovable.app/contact" }],
   }),
   component: ContactPage,
 });

@@ -28,6 +28,7 @@ export const Route = createFileRoute("/list-property")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: "https://friendly-fellow-kit.lovable.app/list-property" }],
   }),
   component: ListPropertyPage,
 });

@@ -26,7 +26,9 @@ export const Route = createFileRoute("/rent")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:url", content: "https://friendly-fellow-kit.lovable.app/rent" },
     ],
+    links: [{ rel: "canonical", href: "https://friendly-fellow-kit.lovable.app/rent" }],
   }),
   component: RentPage,
 });
