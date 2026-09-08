@@ -1,3 +1,4 @@
+import { uploadMedia, mediaUrl } from "@/lib/media";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, MessagesSquare, Paperclip, Pencil, Pin, Reply, Search, Send, Smile, Trash2, Users } from "lucide-react";
@@ -183,12 +184,11 @@ function TeamChatPage() {
   };
 
   const openAttachment = async (path: string) => {
-    const { data, error } = await supabase.storage.from("internal-files").createSignedUrl(path, 300);
-    if (error || !data) {
+    try {
+      window.open(await mediaUrl("internal-files", path), "_blank", "noopener");
+    } catch {
       toast.error("تعذّر فتح المرفق");
-      return;
     }
-    window.open(data.signedUrl, "_blank", "noopener");
   };
 
   return (
