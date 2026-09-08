@@ -180,7 +180,27 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
         : cycleRaw.includes("نصف") || cycleRaw.includes("semi")
           ? "semiannual"
           : "annual";
-    const paymentsCount = Math.min(Math.max(Number(num(e["payments_count"]) ?? 1), 1), 60);
+    // جدول الدفعات المنصوص عليه في البند ١٢ إن وُجد
+    const rawRows = Array.isArray(e["payments"]) ? (e["payments"] as Record<string, unknown>[]) : [];
+    const scheduleRows = rawRows
+      .filter((r) => r && typeof r === "object")
+      .map((r) => ({
+        due: /^\d{4}-\d{2}-\d{2}$/.test(str(r["due_date"])) ? str(r["due_date"]) : null,
+        amount:
+          num(r["total"]) ??
+          (num(r["rent"]) ?? 0) + (num(r["vat"]) ?? 0) + (num(r["services"]) ?? 0),
+      }))
+      .filter((r) => r.due || r.amount);
+    const declaredCount = Number(num(e["payments_count"]) ?? 0);
+    const paymentsCount = Math.min(
+      Math.max(scheduleRows.length || declaredCount || 1, 1),
+      60,
+    );
+    if (declaredCount && scheduleRows.length && declaredCount !== scheduleRows.length) {
+      warnings.push(
+        `عدد الدفعات المذكور (${declaredCount}) يخالف صفوف جدول السداد (${scheduleRows.length}) — اعتُمد الجدول.`,
+      );
+    }
 
     // منع تكرار رقم العقد لنفس النوع
     const contractType = isSale ? "sale" : "rent";
