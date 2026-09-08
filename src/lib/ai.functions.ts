@@ -96,6 +96,13 @@ async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
         body: JSON.stringify({
           contents,
           ...(systemText ? { system_instruction: { parts: [{ text: systemText }] } } : {}),
+          generationConfig: {
+            temperature: 0,
+            ...(opts.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}),
+            ...(opts.json ? { responseMimeType: "application/json" } : {}),
+            // إيقاف "التفكير" يقلّل زمن الاستجابة بشكل كبير في مهام الاستخراج.
+            ...(opts.fast ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+          },
         }),
       },
     );
