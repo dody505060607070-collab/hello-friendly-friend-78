@@ -160,6 +160,10 @@ function PaymentReminderPage() {
       if (!phone) throw new Error("لا يوجد رقم جوال محفوظ للمستأجر");
       const option = repeatOptions.find((o) => o.key === repeat) ?? { key: "once", label: "مرة واحدة", hours: 0 };
 
+      // إرسال مباشر عبر Twilio من الرقم الموحّد
+      const result = await sendWhatsAppMessage({ data: { to: phone, body: message } });
+      if (!result.ok) throw new Error(result.error);
+
       const { error: logError } = await supabase.from("message_log").insert({
         recipient_name: tenant?.full_name ?? null,
         recipient_phone: phone,
@@ -167,7 +171,7 @@ function PaymentReminderPage() {
         payment_id: p.id,
         body: message,
         channel: "whatsapp",
-        result: "sent",
+        result: result.sid ? `sent:${result.sid}` : "sent",
         sent_by_system: false,
       });
       if (logError) throw logError;
