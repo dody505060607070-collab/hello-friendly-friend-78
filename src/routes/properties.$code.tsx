@@ -242,8 +242,8 @@ function PropertyPage() {
                           rel="noreferrer"
                           title={p.label}
                           aria-label={p.label}
-                          className="flex items-center gap-3 rounded-xl px-4 py-3 text-white shadow-sm transition hover:scale-[1.02] hover:shadow-md"
-                          style={{ backgroundColor: p.color }}
+                          className="flex items-center gap-3 rounded-xl border border-border/70 px-4 py-3 shadow-sm transition hover:scale-[1.02] hover:shadow-md"
+                          style={{ backgroundColor: p.color, color: p.textColor ?? "#FFFFFF" }}
                         >
                           <SocialGlyph platform={p.key} className="size-7 shrink-0" />
                           <span className="text-[14px] font-bold">{p.label}</span>
