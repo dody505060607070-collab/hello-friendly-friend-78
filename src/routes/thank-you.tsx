@@ -40,7 +40,7 @@ function ThankYouPage() {
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a
-            href={whatsappLink("مرحبًا، أرسلت طلبًا عبر الموقع وأود المتابعة.")}
+            href={whatsappLink(undefined, "مرحبًا، أرسلت طلبًا عبر الموقع وأود المتابعة.")}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-[13.5px] font-bold text-primary-foreground"
