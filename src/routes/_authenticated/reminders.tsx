@@ -341,6 +341,8 @@ function RemindersPage() {
         </div>
       </section>
 
+      <TemplatesManager />
+
       <section className="space-y-3">
         <div className="flex items-center gap-2">
           <BellRing className="size-4 text-primary" />
