@@ -92,7 +92,7 @@ async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
   let last = "";
   for (const key of keys) {
     const res = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent",
       {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-goog-api-key": key },
@@ -290,18 +290,9 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
         },
       ];
 
-    // العقود النصية تذهب إلى Groq مباشرة؛ إرسال النص أصغر وأسرع كثيرًا من رفع
-    // PDF كامل إلى نموذج بصري. العقود المصوّرة فقط تستخدم Gemini OCR.
-    let text: string;
-    if (extractedText) {
-      try {
-        text = await callGroq(items, { json: true, fast: true, maxTokens: 1200 });
-      } catch {
-        text = await callGemini(items, { json: true, fast: true, maxTokens: 1200 });
-      }
-    } else {
-      text = await callGemini(items, { json: true, fast: true, maxTokens: 1200 });
-    }
+    // Gemini Flash Lite أسرع مسار للنص ويدعم OCR عند الحاجة؛ Groq يبقى
+    // احتياطيًا للمحادثات النصية ولا نستخدم نموذجه الكبير في تحليل العقود.
+    const text = await callGemini(items, { json: true, fast: true, maxTokens: 1200 });
 
     const match = text.match(/\{[\s\S]*\}/);
     let extractionJson = "{}";
