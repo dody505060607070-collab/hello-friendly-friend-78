@@ -121,7 +121,10 @@ export function AiWidget() {
       </div>
 
       {open ? (
-        <section className="glass-panel fixed bottom-44 start-4 z-50 flex h-[min(30rem,70vh)] w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden">
+        <section
+          style={{ transform: `translate3d(${pos.x}px, ${pos.y}px, 0)` }}
+          className="glass-panel fixed bottom-44 start-4 z-50 flex h-[min(30rem,70vh)] w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden"
+        >
           <header className="flex items-center gap-2 bg-primary px-4 py-3 text-primary-foreground">
             <Sparkles className="size-4 text-gold" />
             <h2 className="text-[13.5px] font-bold">مساعد مثراء الذكي</h2>
