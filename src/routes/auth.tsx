@@ -54,9 +54,9 @@ function AuthPage() {
     try {
       if (audience === "client") {
         const { email: loginEmail } = await resolveClientLogin({ data: { username } });
-        if (!loginEmail) throw new Error("لا يوجد حساب عميل بهذا الرقم. تواصل مع الإدارة.");
+        if (!loginEmail) throw new Error("لا يوجد حساب عميل بهذا اسم المستخدم. تواصل مع الإدارة.");
         const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-        if (error) throw new Error("رقم الهوية أو كلمة المرور غير صحيحة.");
+        if (error) throw new Error("اسم المستخدم أو كلمة المرور غير صحيحة.");
         navigate({ to: "/portal" });
       } else if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -139,7 +139,7 @@ function AuthPage() {
 
           {audience === "client" ? (
             <div className="space-y-2">
-              <Label htmlFor="username">رقم الهوية</Label>
+              <Label htmlFor="username">اسم المستخدم</Label>
               <Input
                 id="username"
                 dir="ltr"
