@@ -29,7 +29,7 @@ function PortalLayout() {
   const active = "bg-white/15 text-white";
 
   return (
-    <div dir="rtl" className="min-h-screen bg-muted/30">
+    <div dir="rtl" className="portal-theme min-h-screen bg-muted/30">
       <header className="bg-gradient-to-l from-[hsl(var(--primary))] to-[hsl(var(--primary)/0.75)] text-white shadow">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
           <div className="flex items-center gap-2">
