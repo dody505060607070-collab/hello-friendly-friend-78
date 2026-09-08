@@ -180,6 +180,24 @@ function OwnersPage() {
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التحديث"),
   });
 
+  const remove = useMutation({
+    mutationFn: async (input: { ids: string[]; withContracts: boolean }) =>
+      deleteOwners(input.ids, input.withContracts),
+    onSuccess: (_d, input) => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["owner-links"] });
+      queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
+      toast.success(`تم حذف ${input.ids.length} مالك`);
+      setDeleteTarget(null);
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحذف"),
+  });
+
+  const askDelete = (targets: Row[], clear?: () => void) =>
+    setDeleteTarget({ rows: targets, clear });
+
+
   const stats = useMemo(
     () => ({
       all: rows.length,
