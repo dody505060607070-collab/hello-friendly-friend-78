@@ -89,6 +89,8 @@ function InvoiceView() {
               <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">من</span>
               <p className="mt-2 font-bold">مثراء العقارية</p>
               <p className="text-sm text-muted-foreground">بريدة، المملكة العربية السعودية</p>
+              <p className="text-sm text-muted-foreground" dir="ltr">0550818020</p>
+
             </div>
             <div className="rounded-xl border border-border p-4">
               <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">إلى</span>
