@@ -41,16 +41,47 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
     const warnings: string[] = Array.isArray(e["warnings"]) ? (e["warnings"] as string[]).map(String) : [];
     const created: string[] = [];
 
-    const findOrCreateContact = async (name: string, role: string) => {
-      if (!name) return null;
-      const found = await db.from("contacts").select("id").ilike("full_name", name).limit(1);
-      if (found.data?.[0]) return found.data[0].id;
+    /** يطابق الشخص بالهوية ثم الجوال ثم الاسم — الشخص الواحد يبقى سجلًا واحدًا مهما تعددت عقوده. */
+    const findOrCreateContact = async (
+      name: string,
+      role: string,
+      nationalId?: string,
+      phone?: string,
+    ) => {
+      const nid = str(nationalId).replace(/\D/g, "");
+      const tel = str(phone).replace(/\s/g, "");
+      if (!name && !nid) return null;
+
+      let existingId: string | null = null;
+      if (nid) {
+        const byId = await db.from("contacts").select("id").eq("national_id", nid).limit(1);
+        existingId = byId.data?.[0]?.id ?? null;
+      }
+      if (!existingId && tel) {
+        const byPhone = await db.from("contacts").select("id").eq("phone", tel).limit(1);
+        existingId = byPhone.data?.[0]?.id ?? null;
+      }
+      if (!existingId && name) {
+        const byName = await db.from("contacts").select("id").ilike("full_name", name).limit(1);
+        existingId = byName.data?.[0]?.id ?? null;
+      }
+
+      if (existingId) {
+        const patch: { national_id?: string; phone?: string } = {};
+        if (nid) patch.national_id = nid;
+        if (tel) patch.phone = tel;
+        if (Object.keys(patch).length) await db.from("contacts").update(patch).eq("id", existingId);
+        return existingId;
+      }
+
       const ins = await db
         .from("contacts")
         .insert({
-          full_name: name,
+          full_name: name || nid,
           kind: "individual",
           roles: [role],
+          national_id: nid || null,
+          phone: tel || null,
           source: "pdf_import",
           created_by: context.userId,
         })
@@ -67,9 +98,19 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
     const ownerName = str(e["owner_name"]);
     const tenantName = str(e["tenant_name"]);
     const brokerName = str(e["broker_name"]);
-    const ownerId = await findOrCreateContact(ownerName, "owner");
-    const tenantId = await findOrCreateContact(tenantName, "tenant");
-    const brokerId = await findOrCreateContact(brokerName, "broker");
+    const ownerId = await findOrCreateContact(
+      ownerName,
+      "owner",
+      str(e["owner_national_id"]),
+      str(e["owner_phone"]),
+    );
+    const tenantId = await findOrCreateContact(
+      tenantName,
+      "tenant",
+      str(e["tenant_national_id"]),
+      str(e["tenant_phone"]),
+    );
+    const brokerId = await findOrCreateContact(brokerName, "broker", "", str(e["broker_phone"]));
     if (!ownerName) warnings.push("لم يُستخرج اسم المالك من الملف.");
     if (!tenantName) warnings.push("لم يُستخرج اسم المستأجر من الملف.");
 
