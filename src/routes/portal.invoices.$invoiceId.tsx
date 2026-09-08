@@ -69,6 +69,10 @@ function InvoiceView() {
                 <dd className="font-bold">{inv.invoice_number}</dd>
               </div>
               <div className="flex gap-6 border-b border-border py-1.5">
+                <dt className="text-muted-foreground">UUID</dt>
+                <dd className="font-mono text-xs font-bold" dir="ltr">{invoiceId}</dd>
+              </div>
+              <div className="flex gap-6 border-b border-border py-1.5">
                 <dt className="text-muted-foreground">تاريخ الإصدار</dt>
                 <dd className="font-bold">{inv.issue_date}</dd>
               </div>
@@ -77,6 +81,7 @@ function InvoiceView() {
                 <dd className="font-bold">{inv.status === "paid" ? "مدفوعة" : "بانتظار السداد"}</dd>
               </div>
             </dl>
+
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
