@@ -179,7 +179,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </aside>
 
         {open ? (
-          <div className="fixed inset-0 top-24 z-20 lg:hidden">
+          <div className="fixed inset-0 top-16 z-20 md:top-24 lg:hidden">
             <button
               type="button"
               aria-label="إغلاق القائمة"
