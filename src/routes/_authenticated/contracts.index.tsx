@@ -697,8 +697,7 @@ function ImportDialog({
       const { extractionJson } = await analyzeContractPdf({
         data: {
           fileName: f.name,
-          extractedText: extractedText.length >= 300 ? extractedText : undefined,
-          dataUrl: extractedText.length >= 300 ? undefined : dataUrl,
+          ...(extractedText.length >= 300 ? { extractedText } : { dataUrl }),
         },
       });
       const extraction = JSON.parse(extractionJson) as Record<string, unknown>;
