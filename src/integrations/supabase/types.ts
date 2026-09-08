@@ -2403,6 +2403,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bootstrap_current_user: { Args: never; Returns: undefined }
       has_perm: {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
