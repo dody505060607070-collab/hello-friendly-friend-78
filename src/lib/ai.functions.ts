@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/responses";
-const MODEL = "openai/gpt-5.6-sol";
+const MODEL = "openai/gpt-6-astra";
 
 type Part = { type: "input_text"; text: string } | { type: "input_file"; filename: string; file_data: string };
 type Item = { role: "system" | "user" | "assistant"; content: Part[] };
@@ -23,7 +23,7 @@ function normalize(input: Item[]) {
   }));
 }
 
-const FALLBACK_MODELS = [MODEL, "openai/gpt-5.5", "google/gemini-3.8-flash"];
+const FALLBACK_MODELS = [MODEL];
 
 async function callGateway(input: Item[]): Promise<string> {
   const key = process.env["LOVABLE_API_KEY"];
