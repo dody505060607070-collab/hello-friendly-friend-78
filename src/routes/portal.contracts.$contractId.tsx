@@ -120,7 +120,16 @@ function ContractDetail() {
       </div>
 
       <section className="overflow-hidden rounded-2xl border border-border bg-card">
-        <header className="border-b border-border px-5 py-3 text-sm font-bold">جدول الأقساط</header>
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3 text-sm font-bold">
+          <span>جدول الأقساط</span>
+          <span className="flex flex-wrap items-center gap-3 text-[11px] font-medium text-muted-foreground">
+            <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-emerald-500" /> مدفوع</span>
+            <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-blue-500" /> مدفوع جزئياً</span>
+            <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-red-500" /> متأخر</span>
+            <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-amber-500" /> قادم</span>
+          </span>
+        </header>
+
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm">
             <thead className="bg-muted/40 text-xs text-muted-foreground">

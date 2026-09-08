@@ -240,9 +240,12 @@ export const getPortalOverview = createServerFn({ method: "GET" })
       db.from("contacts").select("id, full_name, national_id, phone, email").eq("id", contactId).single(),
       db
         .from("contracts")
-        .select("id, contract_number, contract_type, start_date, end_date, annual_rent, total_value, payment_cycle, payments_count, status")
+        .select(
+          "id, contract_number, contract_type, start_date, end_date, annual_rent, total_value, payment_cycle, payments_count, status, tenant:tenant_id(full_name), property:property_id(name, city, district), unit:unit_id(unit_number, unit_type)",
+        )
         .or(partyFilter(contactId))
         .order("start_date", { ascending: false }),
+
     ]);
 
     const contractIds = (contracts.data ?? []).map((c) => c.id);
@@ -255,7 +258,7 @@ export const getPortalOverview = createServerFn({ method: "GET" })
     const [invoices, payments] = await Promise.all([
       db
         .from("invoices")
-        .select("id, invoice_number, issue_date, due_date, total, status")
+        .select("id, invoice_number, issue_date, due_date, total, status, items:invoice_items(count)")
         .or(invoiceFilter)
         .order("issue_date", { ascending: false }),
       contractIds.length

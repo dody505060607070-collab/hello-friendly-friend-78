@@ -20,12 +20,13 @@ export const Route = createFileRoute("/portal/")({
 
 const money = (v: number | null | undefined) =>
   `${Number(v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`;
+const num = (v: number | null | undefined) => Number(v ?? 0).toLocaleString("en-US");
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {
+function Counter({ label, value, tone }: { label: string; value: number; tone?: string }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-lg font-bold ${tone ?? "text-foreground"}`}>{value}</p>
+    <div className="rounded-xl border border-border bg-card px-4 py-3 text-center">
+      <p className={`text-xl font-extrabold ${tone ?? "text-foreground"}`}>{value}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{label}</p>
     </div>
   );
 }
@@ -41,58 +42,163 @@ function PortalHome() {
   if (!data) return null;
 
   const today = new Date().toISOString().slice(0, 10);
-  const upcoming = data.payments.filter((p) => p.status !== "paid" && p.due_date >= today).slice(0, 5);
-  const overdue = data.payments.filter((p) => p.status !== "paid" && p.due_date < today);
+  const pending = data.payments.filter((p) => p.status !== "paid");
+  const overdue = pending.filter((p) => p.due_date < today);
+  const upcoming = pending.filter((p) => p.due_date >= today);
+  const soon = [...overdue, ...upcoming].slice(0, 5);
   const remaining = data.payments.reduce((s, p) => s + Math.max(0, Number(p.amount_due) - Number(p.amount_paid)), 0);
   const paid = data.payments.reduce((s, p) => s + Number(p.amount_paid), 0);
+  const days = (d: string) => Math.round((new Date(d).getTime() - new Date(today).getTime()) / 86400000);
+
+  const contracts = data.contracts as unknown as {
+    id: string;
+    contract_number: string;
+    status: string;
+    start_date: string | null;
+    end_date: string | null;
+    annual_rent: number | null;
+    property: { name: string; city: string | null; district: string | null } | null;
+    unit: { unit_number: string | null; unit_type: string | null } | null;
+    tenant: { full_name: string } | null;
+  }[];
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h1 className="text-xl font-bold text-foreground">{data.contact?.full_name ?? "مرحبًا"}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          رقم الهوية: {data.contact?.national_id ?? "—"} • الجوال: {data.contact?.phone ?? "—"}
-        </p>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="عقود نشطة" value={String(data.contracts.filter((c) => c.status === "active").length)} />
-        <Stat label="فواتير" value={String(data.invoices.length)} />
-        <Stat label="إجمالي المدفوع" value={money(paid)} tone="text-emerald-600" />
-        <Stat label="المتبقي" value={money(remaining)} tone={overdue.length ? "text-destructive" : "text-foreground"} />
-      </div>
+    <div className="space-y-5">
+      {/* بطاقة العميل */}
+      <section className="overflow-hidden rounded-2xl bg-gradient-to-l from-[hsl(var(--primary))] to-[hsl(var(--primary)/0.7)] p-5 text-white shadow">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="grid h-12 w-12 place-items-center rounded-full bg-white/20 text-lg font-bold">
+              {(data.contact?.full_name ?? "ع").slice(0, 1)}
+            </span>
+            <div>
+              <h1 className="text-lg font-bold">{data.contact?.full_name ?? "مرحبًا"}</h1>
+              <span className="mt-1 inline-block rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-100">
+                • نشط
+              </span>
+            </div>
+          </div>
+          <div className="rounded-xl bg-black/15 px-4 py-3 text-xs leading-6">
+            <p className="text-white/70">رقم الهوية</p>
+            <p className="font-bold" dir="ltr">{data.contact?.national_id ?? "—"}</p>
+            <p className="mt-1 text-white/70">الجوال</p>
+            <p className="font-bold" dir="ltr">{data.contact?.phone ?? "—"}</p>
+          </div>
+        </div>
+      </section>
 
       {overdue.length ? (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-          لديك {overdue.length} دفعة متأخرة — يرجى التواصل مع الإدارة للسداد.
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm font-semibold text-destructive">
+          ⚠ {overdue.length} دفعات متأخرة بقيمة{" "}
+          {num(overdue.reduce((s, p) => s + (Number(p.amount_due) - Number(p.amount_paid)), 0))} ر.س — يرجى التواصل مع الإدارة.
+        </div>
+      ) : null}
+      {upcoming.length ? (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">
+          ⏰ {upcoming.length} دفعات مستحقة قريبًا بقيمة{" "}
+          {num(upcoming.reduce((s, p) => s + (Number(p.amount_due) - Number(p.amount_paid)), 0))} ر.س.
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-border bg-card">
-        <header className="border-b border-border px-5 py-3 text-sm font-bold">أقرب الدفعات</header>
-        {upcoming.length === 0 ? (
+      {/* أقرب الدفعات */}
+      <section className="overflow-hidden rounded-2xl border border-border bg-card">
+        <header className="flex items-center justify-between border-b border-border px-5 py-3 text-sm font-bold">
+          <span>📅 أقرب الدفعات</span>
+          <Link to="/portal/contracts" className="text-xs font-semibold text-primary">عرض الكل ←</Link>
+        </header>
+        {soon.length === 0 ? (
           <p className="px-5 py-6 text-sm text-muted-foreground">لا توجد دفعات قادمة.</p>
         ) : (
           <ul className="divide-y divide-border">
-            {upcoming.map((p) => (
-              <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 text-sm">
-                <span className="font-semibold">دفعة رقم {p.payment_number}</span>
-                <span className="text-muted-foreground">{p.due_date}</span>
-                <span className="font-bold">{money(Number(p.amount_due) - Number(p.amount_paid))}</span>
-              </li>
-            ))}
+            {soon.map((p) => {
+              const late = p.due_date < today;
+              const d = days(p.due_date);
+              return (
+                <li
+                  key={p.id}
+                  className={`flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm ${late ? "bg-red-50/50" : "bg-blue-50/40"}`}
+                >
+                  <span className="font-bold">{num(Number(p.amount_due) - Number(p.amount_paid))} ر.س</span>
+                  <span className="text-muted-foreground">دفعة رقم {p.payment_number}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {p.due_date} • {late ? `متأخرة منذ ${Math.abs(d)} يوم` : `تستحق بعد ${d} يوم`}
+                  </span>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${late ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}
+                  >
+                    {late ? "متأخرة" : "مستحقة قريبًا"}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
 
-      <div className="flex gap-3">
-        <Link to="/portal/contracts" className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
-          عقودي
-        </Link>
-        <Link to="/portal/invoices" className="rounded-lg border border-border px-4 py-2 text-sm font-semibold">
-          فواتيري
-        </Link>
+      {/* عدادات */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <Counter label="عقد" value={contracts.length} />
+        <Counter label="وحدة" value={new Set(contracts.map((c) => c.unit?.unit_number).filter(Boolean)).size} />
+        <Counter label="فاتورة" value={data.invoices.length} />
+        <Counter label="قسط نشط" value={pending.length} tone="text-amber-600" />
+        <Counter label="مسددة" value={data.payments.filter((p) => p.status === "paid").length} tone="text-emerald-600" />
+        <Counter label="متأخرة" value={overdue.length} tone="text-destructive" />
       </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">إجمالي المدفوع</p>
+          <p className="mt-1 text-xl font-extrabold text-emerald-600">{money(paid)}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">إجمالي المتبقي</p>
+          <p className={`mt-1 text-xl font-extrabold ${remaining ? "text-destructive" : "text-foreground"}`}>{money(remaining)}</p>
+        </div>
+      </div>
+
+      {/* العقارات والوحدات */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-bold">🏢 العقارات والوحدات</h2>
+        {contracts.length === 0 ? (
+          <p className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">لا توجد عقارات مرتبطة بك.</p>
+        ) : (
+          contracts.map((c) => {
+            const own = data.payments.filter((p) => p.contract_id === c.id);
+            const late = own.filter((p) => p.status !== "paid" && p.due_date < today).length;
+            return (
+              <article key={c.id} className="overflow-hidden rounded-2xl border border-border bg-card border-r-4 border-r-primary">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3">
+                  <div>
+                    <p className="text-sm font-bold">{c.property?.name ?? "عقار"}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {[c.property?.city, c.property?.district].filter(Boolean).join(" — ") || "—"}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold">
+                    {c.unit?.unit_number ? `${c.unit.unit_type ?? "شقة"} — وحدة ${c.unit.unit_number}` : "بدون وحدة"}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-xs">
+                  <span className="text-muted-foreground">المستأجر: <b className="text-foreground">{c.tenant?.full_name ?? "—"}</b></span>
+                  <span className="text-muted-foreground">ينتهي في: <b className="text-foreground">{c.end_date ?? "—"}</b></span>
+                  <span
+                    className={`rounded-full px-2.5 py-1 font-semibold ${late ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}
+                  >
+                    {late ? `يوجد ${late} دفعة متأخرة` : "لا توجد دفعات متأخرة"}
+                  </span>
+                  <Link
+                    to="/portal/contracts/$contractId"
+                    params={{ contractId: c.id }}
+                    className="rounded-lg border border-primary/30 px-3 py-1.5 font-semibold text-primary hover:bg-primary/5"
+                  >
+                    جدول الأقساط ←
+                  </Link>
+                </div>
+              </article>
+            );
+          })
+        )}
+      </section>
     </div>
   );
 }
