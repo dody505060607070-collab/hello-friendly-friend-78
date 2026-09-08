@@ -199,9 +199,15 @@ export function DataTable<T>({
           </div>
         ) : null}
         {selected.length ? (
-          <span className="text-[12.5px] font-semibold text-primary">
-            تم تحديد {selected.length}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[12.5px] font-semibold text-primary">
+              تم تحديد {selected.length}
+            </span>
+            {bulkActions?.(
+              selected.map((i) => pageRows[i]).filter(Boolean) as T[],
+              () => setSelected([]),
+            )}
+          </div>
         ) : null}
       </div>
 
