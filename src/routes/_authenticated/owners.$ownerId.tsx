@@ -10,6 +10,8 @@ import {
   Download,
   FileText,
   FileUp,
+  House,
+  KeyRound,
   Loader2,
   Mail,
   MapPin,
@@ -384,26 +386,26 @@ function OwnerDetailPage() {
         subtitle="إدارة بيانات الملاك وعقاراتهم وعقودهم الإيجارية"
         icon={UserRound}
         stats={[
-          { value: String(data.contracts.length), label: "عقد نشط" },
-          { value: String(data.units.length + data.properties.length), label: "وحدة / عقار" },
-          { value: formatCurrency(stats.totalPaid), label: "مدفوعات" },
-          { value: formatCurrency(stats.overdueAmount), label: "متأخرات" },
+          { value: String(data.properties.length + data.units.length), label: "العقارات والوحدات" },
+          { value: formatCurrency(stats.totalDue), label: "إجمالي الإيجارات" },
+          { value: formatCurrency(stats.overdueAmount), label: "المتأخرات" },
+          { value: `${stats.rate}%`, label: "نسبة التحصيل" },
         ]}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-[12px]">
         <Link
           to="/owners"
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 text-[13px] font-semibold hover:bg-muted"
+          className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary"
         >
-          <ArrowRight className="size-4" />
-          رجوع للملاك
+          الملاك
+          <ArrowRight className="size-3.5" />
         </Link>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setImportOpen(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 text-[13px] font-semibold hover:bg-muted"
+            className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 font-semibold hover:bg-muted"
           >
             <FileUp className="size-4" />
             استيراد عقد PDF
@@ -411,7 +413,7 @@ function OwnerDetailPage() {
           <Link
             to="/invoice-form"
             search={{ id: "", ownerId }}
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground"
+            className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 font-semibold text-primary-foreground"
           >
             <ReceiptText className="size-4" />
             إنشاء فاتورة
@@ -419,7 +421,7 @@ function OwnerDetailPage() {
           <button
             type="button"
             onClick={() => void exportOwner()}
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 text-[13px] font-semibold hover:bg-muted"
+            className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 font-semibold hover:bg-muted"
           >
             <Download className="size-4" />
             Excel
@@ -428,7 +430,7 @@ function OwnerDetailPage() {
             type="button"
             disabled={aiExport.isPending}
             onClick={() => aiExport.mutate()}
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-primary/30 bg-accent px-4 text-[13px] font-semibold text-primary disabled:opacity-50"
+            className="inline-flex h-9 items-center gap-2 rounded-md border border-primary/30 bg-accent px-3 font-semibold text-primary disabled:opacity-50"
           >
             {aiExport.isPending ? <Loader2 className="size-4 animate-spin" /> : <Bot className="size-4" />}
             ملف ذكي
@@ -436,23 +438,22 @@ function OwnerDetailPage() {
         </div>
       </div>
 
-      <section className="surface-card overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border p-5">
+      <section className="surface-card overflow-hidden border-e-4 border-e-primary">
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4">
           <div className="flex items-center gap-3">
-            <div className="grid size-11 place-items-center rounded-lg bg-primary text-lg font-bold text-primary-foreground">
+            <div className="grid size-10 place-items-center rounded-lg bg-primary text-base font-bold text-primary-foreground shadow-card">
               {data.owner.full_name.slice(0, 1)}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-[17px] font-bold">{data.owner.full_name}</h2>
+                <h1 className="text-[16px] font-bold">{data.owner.full_name}</h1>
                 <Chip tone="gold">مالك</Chip>
                 <Chip tone={data.owner.is_active ? "success" : "neutral"}>
                   {data.owner.is_active ? "نشط" : "موقوف"}
                 </Chip>
               </div>
-              <p className="mt-1 text-[12px] text-muted-foreground">
-                رقم الهوية: <span dir="ltr">{data.owner.national_id ?? "غير مسجل"}</span> · العقود{" "}
-                {activeContracts.length} نشط / {data.contracts.length} إجمالي · نسبة التحصيل {stats.rate}%
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                رقم المالك: <span dir="ltr">{data.owner.id.slice(0, 8)}</span> · أضيف في {formatDate(data.owner.created_at)}
               </p>
             </div>
           </div>
@@ -460,7 +461,7 @@ function OwnerDetailPage() {
             {phone ? (
               <a
                 href={`tel:+${phone}`}
-                className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-[12px] font-semibold"
+                className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-3 text-[11.5px] font-semibold"
               >
                 <Phone className="size-4" />
                 اتصال
@@ -471,7 +472,7 @@ function OwnerDetailPage() {
                 href={`https://wa.me/${whatsapp}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-9 items-center gap-2 rounded-lg border border-success/30 px-3 text-[12px] font-semibold text-success"
+                className="inline-flex h-8 items-center gap-2 rounded-md border border-success/30 px-3 text-[11.5px] font-semibold text-success"
               >
                 <MessageCircle className="size-4" />
                 واتساب
@@ -480,15 +481,16 @@ function OwnerDetailPage() {
             {data.owner.email ? (
               <a
                 href={`mailto:${data.owner.email}`}
-                className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-[12px] font-semibold"
+                className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-3 text-[11.5px] font-semibold"
               >
                 <Mail className="size-4" />
                 بريد
               </a>
             ) : null}
             <Link
-              to="/owners"
-              className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-[12px] font-semibold text-primary-foreground"
+              to="/owner-form"
+              search={{ id: ownerId }}
+              className="inline-flex h-8 items-center gap-2 rounded-md bg-primary px-3 text-[11.5px] font-semibold text-primary-foreground"
             >
               <Pencil className="size-4" />
               تعديل
@@ -496,9 +498,9 @@ function OwnerDetailPage() {
           </div>
         </div>
 
-        <div className="grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-px border-t border-border bg-border sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <Kpi label="المتأخرات" value={formatCurrency(stats.overdueAmount)} hint={`${stats.overdueCount} دفعة متأخرة`} tone="danger" />
-          <Kpi label="القادم خلال 30 يوم" value={formatCurrency(stats.next30Amount)} hint={`${stats.next30Count} دفعة`} />
+          <Kpi label="المستحق خلال 30 يوم" value={formatCurrency(stats.next30Amount)} hint={`${stats.next30Count} دفعة قادمة`} />
           <Kpi
             label="نسبة التحصيل"
             value={`${stats.rate}%`}
@@ -527,7 +529,7 @@ function OwnerDetailPage() {
             return (
               <div
                 key={p.id}
-                className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 ${late ? "border-destructive/40 bg-destructive/5" : "border-border"}`}
+                className={`flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2.5 ${late ? "border-destructive/40 bg-destructive/5" : "border-border"}`}
               >
                 <div className="flex items-center gap-3">
                   <span className="font-bold">{formatCurrency(remainingOf(p))}</span>
@@ -560,25 +562,29 @@ function OwnerDetailPage() {
         </div>
       </RecordSection>
 
-      <RecordSection title="البيانات الأساسية" icon={UserRound} count={4}>
-        <div className="grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
+      <RecordSection title="البيانات الأساسية" icon={UserRound} count={data.owner.is_active ? 1 : 0}>
+        <div className="grid gap-px overflow-hidden rounded-md bg-border sm:grid-cols-2 lg:grid-cols-4">
+          <Info icon={UserRound} label="الاسم" value={data.owner.full_name} />
+          <Info icon={KeyRound} label="رقم الهوية / السجل" value={data.owner.national_id} ltr />
           <Info icon={Phone} label="الجوال" value={data.owner.phone} ltr />
           <Info icon={MessageCircle} label="واتساب" value={data.owner.whatsapp || data.owner.phone} ltr />
           <Info icon={Mail} label="البريد الإلكتروني" value={data.owner.email} ltr />
           <Info icon={MapPin} label="العنوان" value={data.owner.address} />
+          <Info icon={Building2} label="التصنيف" value="مالك" />
+          <Info icon={CheckCircle2} label="الحالة" value={data.owner.is_active ? "نشط" : "موقوف"} />
         </div>
         {data.owner.notes ? (
           <p className="mt-3 rounded-lg bg-secondary/60 p-3 text-[13px]">{data.owner.notes}</p>
         ) : null}
       </RecordSection>
 
-      <RecordSection title="العقارات والوحدات" icon={Building2} count={groups.reduce((s, g) => s + g.items.length, 0)}>
+      <RecordSection title="العقارات والوحدات" icon={House} count={groups.reduce((s, g) => s + g.items.length, 0)}>
         <div className="space-y-4">
           {groups.map((group) => {
             const collapsed = collapsedGroups[group.key];
             return (
-              <article key={group.key} className="overflow-hidden rounded-xl border border-border">
-                <header className="flex flex-wrap items-center justify-between gap-3 bg-secondary/50 px-4 py-3">
+              <article key={group.key} className="overflow-hidden rounded-md border border-border border-e-primary">
+                <header className="flex flex-wrap items-center justify-between gap-3 bg-secondary/40 px-4 py-3">
                   <div>
                     <h3 className="text-[14px] font-bold">{group.title}</h3>
                     <p className="mt-1 text-[12px] text-muted-foreground">{group.subtitle}</p>
@@ -588,7 +594,7 @@ function OwnerDetailPage() {
                     <button
                       type="button"
                       onClick={() => setCollapsedGroups((s) => ({ ...s, [group.key]: !collapsed }))}
-                      className="grid size-8 place-items-center rounded-lg border border-border hover:bg-muted"
+                      className="grid size-8 place-items-center rounded-md border border-border bg-card hover:bg-muted"
                       aria-label="طي / فتح"
                     >
                       <ChevronDown className={`size-4 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
@@ -605,7 +611,7 @@ function OwnerDetailPage() {
                       const totalRemaining = list.reduce((s, p) => s + remainingOf(p), 0);
                       const link = reminderLink(contract);
                       return (
-                        <div key={item.key} className="rounded-lg border border-border">
+                        <div key={item.key} className="rounded-md border border-border bg-card">
                           <div className="flex flex-wrap items-center justify-between gap-3 p-3">
                             <div>
                               <div className="flex items-center gap-2">
@@ -624,7 +630,7 @@ function OwnerDetailPage() {
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                               {contract ? (
-                                <span className="rounded-lg bg-secondary px-3 py-1 text-[12.5px] font-bold">
+                                <span className="rounded-md bg-secondary px-3 py-1 text-[12.5px] font-bold">
                                   {formatCurrency(contract.annual_rent ?? contract.total_value)}
                                 </span>
                               ) : null}
@@ -633,7 +639,7 @@ function OwnerDetailPage() {
                                   href={link}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex h-8 items-center gap-2 rounded-lg border border-success/30 px-3 text-[12px] font-semibold text-success"
+                                  className="inline-flex h-8 items-center gap-2 rounded-md border border-success/30 px-3 text-[12px] font-semibold text-success"
                                 >
                                   <MessageCircle className="size-3.5" />
                                   تذكير
@@ -644,7 +650,7 @@ function OwnerDetailPage() {
                                   <button
                                     type="button"
                                     onClick={() => setOpenUnits((s) => ({ ...s, [item.key]: !shown }))}
-                                    className="inline-flex h-8 items-center gap-2 rounded-lg border border-border px-3 text-[12px] font-semibold hover:bg-muted"
+                                    className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-3 text-[12px] font-semibold hover:bg-muted"
                                   >
                                     <ReceiptText className="size-3.5" />
                                     {shown ? "إخفاء الدفعات" : "عرض الدفعات"}
@@ -652,7 +658,7 @@ function OwnerDetailPage() {
                                   <Link
                                     to="/contracts/$contractId"
                                     params={{ contractId: contract.id }}
-                                    className="inline-flex h-8 items-center gap-2 rounded-lg border border-border px-3 text-[12px] font-semibold hover:bg-muted"
+                                    className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-3 text-[12px] font-semibold hover:bg-muted"
                                   >
                                     <FileText className="size-3.5" />
                                     العقد
@@ -837,9 +843,9 @@ function Kpi({
   progress?: number;
 }) {
   return (
-    <div className="bg-card p-4">
+    <div className="min-h-24 bg-card p-4">
       <p className="text-[11.5px] text-muted-foreground">{label}</p>
-      <p className={`mt-2 text-[18px] font-bold ${tone === "danger" ? "text-destructive" : ""}`}>{value}</p>
+      <p className={`mt-2 text-[17px] font-bold ${tone === "danger" ? "text-destructive" : ""}`}>{value}</p>
       {progress != null ? (
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
           <div className="h-full rounded-full bg-success" style={{ width: `${Math.min(progress, 100)}%` }} />
@@ -852,7 +858,7 @@ function Kpi({
 
 function MiniStat({ label, value, tone }: { label: string; value: string; tone?: "success" | "danger" }) {
   return (
-    <div className="rounded-lg bg-secondary/60 p-2 text-center">
+    <div className="rounded-md bg-secondary/60 p-2 text-center">
       <p className="text-[11px] text-muted-foreground">{label}</p>
       <p
         className={`mt-1 text-[13px] font-bold ${tone === "success" ? "text-success" : tone === "danger" ? "text-destructive" : ""}`}
@@ -875,12 +881,12 @@ function Info({
   ltr?: boolean;
 }) {
   return (
-    <div className="bg-card p-5">
+    <div className="min-h-24 bg-card p-4">
       <p className="flex items-center gap-2 text-[11.5px] text-muted-foreground">
         <Icon className="size-4" />
         {label}
       </p>
-      <p className="mt-2 text-[13px] font-semibold" dir={ltr ? "ltr" : undefined}>
+      <p className="mt-2 break-words text-[13px] font-semibold" dir={ltr ? "ltr" : undefined}>
         {value || "غير مسجل"}
       </p>
     </div>
@@ -899,8 +905,8 @@ function RecordSection({
   children: ReactNode;
 }) {
   return (
-    <section className="surface-card overflow-hidden">
-      <header className="flex items-center justify-between border-b border-border px-5 py-4">
+    <section className="surface-card overflow-hidden border-e-2 border-e-primary">
+      <header className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <h2 className="flex items-center gap-2 text-[14px] font-bold">
           <Icon className="size-4 text-primary" />
           {title}
