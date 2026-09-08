@@ -1483,6 +1483,13 @@ export type Database = {
           is_featured: boolean
           is_visible: boolean
           latitude: number | null
+          link_facebook: string | null
+          link_instagram: string | null
+          link_snapchat: string | null
+          link_tiktok: string | null
+          link_tour: string | null
+          link_x: string | null
+          link_youtube: string | null
           longitude: number | null
           map_url: string | null
           name: string
@@ -1511,6 +1518,13 @@ export type Database = {
           is_featured?: boolean
           is_visible?: boolean
           latitude?: number | null
+          link_facebook?: string | null
+          link_instagram?: string | null
+          link_snapchat?: string | null
+          link_tiktok?: string | null
+          link_tour?: string | null
+          link_x?: string | null
+          link_youtube?: string | null
           longitude?: number | null
           map_url?: string | null
           name: string
@@ -1539,6 +1553,13 @@ export type Database = {
           is_featured?: boolean
           is_visible?: boolean
           latitude?: number | null
+          link_facebook?: string | null
+          link_instagram?: string | null
+          link_snapchat?: string | null
+          link_tiktok?: string | null
+          link_tour?: string | null
+          link_x?: string | null
+          link_youtube?: string | null
           longitude?: number | null
           map_url?: string | null
           name?: string
@@ -2186,6 +2207,9 @@ export type Database = {
           due_date: string | null
           due_time: string | null
           id: string
+          location_lat: number | null
+          location_lng: number | null
+          location_text: string | null
           priority: string
           property_id: string | null
           rejection_note: string | null
@@ -2206,6 +2230,9 @@ export type Database = {
           due_date?: string | null
           due_time?: string | null
           id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          location_text?: string | null
           priority?: string
           property_id?: string | null
           rejection_note?: string | null
@@ -2226,6 +2253,9 @@ export type Database = {
           due_date?: string | null
           due_time?: string | null
           id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          location_text?: string | null
           priority?: string
           property_id?: string | null
           rejection_note?: string | null

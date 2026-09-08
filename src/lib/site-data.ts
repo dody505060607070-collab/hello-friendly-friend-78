@@ -18,12 +18,19 @@ export type PublicProperty = {
   latitude: number | null;
   longitude: number | null;
   whatsapp_number: string | null;
+  link_youtube: string | null;
+  link_tiktok: string | null;
+  link_instagram: string | null;
+  link_snapchat: string | null;
+  link_x: string | null;
+  link_facebook: string | null;
+  link_tour: string | null;
   created_at: string;
   property_images: { url: string; is_cover: boolean; sort_order: number }[];
 };
 
 const PROPERTY_FIELDS =
-  "id, code, name, purpose, property_type, city, district, price_text, price_value, description, is_featured, map_url, latitude, longitude, whatsapp_number, created_at, property_images(url, is_cover, sort_order)";
+  "id, code, name, purpose, property_type, city, district, price_text, price_value, description, is_featured, map_url, latitude, longitude, whatsapp_number, link_youtube, link_tiktok, link_instagram, link_snapchat, link_x, link_facebook, link_tour, created_at, property_images(url, is_cover, sort_order)";
 
 export const DEFAULT_WHATSAPP = "966550818020";
 export const COMPANY_PHONE = "0550818020";

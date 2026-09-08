@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Camera, CircleCheck, ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
+import { Camera, MapPin, CircleCheck, ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -31,7 +31,20 @@ type Row = {
   due_time: string | null;
   property_id: string | null;
   property: { name: string } | null;
+  location_text: string | null;
+  location_lat: number | null;
+  location_lng: number | null;
   created_at: string;
+};
+
+const STATUS_STYLE: Record<string, string> = {
+  new: "border-sky-300 bg-sky-50 text-sky-700",
+  in_progress: "border-amber-300 bg-amber-50 text-amber-800",
+  submitted: "border-violet-300 bg-violet-50 text-violet-700",
+  approved: "border-emerald-300 bg-emerald-50 text-emerald-700",
+  done: "border-emerald-300 bg-emerald-50 text-emerald-700",
+  rejected: "border-rose-300 bg-rose-50 text-rose-700",
+  cancelled: "border-slate-300 bg-slate-100 text-slate-600",
 };
 
 export const Route = createFileRoute("/_authenticated/tasks")({
@@ -52,7 +65,7 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 });
 
 const SELECT =
-  "id, title, details, task_type, priority, status, due_date, due_time, property_id, created_at, property:property_id(name)";
+  "id, title, details, task_type, priority, status, due_date, due_time, property_id, created_at, location_text, location_lat, location_lng, property:property_id(name)";
 
 const statusOrder = ["new", "in_progress", "submitted", "approved", "rejected", "done", "cancelled"];
 
@@ -303,6 +316,23 @@ function TasksPage() {
             },
             { header: "العقار", cell: (r) => r.property?.name ?? "—" },
             {
+              header: "الموقع",
+              cell: (r) =>
+                r.location_lat != null && r.location_lng != null ? (
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${r.location_lat},${r.location_lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-primary"
+                  >
+                    <MapPin className="size-3.5" />
+                    {r.location_text || "عرض على الخريطة"}
+                  </a>
+                ) : (
+                  (r.location_text ?? "—")
+                ),
+            },
+            {
               header: "الموعد",
               sortable: true,
               value: (r) => r.due_date ?? "",
@@ -314,7 +344,9 @@ function TasksPage() {
                 <select
                   value={r.status}
                   onChange={(e) => changeStatus.mutate({ id: r.id, status: e.target.value })}
-                  className="h-9 rounded-lg border border-border bg-card px-2 text-[12.5px] font-semibold text-foreground outline-none"
+                  className={`h-9 rounded-lg border px-2 text-[12.5px] font-semibold outline-none ${
+                    STATUS_STYLE[r.status] ?? "border-border bg-card text-foreground"
+                  }`}
                   aria-label="حالة المهمة"
                 >
                   {statusOrder.map((s) => (

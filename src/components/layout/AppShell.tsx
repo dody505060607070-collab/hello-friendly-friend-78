@@ -114,7 +114,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
+      <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-border bg-card px-3 md:px-6">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -148,7 +148,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             alt="مثراء العقارية"
             width={1152}
             height={576}
-            className="h-10 w-auto md:h-11"
+            className="h-14 w-auto md:h-[68px]"
           />
         </Link>
 
@@ -173,12 +173,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <div className="flex">
-        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-[268px] shrink-0 overflow-y-auto border-s border-sidebar-border bg-sidebar lg:block">
+        <aside className="sticky top-20 hidden h-[calc(100vh-5rem)] w-[268px] shrink-0 overflow-y-auto border-s border-sidebar-border bg-sidebar lg:block">
           <SidebarNav />
         </aside>
 
         {open ? (
-          <div className="fixed inset-0 top-16 z-20 lg:hidden">
+          <div className="fixed inset-0 top-20 z-20 lg:hidden">
             <button
               type="button"
               aria-label="إغلاق القائمة"
