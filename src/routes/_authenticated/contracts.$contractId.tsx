@@ -65,7 +65,7 @@ function ContractViewPage() {
       const { data, error } = await supabase
         .from("contracts")
         .select(
-          "*, owner:contacts!contracts_owner_id_fkey(full_name, phone, national_id, email), tenant:contacts!contracts_tenant_id_fkey(full_name, phone, national_id, email), property:properties(code, name, city, district, property_type)",
+          "*, owner:contacts!contracts_owner_id_fkey(full_name, phone, national_id, email), tenant:contacts!contracts_tenant_id_fkey(full_name, phone, national_id, email), broker:contacts!contracts_broker_id_fkey(full_name, phone), property:properties(id, code, name, city, district, property_type), unit:units(id, unit_number, unit_type, floor, area, status)",
         )
         .eq("id", contractId)
         .maybeSingle();
