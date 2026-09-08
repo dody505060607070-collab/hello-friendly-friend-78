@@ -300,6 +300,8 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
         tenant_id: tenantId,
         broker_id: brokerId,
         property_id: propertyId,
+        unit_id: primaryUnitId,
+
         start_date: startDate,
         end_date: endDate,
         signed_date: /^\d{4}-\d{2}-\d{2}$/.test(str(e["signed_date"])) ? str(e["signed_date"]) : null,
