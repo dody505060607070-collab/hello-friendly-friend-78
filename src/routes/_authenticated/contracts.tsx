@@ -196,16 +196,33 @@ function ContractsPage() {
       if (editing) {
         const { error } = await supabase.from("contracts").update(payload).eq("id", editing.id);
         if (error) throw error;
-      } else {
-        const { error } = await supabase.from("contracts").insert({ ...payload, source });
-        if (error) throw error;
+        return null;
       }
+      const { error } = await supabase.from("contracts").insert({ ...payload, source });
+      if (error) throw error;
+      // إنشاء حساب بوابة العميل تلقائيًا (اسم المستخدم = رقم الهوية، كلمة المرور = الجوال 05…)
+      if (payload.tenant_id) {
+        try {
+          const res = await ensureClientAccount({ data: { contactId: payload.tenant_id } });
+          return res.ok ? { username: res.username, password: res.password } : { reason: res.reason };
+        } catch {
+          return { reason: "تعذّر إنشاء حساب بوابة العميل تلقائيًا." };
+        }
+      }
+      return null;
     },
-    onSuccess: () => {
+    onSuccess: (account) => {
       queryClient.invalidateQueries({ queryKey: ["contracts"] });
       queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
       toast.success(editing ? "تم تحديث العقد" : "تم إنشاء العقد");
+      if (account && "username" in account && account.username) {
+        toast.success(`تم تفعيل بوابة العميل — المستخدم ${account.username} وكلمة المرور ${account.password}`, {
+          duration: 12000,
+        });
+      } else if (account && "reason" in account && account.reason) {
+        toast.warning(account.reason);
+      }
       setFormOpen(false);
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
