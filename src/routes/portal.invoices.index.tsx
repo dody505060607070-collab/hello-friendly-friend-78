@@ -69,41 +69,70 @@ function PortalInvoices() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 rounded-xl border border-border bg-card p-4">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="رقم الفاتورة"
-          className="min-w-[180px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
-        />
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
-        >
-          <option value="">الكل</option>
-          <option value="paid">مدفوعة</option>
-          <option value="sent">مرسلة</option>
-          <option value="unpaid">بانتظار السداد</option>
-          <option value="overdue">متأخرة</option>
-        </select>
+      <div className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-5">
+        <label className="text-xs text-muted-foreground lg:col-span-2">
+          بحث
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="رقم الفاتورة"
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+          />
+        </label>
+        <label className="text-xs text-muted-foreground">
+          الحالة
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+          >
+            <option value="">الكل</option>
+            <option value="paid">مدفوعة</option>
+            <option value="sent">مرسلة</option>
+            <option value="unpaid">بانتظار السداد</option>
+            <option value="overdue">متأخرة</option>
+          </select>
+        </label>
+        <label className="text-xs text-muted-foreground">
+          من تاريخ
+          <input
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+          />
+        </label>
+        <label className="text-xs text-muted-foreground">
+          إلى تاريخ
+          <input
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+          />
+        </label>
       </div>
 
       <div className="space-y-3">
         {rows.map((i) => {
           const chip = statusChip[i.status] ?? statusChip["unpaid"]!;
+          const count = (i as { items?: { count: number }[] }).items?.[0]?.count ?? 0;
           return (
             <article key={i.id} className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card px-5 py-4">
               <div>
-                <p className="text-xs text-muted-foreground">رقم الفاتورة</p>
+                <p className="text-[11px] text-muted-foreground">رقم الفاتورة</p>
                 <p className="font-bold">{i.invoice_number}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">تاريخ الفاتورة</p>
+                <p className="text-[11px] text-muted-foreground">تاريخ الفاتورة</p>
                 <p className="font-semibold">{i.issue_date}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">الإجمالي</p>
+                <p className="text-[11px] text-muted-foreground">عدد البنود</p>
+                <p className="font-semibold">{count}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground">الإجمالي</p>
                 <p className="font-semibold">{money(Number(i.total))}</p>
               </div>
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${chip.cls}`}>{chip.label}</span>
@@ -117,6 +146,7 @@ function PortalInvoices() {
             </article>
           );
         })}
+
         {rows.length === 0 ? (
           <p className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">لا توجد فواتير مطابقة.</p>
         ) : null}
