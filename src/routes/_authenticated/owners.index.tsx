@@ -235,7 +235,15 @@ function OwnersPage() {
               header: "المالك",
               sortable: true,
               value: (r) => r.full_name,
-              cell: (r) => r.full_name,
+              cell: (r) => (
+                <Link
+                  to="/owners/$ownerId"
+                  params={{ ownerId: r.id }}
+                  className="font-bold text-primary hover:underline"
+                >
+                  {r.full_name}
+                </Link>
+              ),
               className: "font-semibold",
             },
             {
