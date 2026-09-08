@@ -56,9 +56,15 @@ function ContractDetail() {
 
   return (
     <div className="space-y-5">
-      <nav className="text-xs text-muted-foreground">
-        <Link to="/portal/contracts" className="hover:text-foreground">العقود</Link> › {c.contract_number}
-      </nav>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <nav className="text-xs text-muted-foreground">
+          <Link to="/portal/contracts" className="hover:text-foreground">العقود</Link> › {c.contract_number}
+        </nav>
+        <Link to="/portal/contracts" className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold hover:bg-muted">
+          رجوع للعقود
+        </Link>
+      </div>
+
 
       <section className="rounded-2xl border border-border bg-card">
         <header className="flex items-center justify-between border-b border-border px-5 py-4">
