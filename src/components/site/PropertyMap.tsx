@@ -15,9 +15,15 @@ const filters = [
 ] as const;
 
 const colors: Record<string, string> = {
-  sale: "#E0A800",
-  rent: "#DC2626",
+  sale: "#F59E0B",
+  rent: "#EF4444",
 };
+
+function normalizePurpose(p?: string | null): "sale" | "rent" {
+  const v = (p ?? "").toLowerCase().trim();
+  if (v === "sale" || v === "sell" || v === "بيع" || v === "للبيع") return "sale";
+  return "rent";
+}
 
 export function PropertyMap({
   properties,
