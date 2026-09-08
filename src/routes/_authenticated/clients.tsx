@@ -20,6 +20,7 @@ import { Pills } from "@/components/kit/Pills";
 import { Toggle } from "@/components/kit/Toggle";
 import { supabase } from "@/integrations/supabase/client";
 import { contactRoleLabels } from "@/lib/labels";
+import { getClientAccess, issueClientAccess } from "@/lib/portal.functions";
 import { cn } from "@/lib/utils";
 
 type Row = {
