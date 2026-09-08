@@ -16,13 +16,13 @@ const filters = [
 
 const colors: Record<string, string> = {
   sale: "#E0A800",
-  rent: "#B01C2E",
+  rent: "#2563EB",
 };
 
 export function PropertyMap({
   properties,
   title = "العقارات على الخريطة",
-  description = "اضغط على أي نقطة لعرض تفاصيل العقار — الأصفر للبيع والأحمر للإيجار.",
+  description = "اضغط على أي نقطة لعرض تفاصيل العقار — الأصفر للبيع والأزرق للإيجار.",
 }: {
   properties: MapProperty[] | undefined;
   title?: string;
@@ -112,7 +112,7 @@ export function PropertyMap({
             }</span><br/>
             <span style="color:${color};font-weight:700;font-size:13px">${priceLabel}</span>
             <div style="display:flex;gap:10px;margin-top:8px">
-              <a href="/properties/${property.code}" style="color:#B01C2E;font-weight:700;font-size:12px">عرض التفاصيل</a>
+              <a href="/properties/${property.code}" style="color:${color};font-weight:700;font-size:12px">عرض التفاصيل</a>
               <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" rel="noopener" style="color:#0a7d33;font-weight:700;font-size:12px">الاتجاهات</a>
             </div>
           </div>`,
