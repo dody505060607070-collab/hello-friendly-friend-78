@@ -144,7 +144,10 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
       (str(e["unit_number"]) ? `وحدة ${str(e["unit_number"])}` : "");
     let propertyId: string | null = null;
     if (propertyName) {
-      const found = await db.from("properties").select("id").ilike("name", propertyName).limit(1);
+      // البحث مقيّد بمالك العقد — حتى لا يُربط العقد بعقار مالك آخر يحمل اسمًا مشابهًا.
+      let query = db.from("properties").select("id").ilike("name", propertyName).limit(1);
+      query = ownerId ? query.eq("owner_id", ownerId) : query.is("owner_id", null);
+      const found = await query;
       if (found.data?.[0]) propertyId = found.data[0].id;
       else {
         const code = `P-${Date.now().toString(36).toUpperCase()}`;
@@ -156,6 +159,7 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
             purpose: str(e["contract_type"]) === "sale" ? "sale" : "rent",
             city: str(e["city"]) || null,
             district: str(e["district"]) || null,
+            property_type: str(e["property_type"]) || null,
             owner_id: ownerId,
             is_visible: false,
             needs_review: true,
@@ -174,6 +178,60 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
     } else {
       warnings.push("لم يُستخرج اسم العقار — رُبط العقد بدون عقار.");
     }
+
+    // الوحدات المذكورة في العقد
+    const rawUnits = Array.isArray(e["units"]) ? (e["units"] as Record<string, unknown>[]) : [];
+    const unitList = rawUnits
+      .map((u) => ({
+        unit_number: str(u["unit_number"]),
+        unit_type: str(u["unit_type"]),
+        floor: str(u["floor"]),
+        area: num(u["area"]),
+      }))
+      .filter((u) => u.unit_number || u.unit_type);
+    if (!unitList.length && str(e["unit_number"])) {
+      for (const n of str(e["unit_number"]).split(/[،,]/).map((s) => s.trim()).filter(Boolean)) {
+        unitList.push({ unit_number: n, unit_type: str(e["property_type"]), floor: "", area: null });
+      }
+    }
+    let primaryUnitId: string | null = null;
+    for (const u of unitList) {
+      const label = u.unit_number || u.unit_type;
+      let unitId: string | null = null;
+      const found = await db
+        .from("units")
+        .select("id")
+        .eq("owner_id", ownerId ?? "")
+        .eq("unit_number", label)
+        .limit(1);
+      if (found.data?.[0]) unitId = found.data[0].id;
+      else {
+        const ins = await db
+          .from("units")
+          .insert({
+            owner_id: ownerId,
+            unit_number: label,
+            unit_type: u.unit_type || null,
+            floor: u.floor || null,
+            area: u.area,
+            status: "rented",
+            is_rentable: true,
+            notes: "أُنشئت تلقائيًا من استيراد عقد PDF.",
+          })
+          .select("id")
+          .single();
+        if (ins.error) warnings.push(`تعذّر إنشاء الوحدة «${label}»: ${ins.error.message}`);
+        else {
+          unitId = ins.data.id;
+          created.push(`وحدة: ${label}`);
+        }
+      }
+      if (unitId && !primaryUnitId) primaryUnitId = unitId;
+    }
+    if (primaryUnitId && propertyId) {
+      await db.from("properties").update({ unit_id: primaryUnitId }).eq("id", propertyId);
+    }
+
 
     // العقد
     const isSale = str(e["contract_type"]) === "sale";
