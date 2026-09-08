@@ -57,10 +57,12 @@ import { Route as AuthenticatedInvoicesIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
 import { Route as AuthenticatedOwnersIndexRouteImport } from './routes/_authenticated/owners.index'
 import { Route as AuthenticatedOwnersOwnerIdRouteImport } from './routes/_authenticated/owners.$ownerId'
+import { Route as ApiPublicTwilioWhatsappRouteImport } from './routes/api/public/twilio-whatsapp'
 import { Route as PortalContractsIndexRouteImport } from './routes/portal.contracts.index'
 import { Route as PortalContractsContractIdRouteImport } from './routes/portal.contracts.$contractId'
 import { Route as PortalInvoicesIndexRouteImport } from './routes/portal.invoices.index'
 import { Route as PortalInvoicesInvoiceIdRouteImport } from './routes/portal.invoices.$invoiceId'
+import { Route as ApiPublicFilesSplatRouteImport } from './routes/api/public/files/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -314,6 +316,11 @@ const AuthenticatedOwnersOwnerIdRoute =
     path: '/owners/$ownerId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicTwilioWhatsappRoute = ApiPublicTwilioWhatsappRouteImport.update({
+  id: '/api/public/twilio-whatsapp',
+  path: '/api/public/twilio-whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PortalContractsIndexRoute = PortalContractsIndexRouteImport.update({
   id: '/contracts/',
   path: '/contracts/',
@@ -334,6 +341,11 @@ const PortalInvoicesInvoiceIdRoute = PortalInvoicesInvoiceIdRouteImport.update({
   id: '/invoices/$invoiceId',
   path: '/invoices/$invoiceId',
   getParentRoute: () => PortalRoute,
+} as any)
+const ApiPublicFilesSplatRoute = ApiPublicFilesSplatRouteImport.update({
+  id: '/api/public/files/$',
+  path: '/api/public/files/$',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -381,6 +393,7 @@ export interface FileRoutesByFullPath {
   '/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
+  '/api/public/twilio-whatsapp': typeof ApiPublicTwilioWhatsappRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
   '/contracts/': typeof AuthenticatedContractsIndexRoute
@@ -388,6 +401,7 @@ export interface FileRoutesByFullPath {
   '/owners/': typeof AuthenticatedOwnersIndexRoute
   '/portal/contracts/': typeof PortalContractsIndexRoute
   '/portal/invoices/': typeof PortalInvoicesIndexRoute
+  '/api/public/files/$': typeof ApiPublicFilesSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -433,6 +447,7 @@ export interface FileRoutesByTo {
   '/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
+  '/api/public/twilio-whatsapp': typeof ApiPublicTwilioWhatsappRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
   '/contracts': typeof AuthenticatedContractsIndexRoute
@@ -440,6 +455,7 @@ export interface FileRoutesByTo {
   '/owners': typeof AuthenticatedOwnersIndexRoute
   '/portal/contracts': typeof PortalContractsIndexRoute
   '/portal/invoices': typeof PortalInvoicesIndexRoute
+  '/api/public/files/$': typeof ApiPublicFilesSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -488,6 +504,7 @@ export interface FileRoutesById {
   '/_authenticated/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/_authenticated/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
+  '/api/public/twilio-whatsapp': typeof ApiPublicTwilioWhatsappRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
   '/_authenticated/contracts/': typeof AuthenticatedContractsIndexRoute
@@ -495,6 +512,7 @@ export interface FileRoutesById {
   '/_authenticated/owners/': typeof AuthenticatedOwnersIndexRoute
   '/portal/contracts/': typeof PortalContractsIndexRoute
   '/portal/invoices/': typeof PortalInvoicesIndexRoute
+  '/api/public/files/$': typeof ApiPublicFilesSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -543,6 +561,7 @@ export interface FileRouteTypes {
     | '/contracts/$contractId'
     | '/invoices/$invoiceId'
     | '/owners/$ownerId'
+    | '/api/public/twilio-whatsapp'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
     | '/contracts/'
@@ -550,6 +569,7 @@ export interface FileRouteTypes {
     | '/owners/'
     | '/portal/contracts/'
     | '/portal/invoices/'
+    | '/api/public/files/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -595,6 +615,7 @@ export interface FileRouteTypes {
     | '/contracts/$contractId'
     | '/invoices/$invoiceId'
     | '/owners/$ownerId'
+    | '/api/public/twilio-whatsapp'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
     | '/contracts'
@@ -602,6 +623,7 @@ export interface FileRouteTypes {
     | '/owners'
     | '/portal/contracts'
     | '/portal/invoices'
+    | '/api/public/files/$'
   id:
     | '__root__'
     | '/'
@@ -649,6 +671,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contracts/$contractId'
     | '/_authenticated/invoices/$invoiceId'
     | '/_authenticated/owners/$ownerId'
+    | '/api/public/twilio-whatsapp'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
     | '/_authenticated/contracts/'
@@ -656,6 +679,7 @@ export interface FileRouteTypes {
     | '/_authenticated/owners/'
     | '/portal/contracts/'
     | '/portal/invoices/'
+    | '/api/public/files/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -674,6 +698,8 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   ThankYouRoute: typeof ThankYouRoute
   PropertiesCodeRoute: typeof PropertiesCodeRoute
+  ApiPublicTwilioWhatsappRoute: typeof ApiPublicTwilioWhatsappRoute
+  ApiPublicFilesSplatRoute: typeof ApiPublicFilesSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1014,6 +1040,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOwnersOwnerIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/twilio-whatsapp': {
+      id: '/api/public/twilio-whatsapp'
+      path: '/api/public/twilio-whatsapp'
+      fullPath: '/api/public/twilio-whatsapp'
+      preLoaderRoute: typeof ApiPublicTwilioWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portal/contracts/': {
       id: '/portal/contracts/'
       path: '/contracts'
@@ -1041,6 +1074,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/portal/invoices/$invoiceId'
       preLoaderRoute: typeof PortalInvoicesInvoiceIdRouteImport
       parentRoute: typeof PortalRoute
+    }
+    '/api/public/files/$': {
+      id: '/api/public/files/$'
+      path: '/api/public/files/$'
+      fullPath: '/api/public/files/$'
+      preLoaderRoute: typeof ApiPublicFilesSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -1153,6 +1193,8 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   ThankYouRoute: ThankYouRoute,
   PropertiesCodeRoute: PropertiesCodeRoute,
+  ApiPublicTwilioWhatsappRoute: ApiPublicTwilioWhatsappRoute,
+  ApiPublicFilesSplatRoute: ApiPublicFilesSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

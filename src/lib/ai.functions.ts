@@ -113,10 +113,15 @@ async function callGemini(input: Item[]): Promise<string> {
   throw new Error(last || "فشل Gemini.");
 }
 
+/**
+ * ترتيب المزوّدين: Google Gemini أولًا (مفتاح مباشر لا يعتمد على منصة الاستضافة)،
+ * ثم Groq، وأخيرًا بوابة Lovable فقط إن وُجد مفتاحها — حتى يعمل النظام كاملًا على
+ * خادم Hostinger VPS بدون أي اعتماد على Lovable.
+ */
 async function callGateway(input: Item[]): Promise<string> {
   const errors: string[] = [];
   try {
-    return await callLovable(input);
+    return await callGemini(input);
   } catch (e) {
     errors.push(e instanceof Error ? e.message : String(e));
   }
@@ -125,10 +130,12 @@ async function callGateway(input: Item[]): Promise<string> {
   } catch (e) {
     errors.push(e instanceof Error ? e.message : String(e));
   }
-  try {
-    return await callGemini(input);
-  } catch (e) {
-    errors.push(e instanceof Error ? e.message : String(e));
+  if (process.env["LOVABLE_API_KEY"]) {
+    try {
+      return await callLovable(input);
+    } catch (e) {
+      errors.push(e instanceof Error ? e.message : String(e));
+    }
   }
   throw new Error(`تعذّر الوصول لأي مزوّد ذكاء اصطناعي. (${errors.join(" | ").slice(0, 400)})`);
 }

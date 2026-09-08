@@ -1,3 +1,4 @@
+import { uploadMedia, mediaUrl } from "@/lib/media";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, MessagesSquare, Paperclip, Pencil, Pin, Reply, Search, Send, Smile, Trash2, Users } from "lucide-react";
@@ -162,8 +163,7 @@ function TeamChatPage() {
     setUploading(true);
     try {
       const path = `team-chat/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
-      const up = await supabase.storage.from("internal-files").upload(path, file, { upsert: true });
-      if (up.error) throw up.error;
+      await uploadMedia("internal-files", path, file);
       const { error } = await supabase.from("group_messages").insert({
         sender_id: userId!,
         body: body.trim() || null,
@@ -184,12 +184,11 @@ function TeamChatPage() {
   };
 
   const openAttachment = async (path: string) => {
-    const { data, error } = await supabase.storage.from("internal-files").createSignedUrl(path, 300);
-    if (error || !data) {
+    try {
+      window.open(await mediaUrl("internal-files", path), "_blank", "noopener");
+    } catch {
       toast.error("تعذّر فتح المرفق");
-      return;
     }
-    window.open(data.signedUrl, "_blank", "noopener");
   };
 
   return (
