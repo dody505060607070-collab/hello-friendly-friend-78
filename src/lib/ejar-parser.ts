@@ -221,33 +221,54 @@ export function parseEjarContract(rawText: string): EjarParsed | null {
       if (sec === "units") currentUnit = null;
       continue;
     }
-    if ((LABELS as readonly string[]).includes(p)) {
+    const label = (LABELS as readonly string[]).includes(p)
+      ? p
+      : (LABELS as readonly string[]).find((l) => l.length > 6 && p.endsWith(l));
+    if (label) {
       const value = cleanValue(parts[i + 1] ?? "");
-      if (value && !(LABELS as readonly string[]).includes(value)) put(p, value);
+      if (value && !(LABELS as readonly string[]).includes(value)) put(label, value);
     }
   }
 
   const g = (sec: Sec, key: string) => get[sec]?.[key] ?? "";
   const contract = (k: string) => g("contract", k);
 
-  // جدول الدفعات: صفوف بترتيب معكوس (RTL)
+  // جدول الدفعات: صفوف بترتيب معكوس (RTL) — نموذجان مختلفان للتخطيط
   const payments: EjarPayment[] = [];
   const rowRe =
-    /(\d{4}-\d{2}-\d{2})\s{2,}(\d{4}-\d{2}-\d{2})\s{2,}(\d{4}-\d{2}-\d{2})\s{2,}(\d{4}-\d{2}-\d{2})\s{2,}([\d.,]+)\s{2,}([\d.,]+)\s{2,}([\d.,]+)\s{2,}([\d.,]+)\s{2,}(\d{1,3})(?!\d)/g;
+    /(\d{4}-\d{2}-\d{2})\s{2,}(\d{4}-\d{2}-\d{2})\s{2,}([\d.,]+)\s{2,}([\d.,]+)\s{2,}([\d.,]+)\s{2,}([\d.,]+)\s{2,}(\d{1,3})(?!\d)/g;
   for (const m of text.matchAll(rowRe)) {
-    const dueAd = m[3]!;
-    const issueAd = m[4]!;
+    const dueAd = m[1]!;
+    const issueAd = m[2]!;
     if (Number(dueAd.slice(0, 4)) < 1900) continue;
     payments.push({
-      no: Number(m[9]),
-      total: num(m[5]),
-      services: num(m[6]),
-      vat: num(m[7]),
-      rent: num(m[8]),
+      no: Number(m[7]),
+      total: num(m[3]),
+      services: num(m[4]),
+      vat: num(m[5]),
+      rent: num(m[6]),
       due_date: dueAd,
       issue_date: issueAd,
     });
   }
+  if (!payments.length) {
+    const simpleRe =
+      /([\d.,]+\.\d{2})\s{2,}\d{4}-\d{2}-\d{2}\s{2,}\d{4}-\d{2}-\d{2}\s{2,}[^\s]+\s{2,}(\d{4}-\d{2}-\d{2})\s{2,}(\d{4}-\d{2}-\d{2})\s{2,}(\d{1,3})(?!\d)/g;
+    for (const m of text.matchAll(simpleRe)) {
+      const dueAd = m[2]!;
+      if (Number(dueAd.slice(0, 4)) < 1900) continue;
+      payments.push({
+        no: Number(m[4]),
+        total: num(m[1]),
+        services: 0,
+        vat: 0,
+        rent: num(m[1]),
+        due_date: dueAd,
+        issue_date: m[3]!,
+      });
+    }
+  }
+
   payments.sort((a, b) => a.no - b.no);
 
   const units: EjarUnit[] = unitBuckets
