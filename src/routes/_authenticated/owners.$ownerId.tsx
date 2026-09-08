@@ -578,13 +578,13 @@ function OwnerDetailPage() {
         ) : null}
       </RecordSection>
 
-      <RecordSection title="العقارات والوحدات" icon={Building2} count={groups.reduce((s, g) => s + g.items.length, 0)}>
+      <RecordSection title="العقارات والوحدات" icon={House} count={groups.reduce((s, g) => s + g.items.length, 0)}>
         <div className="space-y-4">
           {groups.map((group) => {
             const collapsed = collapsedGroups[group.key];
             return (
-              <article key={group.key} className="overflow-hidden rounded-xl border border-border">
-                <header className="flex flex-wrap items-center justify-between gap-3 bg-secondary/50 px-4 py-3">
+              <article key={group.key} className="overflow-hidden rounded-md border border-border border-e-primary">
+                <header className="flex flex-wrap items-center justify-between gap-3 bg-secondary/40 px-4 py-3">
                   <div>
                     <h3 className="text-[14px] font-bold">{group.title}</h3>
                     <p className="mt-1 text-[12px] text-muted-foreground">{group.subtitle}</p>
@@ -594,7 +594,7 @@ function OwnerDetailPage() {
                     <button
                       type="button"
                       onClick={() => setCollapsedGroups((s) => ({ ...s, [group.key]: !collapsed }))}
-                      className="grid size-8 place-items-center rounded-lg border border-border hover:bg-muted"
+                      className="grid size-8 place-items-center rounded-md border border-border bg-card hover:bg-muted"
                       aria-label="طي / فتح"
                     >
                       <ChevronDown className={`size-4 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
@@ -611,7 +611,7 @@ function OwnerDetailPage() {
                       const totalRemaining = list.reduce((s, p) => s + remainingOf(p), 0);
                       const link = reminderLink(contract);
                       return (
-                        <div key={item.key} className="rounded-lg border border-border">
+                        <div key={item.key} className="rounded-md border border-border bg-card">
                           <div className="flex flex-wrap items-center justify-between gap-3 p-3">
                             <div>
                               <div className="flex items-center gap-2">
@@ -630,7 +630,7 @@ function OwnerDetailPage() {
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                               {contract ? (
-                                <span className="rounded-lg bg-secondary px-3 py-1 text-[12.5px] font-bold">
+                                <span className="rounded-md bg-secondary px-3 py-1 text-[12.5px] font-bold">
                                   {formatCurrency(contract.annual_rent ?? contract.total_value)}
                                 </span>
                               ) : null}
@@ -639,7 +639,7 @@ function OwnerDetailPage() {
                                   href={link}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex h-8 items-center gap-2 rounded-lg border border-success/30 px-3 text-[12px] font-semibold text-success"
+                                  className="inline-flex h-8 items-center gap-2 rounded-md border border-success/30 px-3 text-[12px] font-semibold text-success"
                                 >
                                   <MessageCircle className="size-3.5" />
                                   تذكير
@@ -650,7 +650,7 @@ function OwnerDetailPage() {
                                   <button
                                     type="button"
                                     onClick={() => setOpenUnits((s) => ({ ...s, [item.key]: !shown }))}
-                                    className="inline-flex h-8 items-center gap-2 rounded-lg border border-border px-3 text-[12px] font-semibold hover:bg-muted"
+                                    className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-3 text-[12px] font-semibold hover:bg-muted"
                                   >
                                     <ReceiptText className="size-3.5" />
                                     {shown ? "إخفاء الدفعات" : "عرض الدفعات"}
@@ -658,7 +658,7 @@ function OwnerDetailPage() {
                                   <Link
                                     to="/contracts/$contractId"
                                     params={{ contractId: contract.id }}
-                                    className="inline-flex h-8 items-center gap-2 rounded-lg border border-border px-3 text-[12px] font-semibold hover:bg-muted"
+                                    className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-3 text-[12px] font-semibold hover:bg-muted"
                                   >
                                     <FileText className="size-3.5" />
                                     العقد
@@ -843,9 +843,9 @@ function Kpi({
   progress?: number;
 }) {
   return (
-    <div className="bg-card p-4">
+    <div className="min-h-24 bg-card p-4">
       <p className="text-[11.5px] text-muted-foreground">{label}</p>
-      <p className={`mt-2 text-[18px] font-bold ${tone === "danger" ? "text-destructive" : ""}`}>{value}</p>
+      <p className={`mt-2 text-[17px] font-bold ${tone === "danger" ? "text-destructive" : ""}`}>{value}</p>
       {progress != null ? (
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
           <div className="h-full rounded-full bg-success" style={{ width: `${Math.min(progress, 100)}%` }} />
@@ -858,7 +858,7 @@ function Kpi({
 
 function MiniStat({ label, value, tone }: { label: string; value: string; tone?: "success" | "danger" }) {
   return (
-    <div className="rounded-lg bg-secondary/60 p-2 text-center">
+    <div className="rounded-md bg-secondary/60 p-2 text-center">
       <p className="text-[11px] text-muted-foreground">{label}</p>
       <p
         className={`mt-1 text-[13px] font-bold ${tone === "success" ? "text-success" : tone === "danger" ? "text-destructive" : ""}`}
@@ -881,12 +881,12 @@ function Info({
   ltr?: boolean;
 }) {
   return (
-    <div className="bg-card p-5">
+    <div className="min-h-24 bg-card p-4">
       <p className="flex items-center gap-2 text-[11.5px] text-muted-foreground">
         <Icon className="size-4" />
         {label}
       </p>
-      <p className="mt-2 text-[13px] font-semibold" dir={ltr ? "ltr" : undefined}>
+      <p className="mt-2 break-words text-[13px] font-semibold" dir={ltr ? "ltr" : undefined}>
         {value || "غير مسجل"}
       </p>
     </div>
@@ -905,8 +905,8 @@ function RecordSection({
   children: ReactNode;
 }) {
   return (
-    <section className="surface-card overflow-hidden">
-      <header className="flex items-center justify-between border-b border-border px-5 py-4">
+    <section className="surface-card overflow-hidden border-e-2 border-e-primary">
+      <header className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <h2 className="flex items-center gap-2 text-[14px] font-bold">
           <Icon className="size-4 text-primary" />
           {title}
