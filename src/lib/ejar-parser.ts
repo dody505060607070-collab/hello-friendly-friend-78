@@ -107,6 +107,9 @@ const cleanValue = (v: string) => {
   const colon = s.indexOf(":");
   if (colon >= 0 && new RegExp(`[${AR}]`).test(s.slice(colon))) s = s.slice(0, colon);
   s = s.replace(/\s+/g, " ").trim();
+  // بقايا حرف واحد من التسمية العربية في بداية القيمة (مثل "ة محل")
+  s = s.replace(new RegExp(`^[${AR}] (?=[${AR}])`), "");
+  s = s.replace(/^[،,]\s*/, "").trim();
   if (s === "-" || s === "—") return "";
   return s;
 };
@@ -116,6 +119,16 @@ const num = (v: string | undefined) => {
   const n = Number(v.replace(/[^\d.]/g, ""));
   return Number.isFinite(n) ? n : 0;
 };
+
+const cycleLabel = (raw: string) => {
+  const s = raw.replace(/\s/g, "");
+  if (/نصفسنو/.test(s)) return "نصف سنوي";
+  if (/ربعسنو/.test(s)) return "ربع سنوي";
+  if (/شهر/.test(s)) return "شهري";
+  if (/سنو/.test(s)) return "سنوي";
+  return raw;
+};
+
 
 export type EjarUnit = { unit_number: string; unit_type: string; floor: string; area: number };
 export type EjarPayment = {
