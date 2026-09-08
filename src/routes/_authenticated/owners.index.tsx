@@ -427,6 +427,52 @@ function OwnersPage() {
           </span>
         </div>
       </Modal>
+
+      <Modal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title={
+          deleteTarget && deleteTarget.rows.length > 1
+            ? `حذف ${deleteTarget.rows.length} مالك`
+            : `حذف المالك ${deleteTarget?.rows[0]?.full_name ?? ""}`
+        }
+        subtitle="لا يمكن التراجع عن هذا الإجراء."
+        footer={
+          <>
+            <PrimaryButton
+              onClick={() => {
+                if (!deleteTarget) return;
+                const ids = deleteTarget.rows.map((r) => r.id);
+                const clear = deleteTarget.clear;
+                remove.mutate({ ids, withContracts }, { onSuccess: () => clear?.() });
+              }}
+              disabled={remove.isPending}
+            >
+              {remove.isPending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+              تأكيد الحذف
+            </PrimaryButton>
+            <GhostButton onClick={() => setDeleteTarget(null)}>إلغاء</GhostButton>
+          </>
+        }
+      >
+        <div className="space-y-3 text-[13px]">
+          <p className="text-muted-foreground">
+            سيتم فصل عقارات ووحدات {deleteTarget && deleteTarget.rows.length > 1 ? "الملاك" : "المالك"} عن
+            الملف قبل الحذف.
+          </p>
+          <label className="flex items-center gap-2 font-semibold">
+            <Toggle
+              label="حذف العقود المرتبطة"
+              checked={withContracts}
+              onChange={(v) => setWithContracts(v)}
+            />
+            حذف العقود المرتبطة بالمالك أيضًا
+          </label>
+          <p className="text-[12px] text-muted-foreground">
+            لو أوقفت هذا الخيار سيتم الاحتفاظ بالعقود بدون مالك.
+          </p>
+        </div>
+      </Modal>
     </>
   );
 }
