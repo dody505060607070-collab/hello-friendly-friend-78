@@ -24,8 +24,14 @@ export function AiWidget() {
     },
   ]);
   const scroller = useRef<HTMLDivElement>(null);
-  const [offsetY, setOffsetY] = useState(0);
-  const dragging = useRef<{ startY: number; startOffset: number; moved: boolean } | null>(null);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const dragging = useRef<{
+    startX: number;
+    startY: number;
+    ox: number;
+    oy: number;
+    moved: boolean;
+  } | null>(null);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
