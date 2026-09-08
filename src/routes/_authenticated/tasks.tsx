@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Camera, MapPin, CircleCheck, ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -92,6 +92,7 @@ const emptyForm: FormState = {
 };
 
 function TasksPage() {
+  const navigate = useNavigate();
   const [type, setType] = useState("all");
   const [status, setStatus] = useState("all");
   const [open, setOpen] = useState(false);
@@ -278,6 +279,7 @@ function TasksPage() {
       ) : (
         <DataTable<Row>
           rows={filtered}
+          onRowClick={(r) => navigate({ to: "/task-form", search: { id: r.id } })}
           selectable
           showColumnsButton
           draggableRows

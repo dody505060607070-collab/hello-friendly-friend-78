@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, FileText } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowRight, FileText, Loader2, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Chip } from "@/components/kit/Chip";
 import { PageHero } from "@/components/kit/PageHero";
@@ -48,6 +49,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function ContractViewPage() {
   const { contractId } = Route.useParams();
+  const navigate = useNavigate();
 
   const contract = useQuery({
     queryKey: ["contract-view", contractId],
@@ -92,6 +94,18 @@ function ContractViewPage() {
 
   const c: any = contract.data;
 
+  const remove = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("contracts").delete().eq("id", contractId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تم حذف العقد");
+      navigate({ to: "/contracts" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <>
       <PageHero
@@ -100,13 +114,36 @@ function ContractViewPage() {
         icon={FileText}
       />
 
-      <Link
-        to="/contracts"
-        className="inline-flex items-center gap-2 text-[13px] font-semibold text-primary"
-      >
-        <ArrowRight className="size-4" />
-        رجوع لإدارة العقود
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          to="/contracts"
+          className="inline-flex items-center gap-2 text-[13px] font-semibold text-primary"
+        >
+          <ArrowRight className="size-4" />
+          رجوع لإدارة العقود
+        </Link>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/contracts"
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 text-[13px] font-semibold hover:bg-muted"
+          >
+            <Pencil className="size-4" />
+            تعديل العقد
+          </Link>
+          <button
+            type="button"
+            disabled={remove.isPending}
+            onClick={() => {
+              if (window.confirm(`حذف العقد ${c?.contract_number ?? ""} نهائيًا؟`)) remove.mutate();
+            }}
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-destructive px-4 text-[13px] font-semibold text-destructive-foreground disabled:opacity-60"
+          >
+            {remove.isPending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+            حذف العقد
+          </button>
+        </div>
+      </div>
 
       {contract.isLoading ? (
         <div className="h-40 animate-pulse rounded-2xl bg-muted" />

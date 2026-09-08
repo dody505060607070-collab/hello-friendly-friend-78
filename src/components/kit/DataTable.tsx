@@ -36,6 +36,7 @@ export function DataTable<T>({
   emptyState,
   draggableRows = true,
   dragLabel,
+  onRowClick,
   exportFileName = "بيانات",
 }: {
   columns: Column<T>[];
@@ -50,6 +51,8 @@ export function DataTable<T>({
   /** السماح بسحب الصفوف إلى شات الذكاء الاصطناعي */
   draggableRows?: boolean;
   dragLabel?: string;
+  /** فتح صفحة الصف عند الضغط على أي مكان فيه */
+  onRowClick?: (row: T) => void;
   /** اسم ملف Excel، ويظهر زر التصدير تلقائيًا لكل جدول */
   exportFileName?: string;
 }) {
@@ -280,9 +283,19 @@ export function DataTable<T>({
                         }
                       : undefined
                   }
+                  onClick={
+                    onRowClick
+                      ? (e) => {
+                          const el = e.target as HTMLElement;
+                          if (el.closest("a,button,input,select,textarea,label")) return;
+                          onRowClick(row);
+                        }
+                      : undefined
+                  }
                   className={cn(
                     "border-b border-border/70 last:border-0 hover:bg-muted/40",
-                    draggableRows && "cursor-grab active:cursor-grabbing",
+                    onRowClick && "cursor-pointer",
+                    draggableRows && !onRowClick && "cursor-grab active:cursor-grabbing",
                     rowClassName?.(row),
                   )}
                 >
