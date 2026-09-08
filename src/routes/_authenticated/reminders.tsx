@@ -267,7 +267,7 @@ function RemindersPage() {
               onChange={(e) => {
                 setTemplateId(e.target.value);
                 const t = (templates.data ?? []).find((x) => x.id === e.target.value);
-                if (t) setBody(t.body);
+                if (t) setBody(fillTemplate(t.body));
               }}
             >
               <option value="">تخصيص نص الرسالة</option>
@@ -279,14 +279,24 @@ function RemindersPage() {
             </select>
           </Field>
 
-          <Field label="نص الرسالة" className="sm:col-span-2 lg:col-span-4">
-            <textarea
-              className={textareaClass}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="مثال: تحية طيبة، نود تذكيركم بموعد سداد دفعة الإيجار."
-            />
-          </Field>
+          <div className="grid gap-4 sm:col-span-2 lg:col-span-4 lg:grid-cols-2">
+            <Field label="نص الرسالة (قابل للتخصيص)">
+              <textarea
+                className={textareaClass}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="مثال: تحية طيبة، نود تذكيركم بموعد سداد دفعة الإيجار."
+              />
+            </Field>
+            <Field label="معاينة الرسالة كما تصل للعميل">
+              <div className="min-h-[120px] rounded-xl bg-[#ece5dd] p-3">
+                <div className="ms-auto max-w-[92%] whitespace-pre-wrap rounded-xl bg-[#dcf8c6] p-3 text-[13px] leading-6 text-[#111b21] shadow-sm">
+                  {body.trim() || "اكتب نص الرسالة أو اختر قالبًا جاهزًا لتظهر المعاينة هنا."}
+                </div>
+              </div>
+            </Field>
+          </div>
+
 
           <div className="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-4">
             <span className="text-[12.5px] font-semibold text-foreground">التكرار</span>
