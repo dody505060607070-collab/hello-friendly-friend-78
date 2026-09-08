@@ -214,6 +214,6 @@ export function AiDock() {
           </form>
         </section>
       ) : null}
-    </>
+    </div>
   );
 }
