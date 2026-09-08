@@ -1,7 +1,17 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 import { AppShell } from "@/components/layout/AppShell";
+import { useChatAlerts } from "@/hooks/useChatAlerts";
 import { supabase } from "@/integrations/supabase/client";
+
+function AuthedLayout() {
+  useChatAlerts();
+  return (
+    <AppShell>
+      <Outlet />
+    </AppShell>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
