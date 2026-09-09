@@ -122,6 +122,9 @@ function PropertyFormPage() {
   const [videoUrl, setVideoUrl] = useState("");
   const [videoTitle, setVideoTitle] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [guaranteeName, setGuaranteeName] = useState("");
+  const [guaranteeYears, setGuaranteeYears] = useState("");
+
 
   const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
 
