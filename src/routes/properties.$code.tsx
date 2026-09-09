@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2, MapPin, Phone, Share2, ShieldCheck } from "lucide-react";
+import { Building2, MapPin, MessageCircle, Phone, Share2, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -64,12 +64,13 @@ function PropertyPage() {
   const [active, setActive] = useState(0);
   const guarantees = useQuery({
     queryKey: ["public-property-guarantees", property?.id],
-    enabled: Boolean(property?.id),
+    enabled: Boolean(property?.id) && property?.purpose === "sale",
     queryFn: async () => {
+      if (!property?.id) return [];
       const { data, error } = await supabase
         .from("property_guarantees")
         .select("id, name, years")
-        .eq("property_id", property!.id)
+        .eq("property_id", property.id)
         .order("sort_order");
       if (error) throw error;
       return (data ?? []) as { id: string; name: string; years: number }[];
@@ -185,22 +186,22 @@ function PropertyPage() {
               </p>
             </div>
 
-            {(guarantees.data ?? []).length > 0 ? (
-              <div className="mt-6 rounded-2xl border border-border bg-card p-6">
-                <h2 className="flex items-center gap-2 text-[17px] font-bold text-foreground">
+            {property.purpose === "sale" && (guarantees.data ?? []).length > 0 ? (
+              <div className="mt-6 rounded-2xl border border-border bg-card p-6 sm:p-7">
+                <h2 className="flex items-center gap-2 border-b-2 border-primary pb-2 text-[18px] font-bold text-foreground">
                   <ShieldCheck className="size-5 text-primary" />
-                  ضمانات العقار
+                  الضمانات
                 </h2>
-                <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
                   {(guarantees.data ?? []).map((g) => (
-                    <li
-                      key={g.id}
-                      className="flex items-center justify-between gap-3 rounded-xl bg-secondary/70 px-4 py-3"
-                    >
-                      <span className="text-[13.5px] font-semibold text-foreground">{g.name}</span>
-                      <span className="text-[13px] font-bold text-primary">
-                        {g.years > 0 ? `${g.years} سنة` : "متوفر"}
+                    <li key={g.id} className="flex min-w-0 flex-col items-center text-center">
+                      <span className="grid size-[72px] place-items-center rounded-full bg-primary text-primary-foreground shadow-card">
+                        <span>
+                          <strong className="block text-[20px] leading-none">{g.years > 0 ? g.years : "✓"}</strong>
+                          <small className="mt-1 block text-[10px] font-medium">{g.years > 0 ? "سنوات" : "متوفر"}</small>
+                        </span>
                       </span>
+                      <span className="mt-3 text-[13px] font-bold leading-6 text-foreground">{g.name}</span>
                     </li>
                   ))}
                 </ul>
@@ -242,37 +243,55 @@ function PropertyPage() {
                 </dl>
               ) : null}
 
-              <div className="mt-6 space-y-2.5">
-                <a
-                  href={whatsappLink(
-                    property.whatsapp_number,
-                    `استفسار عن العقار ${property.code} — ${property.name}`,
-                  )}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block rounded-lg bg-primary py-3 text-center text-[14px] font-bold text-primary-foreground"
-                >
-                  تواصل عبر واتساب
-                </a>
+              <div className="mt-6 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <a
+                    href={whatsappLink(
+                      property.whatsapp_number,
+                      `استفسار عن العقار ${property.code} — ${property.name}`,
+                    )}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-center text-[14px] font-bold text-primary-foreground"
+                  >
+                    <MessageCircle className="size-5" />
+                    تواصل عبر واتساب
+                  </a>
                 <a
                   href={`tel:${COMPANY_PHONE}`}
-                  className="flex items-center justify-center gap-2 rounded-lg border border-border py-3 text-[14px] font-semibold text-foreground"
+                    className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-[14px] font-bold text-primary-foreground"
                 >
-                  <Phone className="size-4" />
-                  اتصل بنا
+                    <Phone className="size-5" />
+                    اتصل الآن
                 </a>
+                </div>
                 <button
                   type="button"
                   onClick={share}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3 text-[14px] font-semibold text-foreground"
+                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-[14px] font-semibold text-foreground shadow-sm"
                 >
                   <Share2 className="size-4" />
                   مشاركة العقار
                 </button>
+                {property.map_url ? (
+                  <a
+                    href={property.map_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex min-h-12 items-center justify-center gap-2 rounded-lg border-2 border-primary bg-card px-4 text-[14px] font-bold text-primary"
+                  >
+                    <MapPin className="size-5" />
+                    الموقع على الخريطة
+                  </a>
+                ) : null}
                 {SOCIAL_PLATFORMS.some((p) => property[p.key]) ? (
-                  <div className="rounded-2xl border border-border p-4">
-                    <p className="mb-3 text-[13px] font-bold text-foreground">شاهد العقار على</p>
-                    <div className="flex flex-col gap-2.5">
+                  <div className="space-y-3 pt-1">
+                    <div className="flex items-center gap-3 text-[12.5px] text-muted-foreground">
+                      <span className="h-px flex-1 bg-border" />
+                      يمكنك مشاهدة فيديو توضيحي للعقار
+                      <span className="h-px flex-1 bg-border" />
+                    </div>
+                    <div className="flex flex-col gap-3">
                       {SOCIAL_PLATFORMS.filter((p) => property[p.key]).map((p) => (
                         <a
                           key={p.key}
@@ -281,26 +300,14 @@ function PropertyPage() {
                           rel="noreferrer"
                           title={p.label}
                           aria-label={p.label}
-                          className="flex items-center gap-3 rounded-xl border border-border/70 px-4 py-3 shadow-sm transition hover:scale-[1.02] hover:shadow-md"
-                          style={{ backgroundColor: p.color, color: p.textColor ?? "#FFFFFF" }}
+                          className="flex min-h-12 items-center justify-center gap-2 rounded-lg border-2 border-primary bg-card px-4 text-primary transition hover:bg-accent"
                         >
-                          <SocialGlyph platform={p.key} className="size-7 shrink-0" />
+                          <SocialGlyph platform={p.key} className="size-5 shrink-0" />
                           <span className="text-[14px] font-bold">{p.label}</span>
                         </a>
                       ))}
                     </div>
                   </div>
-                ) : null}
-                {property.map_url ? (
-                  <a
-                    href={property.map_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-center gap-2 rounded-lg border border-border py-3 text-[14px] font-semibold text-foreground"
-                  >
-                    <MapPin className="size-4" />
-                    الموقع على الخريطة
-                  </a>
                 ) : null}
               </div>
             </div>

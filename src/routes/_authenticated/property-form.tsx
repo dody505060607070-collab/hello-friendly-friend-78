@@ -256,7 +256,7 @@ function PropertyFormPage() {
 
   const guarantees = useQuery({
     queryKey: ["property-guarantees", id],
-    enabled: Boolean(id),
+    enabled: Boolean(id) && form.purpose === "sale",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("property_guarantees")
@@ -270,6 +270,7 @@ function PropertyFormPage() {
 
   const presets = useQuery({
     queryKey: ["sale-guarantees", "active"],
+    enabled: form.purpose === "sale",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sale_guarantees")
@@ -287,6 +288,7 @@ function PropertyFormPage() {
   const addGuarantee = useMutation({
     mutationFn: async (input: { name: string; years: number }) => {
       if (!id) throw new Error("احفظ العقار أولًا");
+      if (form.purpose !== "sale") throw new Error("الضمانات متاحة لعقارات البيع فقط");
       if (!input.name.trim()) throw new Error("اكتب اسم الضمان");
       const { error } = await supabase.from("property_guarantees").insert({
         property_id: id,
@@ -778,94 +780,107 @@ function PropertyFormPage() {
         </div>
       </SectionCard>
 
-      <SectionCard
-        title="ضمانات العقار"
-        subtitle="أضف ضمانات هذا العقار ومدة كل ضمان بالسنوات؛ تظهر للعميل في صفحة العقار."
-        icon={ShieldCheck}
-      >
-        {!id ? (
-          <p className="rounded-xl border border-dashed border-border p-6 text-center text-[13px] text-muted-foreground">
-            احفظ العقار أولًا ثم أضِف الضمانات.
-          </p>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {(presets.data ?? []).map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => addGuarantee.mutate({ name: p.name, years: p.default_years ?? 0 })}
-                  className="rounded-full border border-border px-3 py-1.5 text-[12.5px] font-semibold text-primary hover:bg-accent"
-                >
-                  + {p.name}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                className={inputClass}
-                value={guaranteeName}
-                onChange={(e) => setGuaranteeName(e.target.value)}
-                placeholder="اسم الضمان (مثال: ضمان السباكة)"
-              />
-              <input
-                className={`${inputClass} sm:w-40`}
-                type="number"
-                min={0}
-                value={guaranteeYears}
-                onChange={(e) => setGuaranteeYears(e.target.value)}
-                placeholder="عدد السنوات"
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  addGuarantee.mutate({
-                    name: guaranteeName.trim(),
-                    years: Number(guaranteeYears) || 0,
-                  })
-                }
-                disabled={addGuarantee.isPending}
-                className="inline-flex h-10 items-center gap-1 rounded-lg border border-border px-4 text-[12.5px] font-semibold text-primary disabled:opacity-50"
-              >
-                <Plus className="size-4" />
-                إضافة
-              </button>
-            </div>
-            <ul className="divide-y divide-border rounded-xl border border-border">
-              {(guarantees.data ?? []).map((g) => (
-                <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
-                  <span className="text-[13px] font-semibold text-foreground">{g.name}</span>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="number"
-                      min={0}
-                      defaultValue={g.years}
-                      onBlur={(e) =>
-                        updateGuarantee.mutate({ rowId: g.id, years: Number(e.target.value) || 0 })
-                      }
-                      className="h-9 w-24 rounded-lg border border-border bg-card px-2 text-center text-[12.5px]"
-                    />
-                    <span className="text-[12.5px] text-muted-foreground">سنة</span>
+      {form.purpose === "sale" ? (
+        <SectionCard
+          title="الضمانات المقدمة في هذا العقار"
+          subtitle="هذه الضمانات خاصة بعقارات البيع فقط، وتظهر للعميل في صفحة العقار."
+          icon={ShieldCheck}
+        >
+          {!id ? (
+            <p className="rounded-xl border border-dashed border-border p-6 text-center text-[13px] text-muted-foreground">
+              احفظ عقار البيع أولًا ثم أضِف الضمانات.
+            </p>
+          ) : (
+            <div className="space-y-5">
+              {(presets.data ?? []).length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {(presets.data ?? []).map((p) => (
                     <button
+                      key={p.id}
                       type="button"
-                      aria-label="حذف الضمان"
-                      onClick={() => removeGuarantee.mutate(g.id)}
-                      className="text-destructive"
+                      onClick={() => addGuarantee.mutate({ name: p.name, years: p.default_years ?? 0 })}
+                      className="rounded-lg border border-border bg-card px-3 py-2 text-[12.5px] font-semibold text-primary transition hover:bg-accent"
                     >
-                      <Trash2 className="size-4" />
+                      + {p.name}
                     </button>
-                  </div>
-                </li>
-              ))}
-              {!guarantees.data?.length ? (
-                <li className="px-4 py-6 text-center text-[12.5px] text-muted-foreground">
-                  لا توجد ضمانات مضافة
-                </li>
+                  ))}
+                </div>
               ) : null}
-            </ul>
-          </div>
-        )}
-      </SectionCard>
+
+              <ul className="space-y-3">
+                {(guarantees.data ?? []).map((g) => (
+                  <li key={g.id} className="rounded-xl border border-border bg-card p-4">
+                    <div className="grid items-end gap-3 sm:grid-cols-[1fr_180px_auto]">
+                      <Field label="الضمان">
+                        <input className={inputClass} value={g.name} readOnly />
+                      </Field>
+                      <Field label="السنوات">
+                        <input
+                          type="number"
+                          min={0}
+                          defaultValue={g.years}
+                          onBlur={(e) =>
+                            updateGuarantee.mutate({ rowId: g.id, years: Number(e.target.value) || 0 })
+                          }
+                          className={inputClass}
+                        />
+                      </Field>
+                      <button
+                        type="button"
+                        aria-label="حذف الضمان"
+                        onClick={() => removeGuarantee.mutate(g.id)}
+                        className="grid size-10 place-items-center rounded-lg text-destructive transition hover:bg-destructive/10"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
+                  </li>
+                ))}
+                {!guarantees.data?.length ? (
+                  <li className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-[12.5px] text-muted-foreground">
+                    لا توجد ضمانات مضافة
+                  </li>
+                ) : null}
+              </ul>
+
+              <div className="grid items-end gap-3 border-t border-border pt-5 sm:grid-cols-[1fr_180px_auto]">
+                <Field label="الضمان">
+                  <input
+                    className={inputClass}
+                    value={guaranteeName}
+                    onChange={(e) => setGuaranteeName(e.target.value)}
+                    placeholder="مثال: ضمان السباكة"
+                  />
+                </Field>
+                <Field label="السنوات">
+                  <input
+                    className={inputClass}
+                    type="number"
+                    min={0}
+                    value={guaranteeYears}
+                    onChange={(e) => setGuaranteeYears(e.target.value)}
+                    placeholder="عدد السنوات"
+                  />
+                </Field>
+                <button
+                  type="button"
+                  onClick={() =>
+                    addGuarantee.mutate({
+                      name: guaranteeName.trim(),
+                      years: Number(guaranteeYears) || 0,
+                    })
+                  }
+                  disabled={addGuarantee.isPending}
+                  className="inline-flex h-10 items-center justify-center gap-1 rounded-lg bg-primary px-5 text-[12.5px] font-bold text-primary-foreground disabled:opacity-50"
+                >
+                  <Plus className="size-4" />
+                  إضافة ضمان
+                </button>
+              </div>
+            </div>
+          )}
+        </SectionCard>
+      ) : null}
 
 
 
