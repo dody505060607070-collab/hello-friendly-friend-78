@@ -126,6 +126,13 @@ function PropertyPage() {
   };
 
   const others = (related.data ?? []).filter((p) => p.code !== property.code).slice(0, 3);
+  const mapHref =
+    property.map_url ||
+    (property.latitude && property.longitude
+      ? `https://www.google.com/maps/search/?api=1&query=${property.latitude},${property.longitude}`
+      : null);
+  const channelClass =
+    "group relative flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-primary bg-card px-4 text-primary transition-colors duration-300 after:absolute after:inset-0 after:origin-right after:scale-x-0 after:bg-primary after:transition-transform after:duration-300 hover:text-primary-foreground hover:after:scale-x-100";
 
   return (
     <SiteLayout>
@@ -187,17 +194,17 @@ function PropertyPage() {
             </div>
 
             {property.purpose === "sale" && (guarantees.data ?? []).length > 0 ? (
-              <div className="mt-6 rounded-2xl border border-border bg-card p-6 sm:p-7">
-                <h2 className="flex items-center gap-2 border-b-2 border-primary pb-2 text-[18px] font-bold text-foreground">
+              <div className="mt-6 rounded-2xl bg-card p-6 shadow-card sm:p-7">
+                <h2 className="flex w-fit items-center gap-2 border-b-2 border-primary pb-2 text-[18px] font-bold text-foreground">
                   <ShieldCheck className="size-5 text-primary" />
                   الضمانات
                 </h2>
                 <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
                   {(guarantees.data ?? []).map((g) => (
                     <li key={g.id} className="flex min-w-0 flex-col items-center text-center">
-                      <span className="grid size-[72px] place-items-center rounded-full bg-primary text-primary-foreground shadow-card">
+                      <span className="grid size-[68px] place-items-center rounded-full bg-primary text-primary-foreground shadow-card">
                         <span>
-                          <strong className="block text-[20px] leading-none">{g.years > 0 ? g.years : "✓"}</strong>
+                          <strong className="block text-[19px] leading-none">{g.years > 0 ? g.years : "✓"}</strong>
                           <small className="mt-1 block text-[10px] font-medium">{g.years > 0 ? "سنوات" : "متوفر"}</small>
                         </span>
                       </span>
@@ -273,15 +280,15 @@ function PropertyPage() {
                   <Share2 className="size-4" />
                   مشاركة العقار
                 </button>
-                {property.map_url ? (
+                {mapHref ? (
                   <a
-                    href={property.map_url}
+                    href={mapHref}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-lg border-2 border-primary bg-card px-4 text-[14px] font-bold text-primary"
+                    className={channelClass}
                   >
-                    <MapPin className="size-5" />
-                    الموقع على الخريطة
+                    <MapPin className="relative z-10 size-5" />
+                    <span className="relative z-10 text-[14px] font-bold">الموقع على الخريطة</span>
                   </a>
                 ) : null}
                 {SOCIAL_PLATFORMS.some((p) => property[p.key]) ? (
@@ -300,10 +307,10 @@ function PropertyPage() {
                           rel="noreferrer"
                           title={p.label}
                           aria-label={p.label}
-                          className="flex min-h-12 items-center justify-center gap-2 rounded-lg border-2 border-primary bg-card px-4 text-primary transition hover:bg-accent"
+                          className={channelClass}
                         >
-                          <SocialGlyph platform={p.key} className="size-5 shrink-0" />
-                          <span className="text-[14px] font-bold">{p.label}</span>
+                          <SocialGlyph platform={p.key} className="relative z-10 size-5 shrink-0" />
+                          <span className="relative z-10 text-[14px] font-bold">{p.label}</span>
                         </a>
                       ))}
                     </div>

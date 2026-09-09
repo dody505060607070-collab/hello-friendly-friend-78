@@ -47,6 +47,14 @@ export const Route = createFileRoute("/_authenticated/property-form")({
 
 type MediaRow = { id: string; url: string; sort_order: number; is_cover?: boolean; title?: string | null };
 
+const DEFAULT_SALE_GUARANTEES = [
+  { name: "الأنابيب الخضراء", years: 15 },
+  { name: "نيو باور", years: 5 },
+  { name: "أسلاك وكابلات الرياض", years: 25 },
+  { name: "كهرباء الفنار", years: 25 },
+  { name: "الهيكل الإنشائي", years: 10 },
+] as const;
+
 const statusOptions: [string, string][] = [
   ["available", "متاح"],
   ["reserved", "محجوز"],
@@ -309,16 +317,19 @@ function PropertyFormPage() {
   });
 
   const updateGuarantee = useMutation({
-    mutationFn: async (input: { rowId: string; years: number }) => {
+    mutationFn: async (input: { rowId: string; name?: string; years?: number }) => {
       const { error } = await supabase
         .from("property_guarantees")
-        .update({ years: input.years })
+        .update({
+          ...(input.name !== undefined ? { name: input.name.trim() } : {}),
+          ...(input.years !== undefined ? { years: input.years } : {}),
+        })
         .eq("id", input.rowId);
       if (error) throw error;
     },
     onSuccess: () => {
       refreshGuarantees();
-      toast.success("تم تحديث المدة");
+      toast.success("تم تحديث الضمان");
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التحديث"),
   });
@@ -783,7 +794,7 @@ function PropertyFormPage() {
       {form.purpose === "sale" ? (
         <SectionCard
           title="الضمانات المقدمة في هذا العقار"
-          subtitle="هذه الضمانات خاصة بعقارات البيع فقط، وتظهر للعميل في صفحة العقار."
+          subtitle="علّم على الضمانات المتوفرة، وعدّل الاسم أو عدد السنوات عند الحاجة لتظهر للزوار في صفحة العقار."
           icon={ShieldCheck}
         >
           {!id ? (
@@ -791,28 +802,35 @@ function PropertyFormPage() {
               احفظ عقار البيع أولًا ثم أضِف الضمانات.
             </p>
           ) : (
-            <div className="space-y-5">
-              {(presets.data ?? []).length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {(presets.data ?? []).map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => addGuarantee.mutate({ name: p.name, years: p.default_years ?? 0 })}
-                      className="rounded-lg border border-border bg-card px-3 py-2 text-[12.5px] font-semibold text-primary transition hover:bg-accent"
-                    >
-                      + {p.name}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-
+            <div className="space-y-4">
               <ul className="space-y-3">
                 {(guarantees.data ?? []).map((g) => (
-                  <li key={g.id} className="rounded-xl border border-border bg-card p-4">
-                    <div className="grid items-end gap-3 sm:grid-cols-[1fr_180px_auto]">
+                  <li key={g.id} className="overflow-hidden rounded-xl border border-border bg-card">
+                    <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+                      <label className="flex items-center gap-2 text-[12.5px] font-bold text-foreground">
+                        <input type="checkbox" checked readOnly className="size-4 accent-primary" />
+                        متضمن
+                      </label>
+                      <span className="text-[12px] font-bold text-foreground">{g.name}</span>
+                      <button
+                        type="button"
+                        aria-label="حذف الضمان"
+                        onClick={() => removeGuarantee.mutate(g.id)}
+                        className="grid size-8 place-items-center rounded-md text-destructive transition hover:bg-destructive/10"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
+                    <div className="grid gap-3 p-4 sm:grid-cols-2">
                       <Field label="الضمان">
-                        <input className={inputClass} value={g.name} readOnly />
+                        <input
+                          className={inputClass}
+                          defaultValue={g.name}
+                          onBlur={(e) => {
+                            const name = e.target.value.trim();
+                            if (name && name !== g.name) updateGuarantee.mutate({ rowId: g.id, name });
+                          }}
+                        />
                       </Field>
                       <Field label="السنوات">
                         <input
@@ -825,14 +843,6 @@ function PropertyFormPage() {
                           className={inputClass}
                         />
                       </Field>
-                      <button
-                        type="button"
-                        aria-label="حذف الضمان"
-                        onClick={() => removeGuarantee.mutate(g.id)}
-                        className="grid size-10 place-items-center rounded-lg text-destructive transition hover:bg-destructive/10"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
                     </div>
                   </li>
                 ))}
@@ -842,6 +852,39 @@ function PropertyFormPage() {
                   </li>
                 ) : null}
               </ul>
+
+              <div className="rounded-xl border border-dashed border-border bg-secondary/30 p-4">
+                <p className="mb-3 text-[12.5px] font-bold text-foreground">الضمانات الأساسية</p>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {[...DEFAULT_SALE_GUARANTEES, ...(presets.data ?? []).map((p) => ({ name: p.name, years: p.default_years ?? 0 }))]
+                    .filter((preset, index, list) => list.findIndex((item) => item.name === preset.name) === index)
+                    .map((preset) => {
+                      const selected = (guarantees.data ?? []).some((g) => g.name === preset.name);
+                      return (
+                        <label
+                          key={preset.name}
+                          className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-3 transition ${selected ? "border-primary bg-accent" : "border-border bg-card hover:border-primary/50"}`}
+                        >
+                          <span className="flex items-center gap-2 text-[12.5px] font-semibold text-foreground">
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              disabled={addGuarantee.isPending || removeGuarantee.isPending}
+                              onChange={() => {
+                                const row = (guarantees.data ?? []).find((g) => g.name === preset.name);
+                                if (row) removeGuarantee.mutate(row.id);
+                                else addGuarantee.mutate(preset);
+                              }}
+                              className="size-4 accent-primary"
+                            />
+                            {preset.name}
+                          </span>
+                          <span className="text-[11px] font-bold text-primary">{preset.years} سنوات</span>
+                        </label>
+                      );
+                    })}
+                </div>
+              </div>
 
               <div className="grid items-end gap-3 border-t border-border pt-5 sm:grid-cols-[1fr_180px_auto]">
                 <Field label="الضمان">
