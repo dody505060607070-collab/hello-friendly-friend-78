@@ -693,6 +693,97 @@ function PropertyFormPage() {
       </SectionCard>
 
       <SectionCard
+        title="ضمانات العقار"
+        subtitle="أضف ضمانات هذا العقار ومدة كل ضمان بالسنوات؛ تظهر للعميل في صفحة العقار."
+        icon={ShieldCheck}
+      >
+        {!id ? (
+          <p className="rounded-xl border border-dashed border-border p-6 text-center text-[13px] text-muted-foreground">
+            احفظ العقار أولًا ثم أضِف الضمانات.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {(presets.data ?? []).map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => addGuarantee.mutate({ name: p.name, years: p.default_years ?? 0 })}
+                  className="rounded-full border border-border px-3 py-1.5 text-[12.5px] font-semibold text-primary hover:bg-accent"
+                >
+                  + {p.name}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                className={inputClass}
+                value={guaranteeName}
+                onChange={(e) => setGuaranteeName(e.target.value)}
+                placeholder="اسم الضمان (مثال: ضمان السباكة)"
+              />
+              <input
+                className={`${inputClass} sm:w-40`}
+                type="number"
+                min={0}
+                value={guaranteeYears}
+                onChange={(e) => setGuaranteeYears(e.target.value)}
+                placeholder="عدد السنوات"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  addGuarantee.mutate({
+                    name: guaranteeName.trim(),
+                    years: Number(guaranteeYears) || 0,
+                  })
+                }
+                disabled={addGuarantee.isPending}
+                className="inline-flex h-10 items-center gap-1 rounded-lg border border-border px-4 text-[12.5px] font-semibold text-primary disabled:opacity-50"
+              >
+                <Plus className="size-4" />
+                إضافة
+              </button>
+            </div>
+            <ul className="divide-y divide-border rounded-xl border border-border">
+              {(guarantees.data ?? []).map((g) => (
+                <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                  <span className="text-[13px] font-semibold text-foreground">{g.name}</span>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min={0}
+                      defaultValue={g.years}
+                      onBlur={(e) =>
+                        updateGuarantee.mutate({ rowId: g.id, years: Number(e.target.value) || 0 })
+                      }
+                      className="h-9 w-24 rounded-lg border border-border bg-card px-2 text-center text-[12.5px]"
+                    />
+                    <span className="text-[12.5px] text-muted-foreground">سنة</span>
+                    <button
+                      type="button"
+                      aria-label="حذف الضمان"
+                      onClick={() => removeGuarantee.mutate(g.id)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+              {!guarantees.data?.length ? (
+                <li className="px-4 py-6 text-center text-[12.5px] text-muted-foreground">
+                  لا توجد ضمانات مضافة
+                </li>
+              ) : null}
+            </ul>
+          </div>
+        )}
+      </SectionCard>
+
+
+
+      <SectionCard
         title="صور العقار"
         subtitle="ارفع الصور من جهازك أو أضِف روابط جاهزة، وحدّد الصورة الرئيسية."
         icon={ImageIcon}
