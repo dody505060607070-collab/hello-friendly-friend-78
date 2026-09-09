@@ -416,6 +416,8 @@ function TeamChatPage() {
           </div>
         </footer>
       </div>
+
+      <DirectChats />
     </>
   );
 }
