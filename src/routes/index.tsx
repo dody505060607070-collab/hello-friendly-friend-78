@@ -8,6 +8,7 @@ import ctaImage from "@/assets/cta-deal.jpg";
 import featureCommercial from "@/assets/feature-commercial.jpg";
 import featureInterior from "@/assets/feature-interior.jpg";
 import featureLand from "@/assets/feature-land.jpg";
+import socialCard from "@/assets/mithra-social-card.jpg.asset.json";
 import videoInterior from "@/assets/video-interior.mp4.asset.json";
 import videoCity from "@/assets/video-city.mp4.asset.json";
 import { HeroVideo } from "@/components/site/HeroVideo";
@@ -17,6 +18,9 @@ import { PropertyMapSection } from "@/components/site/PropertyMapSection";
 import { Reveal } from "@/components/site/Reveal";
 import { useRecentlyViewed } from "@/lib/favorites";
 import { publicPropertiesQuery, publicServicesQuery } from "@/lib/site-data";
+
+const SITE_URL = "https://mitharfinale.lovable.app";
+const SOCIAL_IMAGE = `${SITE_URL}${socialCard.url}`;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -33,10 +37,16 @@ export const Route = createFileRoute("/")({
         content: "خبرة محلية في سوق عقارات بريدة: إيجار، بيع، إدارة أملاك ومتابعة عقود.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: SOCIAL_IMAGE },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "شعار مثراء العقارية" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:url", content: "https://friendly-fellow-kit.lovable.app/" },
+      { name: "twitter:image", content: SOCIAL_IMAGE },
+      { name: "twitter:image:alt", content: "شعار مثراء العقارية" },
+      { property: "og:url", content: `${SITE_URL}/` },
     ],
-    links: [{ rel: "canonical", href: "https://friendly-fellow-kit.lovable.app/" }],
+    links: [{ rel: "canonical", href: `${SITE_URL}/` }],
   }),
   component: HomePage,
 });
