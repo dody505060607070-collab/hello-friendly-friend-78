@@ -246,6 +246,14 @@ export function useChatAlerts() {
           void notify(row.sender_id, row.body, "محادثة خاصة");
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "direct_messages" },
+        (payload) => {
+          const row = payload.new as { sender_id: string; body: string | null };
+          void notify(row.sender_id, row.body, "رسالة خاصة");
+        },
+      )
       .subscribe();
 
     return () => {
