@@ -168,6 +168,29 @@ function PropertyPage() {
                 {property.description ?? "لم يُضف وصف لهذا العقار بعد. تواصل معنا للمزيد من التفاصيل."}
               </p>
             </div>
+
+            {(guarantees.data ?? []).length > 0 ? (
+              <div className="mt-6 rounded-2xl border border-border bg-card p-6">
+                <h2 className="flex items-center gap-2 text-[17px] font-bold text-foreground">
+                  <ShieldCheck className="size-5 text-primary" />
+                  ضمانات العقار
+                </h2>
+                <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {(guarantees.data ?? []).map((g) => (
+                    <li
+                      key={g.id}
+                      className="flex items-center justify-between gap-3 rounded-xl bg-secondary/70 px-4 py-3"
+                    >
+                      <span className="text-[13.5px] font-semibold text-foreground">{g.name}</span>
+                      <span className="text-[13px] font-bold text-primary">
+                        {g.years > 0 ? `${g.years} سنة` : "متوفر"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
           </div>
 
           <aside className="space-y-4">
