@@ -60,6 +60,20 @@ function PropertyPage() {
   const { data: property, isLoading, error } = useQuery(publicPropertyQuery(code));
   const related = useQuery(publicPropertiesQuery(undefined, 12));
   const [active, setActive] = useState(0);
+  const guarantees = useQuery({
+    queryKey: ["public-property-guarantees", property?.id],
+    enabled: Boolean(property?.id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("property_guarantees")
+        .select("id, name, years")
+        .eq("property_id", property!.id)
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; years: number }[];
+    },
+  });
+
 
   useEffect(() => {
     recordView(code);
