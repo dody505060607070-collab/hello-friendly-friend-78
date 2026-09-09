@@ -8,7 +8,9 @@ import { FavoriteButton } from "@/components/site/FavoriteButton";
 import { PropertyCard } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { SOCIAL_PLATFORMS, SocialGlyph } from "@/components/site/SocialIcons";
+import { supabase } from "@/integrations/supabase/client";
 import { recordView } from "@/lib/favorites";
+
 import {
   COMPANY_PHONE,
   galleryImages,
