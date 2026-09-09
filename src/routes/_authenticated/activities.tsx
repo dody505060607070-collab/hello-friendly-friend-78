@@ -9,6 +9,7 @@ import { Field, GhostButton, Modal, PrimaryButton, inputClass, textareaClass } f
 import { PageHero } from "@/components/kit/PageHero";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { sendPushToUsers } from "@/lib/push.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/activities")({
@@ -402,6 +403,15 @@ function ActivityPanel({
           body: `${activity.subject}: ${text.slice(0, 80)}`,
           link: "/activities",
         });
+        void sendPushToUsers({
+          data: {
+            userIds: [target],
+            title: "رسالة جديدة في نشاط",
+            body: `${activity.subject}: ${text.slice(0, 80)}`,
+            url: "/activities",
+            tag: "mithra-activity",
+          },
+        }).catch(() => undefined);
       }
     },
     onSuccess: () => {

@@ -103,6 +103,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 
 import { AiDock } from "./AiDock";
 import { NotificationsBell } from "./NotificationsBell";
+import { PushToggle } from "./PushToggle";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -138,6 +139,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
           <LanguageToggle />
           <NotificationsBell />
+          <PushToggle />
         </div>
 
         <Link
