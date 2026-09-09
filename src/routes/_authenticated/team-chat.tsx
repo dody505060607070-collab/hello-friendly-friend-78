@@ -5,6 +5,7 @@ import { Loader2, MessagesSquare, Paperclip, Pencil, Pin, Reply, Search, Send, S
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { DirectChats } from "@/components/chat/DirectChats";
 import { PageHero } from "@/components/kit/PageHero";
 import { PrimaryButton, inputClass } from "@/components/kit/Modal";
 import { useCurrentUser } from "@/hooks/useAuth";
