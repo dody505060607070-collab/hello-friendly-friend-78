@@ -11,6 +11,8 @@ import {
   MapPin,
   NotebookPen,
   Plus,
+  ShieldCheck,
+
   Trash2,
   UploadCloud,
 } from "lucide-react";
