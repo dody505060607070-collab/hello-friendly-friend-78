@@ -124,8 +124,11 @@ function TeamChatPage() {
       });
       if (error) throw error;
       const mentions = text.match(/@([\p{L}\d_]+)/gu) ?? [];
+      const { data: staff } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("is_active", true);
       if (mentions.length) {
-        const { data: staff } = await supabase.from("profiles").select("id, full_name").eq("is_active", true);
         const targets = (staff ?? []).filter(
           (s) => s.id !== userId && mentions.some((m) => s.full_name.includes(m.slice(1))),
         );
@@ -139,6 +142,18 @@ function TeamChatPage() {
             })),
           );
         }
+      }
+      const others = (staff ?? []).map((s) => s.id).filter((id) => id !== userId);
+      if (others.length) {
+        void sendPushToUsers({
+          data: {
+            userIds: others,
+            title: "رسالة جديدة في شات الموظفين",
+            body: text.slice(0, 120),
+            url: "/team-chat",
+            tag: "mithra-team-chat",
+          },
+        }).catch(() => undefined);
       }
     },
     onSuccess: () => {

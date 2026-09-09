@@ -402,6 +402,15 @@ function ActivityPanel({
           body: `${activity.subject}: ${text.slice(0, 80)}`,
           link: "/activities",
         });
+        void sendPushToUsers({
+          data: {
+            userIds: [target],
+            title: "رسالة جديدة في نشاط",
+            body: `${activity.subject}: ${text.slice(0, 80)}`,
+            url: "/activities",
+            tag: "mithra-activity",
+          },
+        }).catch(() => undefined);
       }
     },
     onSuccess: () => {
