@@ -9,6 +9,7 @@ import { Field, GhostButton, Modal, PrimaryButton, inputClass, textareaClass } f
 import { PageHero } from "@/components/kit/PageHero";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { sendPushToUsers } from "@/lib/push.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/activities")({

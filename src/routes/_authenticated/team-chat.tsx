@@ -9,6 +9,7 @@ import { PageHero } from "@/components/kit/PageHero";
 import { PrimaryButton, inputClass } from "@/components/kit/Modal";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { sendPushToUsers } from "@/lib/push.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/team-chat")({
