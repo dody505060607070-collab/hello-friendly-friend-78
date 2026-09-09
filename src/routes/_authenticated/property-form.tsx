@@ -251,6 +251,87 @@ function PropertyFormPage() {
     },
   });
 
+  const guarantees = useQuery({
+    queryKey: ["property-guarantees", id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("property_guarantees")
+        .select("id, name, years, sort_order")
+        .eq("property_id", id)
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; years: number; sort_order: number }[];
+    },
+  });
+
+  const presets = useQuery({
+    queryKey: ["sale-guarantees", "active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sale_guarantees")
+        .select("id, name, default_years")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; default_years: number | null }[];
+    },
+  });
+
+  const refreshGuarantees = () =>
+    queryClient.invalidateQueries({ queryKey: ["property-guarantees", id] });
+
+  const addGuarantee = useMutation({
+    mutationFn: async (input: { name: string; years: number }) => {
+      if (!id) throw new Error("احفظ العقار أولًا");
+      if (!input.name.trim()) throw new Error("اكتب اسم الضمان");
+      const { error } = await supabase.from("property_guarantees").insert({
+        property_id: id,
+        name: input.name.trim(),
+        years: input.years,
+        sort_order: guarantees.data?.length ?? 0,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setGuaranteeName("");
+      setGuaranteeYears("");
+      refreshGuarantees();
+      queryClient.invalidateQueries({ queryKey: ["public-property"] });
+      toast.success("تمت إضافة الضمان");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّرت الإضافة"),
+  });
+
+  const updateGuarantee = useMutation({
+    mutationFn: async (input: { rowId: string; years: number }) => {
+      const { error } = await supabase
+        .from("property_guarantees")
+        .update({ years: input.years })
+        .eq("id", input.rowId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refreshGuarantees();
+      toast.success("تم تحديث المدة");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التحديث"),
+  });
+
+  const removeGuarantee = useMutation({
+    mutationFn: async (rowId: string) => {
+      const { error } = await supabase.from("property_guarantees").delete().eq("id", rowId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refreshGuarantees();
+      toast.success("تم حذف الضمان");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحذف"),
+  });
+
+
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["properties"] });
     queryClient.invalidateQueries({ queryKey: ["public-properties"] });
