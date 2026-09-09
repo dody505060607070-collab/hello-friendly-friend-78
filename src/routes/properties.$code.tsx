@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2, MapPin, Phone, Share2 } from "lucide-react";
+import { Building2, MapPin, Phone, Share2, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -8,7 +8,9 @@ import { FavoriteButton } from "@/components/site/FavoriteButton";
 import { PropertyCard } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { SOCIAL_PLATFORMS, SocialGlyph } from "@/components/site/SocialIcons";
+import { supabase } from "@/integrations/supabase/client";
 import { recordView } from "@/lib/favorites";
+
 import {
   COMPANY_PHONE,
   galleryImages,
@@ -60,6 +62,20 @@ function PropertyPage() {
   const { data: property, isLoading, error } = useQuery(publicPropertyQuery(code));
   const related = useQuery(publicPropertiesQuery(undefined, 12));
   const [active, setActive] = useState(0);
+  const guarantees = useQuery({
+    queryKey: ["public-property-guarantees", property?.id],
+    enabled: Boolean(property?.id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("property_guarantees")
+        .select("id, name, years")
+        .eq("property_id", property!.id)
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; years: number }[];
+    },
+  });
+
 
   useEffect(() => {
     recordView(code);
@@ -168,6 +184,29 @@ function PropertyPage() {
                 {property.description ?? "لم يُضف وصف لهذا العقار بعد. تواصل معنا للمزيد من التفاصيل."}
               </p>
             </div>
+
+            {(guarantees.data ?? []).length > 0 ? (
+              <div className="mt-6 rounded-2xl border border-border bg-card p-6">
+                <h2 className="flex items-center gap-2 text-[17px] font-bold text-foreground">
+                  <ShieldCheck className="size-5 text-primary" />
+                  ضمانات العقار
+                </h2>
+                <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {(guarantees.data ?? []).map((g) => (
+                    <li
+                      key={g.id}
+                      className="flex items-center justify-between gap-3 rounded-xl bg-secondary/70 px-4 py-3"
+                    >
+                      <span className="text-[13.5px] font-semibold text-foreground">{g.name}</span>
+                      <span className="text-[13px] font-bold text-primary">
+                        {g.years > 0 ? `${g.years} سنة` : "متوفر"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
           </div>
 
           <aside className="space-y-4">

@@ -11,6 +11,8 @@ import {
   MapPin,
   NotebookPen,
   Plus,
+  ShieldCheck,
+
   Trash2,
   UploadCloud,
 } from "lucide-react";
@@ -120,6 +122,9 @@ function PropertyFormPage() {
   const [videoUrl, setVideoUrl] = useState("");
   const [videoTitle, setVideoTitle] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [guaranteeName, setGuaranteeName] = useState("");
+  const [guaranteeYears, setGuaranteeYears] = useState("");
+
 
   const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
 
@@ -248,6 +253,87 @@ function PropertyFormPage() {
       return (data ?? []) as MediaRow[];
     },
   });
+
+  const guarantees = useQuery({
+    queryKey: ["property-guarantees", id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("property_guarantees")
+        .select("id, name, years, sort_order")
+        .eq("property_id", id)
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; years: number; sort_order: number }[];
+    },
+  });
+
+  const presets = useQuery({
+    queryKey: ["sale-guarantees", "active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sale_guarantees")
+        .select("id, name, default_years")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; default_years: number | null }[];
+    },
+  });
+
+  const refreshGuarantees = () =>
+    queryClient.invalidateQueries({ queryKey: ["property-guarantees", id] });
+
+  const addGuarantee = useMutation({
+    mutationFn: async (input: { name: string; years: number }) => {
+      if (!id) throw new Error("احفظ العقار أولًا");
+      if (!input.name.trim()) throw new Error("اكتب اسم الضمان");
+      const { error } = await supabase.from("property_guarantees").insert({
+        property_id: id,
+        name: input.name.trim(),
+        years: input.years,
+        sort_order: guarantees.data?.length ?? 0,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setGuaranteeName("");
+      setGuaranteeYears("");
+      refreshGuarantees();
+      queryClient.invalidateQueries({ queryKey: ["public-property"] });
+      toast.success("تمت إضافة الضمان");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّرت الإضافة"),
+  });
+
+  const updateGuarantee = useMutation({
+    mutationFn: async (input: { rowId: string; years: number }) => {
+      const { error } = await supabase
+        .from("property_guarantees")
+        .update({ years: input.years })
+        .eq("id", input.rowId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refreshGuarantees();
+      toast.success("تم تحديث المدة");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التحديث"),
+  });
+
+  const removeGuarantee = useMutation({
+    mutationFn: async (rowId: string) => {
+      const { error } = await supabase.from("property_guarantees").delete().eq("id", rowId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refreshGuarantees();
+      toast.success("تم حذف الضمان");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحذف"),
+  });
+
+
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["properties"] });
@@ -691,6 +777,97 @@ function PropertyFormPage() {
           ))}
         </div>
       </SectionCard>
+
+      <SectionCard
+        title="ضمانات العقار"
+        subtitle="أضف ضمانات هذا العقار ومدة كل ضمان بالسنوات؛ تظهر للعميل في صفحة العقار."
+        icon={ShieldCheck}
+      >
+        {!id ? (
+          <p className="rounded-xl border border-dashed border-border p-6 text-center text-[13px] text-muted-foreground">
+            احفظ العقار أولًا ثم أضِف الضمانات.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {(presets.data ?? []).map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => addGuarantee.mutate({ name: p.name, years: p.default_years ?? 0 })}
+                  className="rounded-full border border-border px-3 py-1.5 text-[12.5px] font-semibold text-primary hover:bg-accent"
+                >
+                  + {p.name}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                className={inputClass}
+                value={guaranteeName}
+                onChange={(e) => setGuaranteeName(e.target.value)}
+                placeholder="اسم الضمان (مثال: ضمان السباكة)"
+              />
+              <input
+                className={`${inputClass} sm:w-40`}
+                type="number"
+                min={0}
+                value={guaranteeYears}
+                onChange={(e) => setGuaranteeYears(e.target.value)}
+                placeholder="عدد السنوات"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  addGuarantee.mutate({
+                    name: guaranteeName.trim(),
+                    years: Number(guaranteeYears) || 0,
+                  })
+                }
+                disabled={addGuarantee.isPending}
+                className="inline-flex h-10 items-center gap-1 rounded-lg border border-border px-4 text-[12.5px] font-semibold text-primary disabled:opacity-50"
+              >
+                <Plus className="size-4" />
+                إضافة
+              </button>
+            </div>
+            <ul className="divide-y divide-border rounded-xl border border-border">
+              {(guarantees.data ?? []).map((g) => (
+                <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                  <span className="text-[13px] font-semibold text-foreground">{g.name}</span>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min={0}
+                      defaultValue={g.years}
+                      onBlur={(e) =>
+                        updateGuarantee.mutate({ rowId: g.id, years: Number(e.target.value) || 0 })
+                      }
+                      className="h-9 w-24 rounded-lg border border-border bg-card px-2 text-center text-[12.5px]"
+                    />
+                    <span className="text-[12.5px] text-muted-foreground">سنة</span>
+                    <button
+                      type="button"
+                      aria-label="حذف الضمان"
+                      onClick={() => removeGuarantee.mutate(g.id)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+              {!guarantees.data?.length ? (
+                <li className="px-4 py-6 text-center text-[12.5px] text-muted-foreground">
+                  لا توجد ضمانات مضافة
+                </li>
+              ) : null}
+            </ul>
+          </div>
+        )}
+      </SectionCard>
+
+
 
       <SectionCard
         title="صور العقار"
