@@ -350,7 +350,20 @@ export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
 /** فصل الرقم المرتبط وإظهار رمز QR جديد. */
 export const unlinkWhatsApp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async (): Promise<{ ok: boolean; error: string | null }> => {
+    const cfg = cloudConfig();
+    if (cfg.ready) {
+      try {
+        const { status, raw } = await cloudJson(`/instance/logout/${cfg.instance}`, {
+          method: "DELETE",
+        });
+        return status >= 200 && status < 300
+          ? { ok: true, error: null }
+          : { ok: false, error: `واتساب ${status}: ${raw.slice(0, 160)}` };
+      } catch (e) {
+        return { ok: false, error: (e as Error).message };
+      }
+    }
     const { url, token } = normalizeBridgeConfig();
     if (!url || !token) return { ok: false, error: "الجسر غير مُعد" };
     try {
