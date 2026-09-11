@@ -145,3 +145,58 @@ export const checkTwilioConfig = createServerFn({ method: "GET" })
       from: process.env["TWILIO_WHATSAPP_FROM"] ?? null,
     };
   });
+
+/** حالة ربط واتساب المجاني + رمز QR للمسح. */
+export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const url = process.env["WHATSAPP_BRIDGE_URL"];
+    const token = process.env["WHATSAPP_BRIDGE_TOKEN"];
+    if (!url || !token) {
+      return { configured: false, connection: "closed" as const, qr: null, me: null, error: null };
+    }
+    try {
+      const res = await fetch(`${url.replace(/\/$/, "")}/status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = (await res.json()) as {
+        connection?: string;
+        qr?: string | null;
+        me?: string | null;
+        error?: string | null;
+      };
+      return {
+        configured: true,
+        connection: (data.connection ?? "closed") as "open" | "connecting" | "closed",
+        qr: data.qr ?? null,
+        me: data.me ?? null,
+        error: data.error ?? null,
+      };
+    } catch (e) {
+      return {
+        configured: true,
+        connection: "closed" as const,
+        qr: null,
+        me: null,
+        error: `تعذر الوصول للجسر: ${(e as Error).message}`,
+      };
+    }
+  });
+
+/** فصل الرقم المرتبط وإظهار رمز QR جديد. */
+export const unlinkWhatsApp = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const url = process.env["WHATSAPP_BRIDGE_URL"];
+    const token = process.env["WHATSAPP_BRIDGE_TOKEN"];
+    if (!url || !token) return { ok: false, error: "الجسر غير مُعد" };
+    try {
+      const res = await fetch(`${url.replace(/\/$/, "")}/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { ok: res.ok, error: res.ok ? null : `Bridge ${res.status}` };
+    } catch (e) {
+      return { ok: false, error: (e as Error).message };
+    }
+  });
