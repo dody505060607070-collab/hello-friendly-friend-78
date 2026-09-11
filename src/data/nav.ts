@@ -16,6 +16,8 @@ export type NavItem = {
   countKey?: string;
   /** القسم المطلوب لعرض العنصر */
   module?: string;
+  /** بارامترات البحث المرافقة للرابط */
+  search?: Record<string, string>;
 };
 
 export type NavGroup = {
@@ -37,7 +39,19 @@ export const navGroups: NavGroup[] = [
     icon: Factory,
     items: [
       { label: "العقارات", to: "/properties", countKey: "properties", module: "properties" },
-      { label: "طلبات التقديم", to: "/requests", countKey: "listingRequests", module: "requests" },
+      {
+        label: "طلبات التقديم",
+        to: "/requests",
+        countKey: "listingRequests",
+        module: "requests",
+        search: { source: "listing" },
+      },
+      {
+        label: "طلبات توفير عقار",
+        to: "/requests",
+        module: "requests",
+        search: { source: "supply" },
+      },
       { label: "إدارة الحجوزات", to: "/reservations", countKey: "reservations", module: "reservations" },
     ],
   },
