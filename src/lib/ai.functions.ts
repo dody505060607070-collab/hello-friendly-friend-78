@@ -94,7 +94,7 @@ async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
   let last = "";
   for (const model of models) {
     for (const key of keys) {
-      for (let attempt = 0; attempt < 2; attempt += 1) {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
           {
@@ -116,8 +116,8 @@ async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
         if (!res.ok) {
           last = `Gemini ${res.status}: ${(await res.text()).slice(0, 200)}`;
           // 503/429 مؤقتة: أعد المحاولة مرة واحدة ثم انتقل للمفتاح/النموذج التالي
-          if ((res.status === 503 || res.status === 429) && attempt === 0) {
-            await new Promise((r) => setTimeout(r, 1500));
+          if ((res.status === 503 || res.status === 429 || res.status >= 500) && attempt < 2) {
+            await new Promise((r) => setTimeout(r, 1200 * (attempt + 1)));
             continue;
           }
           break;
@@ -153,6 +153,13 @@ async function callGateway(input: Item[], opts: CallOpts = {}): Promise<string> 
   }
   try {
     return await callGroq(input, opts);
+  } catch (e) {
+    errors.push(e instanceof Error ? e.message : String(e));
+  }
+  // محاولة أخيرة على Gemini بعد مهلة قصيرة (ازدحام مؤقت) قبل الاستسلام
+  try {
+    await new Promise((r) => setTimeout(r, 2000));
+    return await callGemini(input, opts);
   } catch (e) {
     errors.push(e instanceof Error ? e.message : String(e));
   }
