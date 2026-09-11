@@ -35,11 +35,11 @@ node -v && npm -v && nginx -v
 
 ## 2) جلب المشروع
 
-استبدل `RRR` برابط مستودع GitHub الحقيقي للمشروع (من زر GitHub في Lovable):
+رابط المستودع جاهز:
 
 ```bash
 mkdir -p /var/www && cd /var/www
-git clone RRR mithraa
+git clone https://github.com/dody505060607070-collab/mitharfinale.git mithraa
 cd /var/www/mithraa && ls
 ```
 
