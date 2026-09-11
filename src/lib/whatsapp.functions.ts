@@ -24,15 +24,34 @@ type TwilioResult =
   | { ok: true; sid: string }
   | { ok: false; error: string; needsTemplate?: boolean };
 
+function normalizeBridgeConfig() {
+  const rawUrl = process.env["WHATSAPP_BRIDGE_URL"] ?? "";
+  const rawToken = process.env["WHATSAPP_BRIDGE_TOKEN"] ?? "";
+  const url = rawUrl.trim().replace(/^['"]|['"]$/g, "").replace(/\/+$/, "");
+  const token = rawToken
+    .trim()
+    .replace(/^WHATSAPP_BRIDGE_TOKEN\s*=\s*/i, "")
+    .replace(/^BRIDGE_TOKEN\s*=\s*/i, "")
+    .replace(/^['"]|['"]$/g, "")
+    .trim();
+  return { url, token };
+}
+
+function bridgeHeaders(token: string): Record<string, string> {
+  return {
+    Authorization: `Bearer ${token}`,
+    "X-Bridge-Token": token,
+  };
+}
+
 /** إرسال عبر جسر واتساب المجاني على الـVPS (رقمك الشخصي/رقم الشركة). */
 async function bridgeSend(to: string, body: string): Promise<TwilioResult | null> {
-  const url = process.env["WHATSAPP_BRIDGE_URL"];
-  const token = process.env["WHATSAPP_BRIDGE_TOKEN"];
+  const { url, token } = normalizeBridgeConfig();
   if (!url || !token) return null;
   try {
-    const res = await fetch(`${url.replace(/\/$/, "")}/send`, {
+    const res = await fetch(`${url}/send`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: { ...bridgeHeaders(token), "Content-Type": "application/json" },
       body: JSON.stringify({ to: toE164(to), body }),
     });
     const data = (await res.json().catch(() => ({}))) as { ok?: boolean; id?: string; error?: string };
@@ -150,14 +169,13 @@ export const checkTwilioConfig = createServerFn({ method: "GET" })
 export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    const url = process.env["WHATSAPP_BRIDGE_URL"];
-    const token = process.env["WHATSAPP_BRIDGE_TOKEN"];
+    const { url, token } = normalizeBridgeConfig();
     if (!url || !token) {
       return { configured: false, connection: "closed" as const, qr: null, me: null, error: null };
     }
     try {
-      const res = await fetch(`${url.replace(/\/$/, "")}/status`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(`${url}/status`, {
+        headers: bridgeHeaders(token),
       });
       const raw = await res.text().catch(() => "");
       let data: { connection?: string; qr?: string | null; me?: string | null; error?: string | null } = {};
@@ -175,7 +193,7 @@ export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
           me: null,
           error:
             res.status === 401 || res.status === 403
-              ? "التوكن غير مطابق للجسر (unauthorized). حدّث WHATSAPP_BRIDGE_TOKEN بنفس القيمة الموجودة في .env على السيرفر."
+              ? "الجسر يعمل لكنه رفض مفتاح الاتصال. أعد تشغيل خدمة واتساب من لوحة الخادم لتقرأ إعداداتها المحفوظة."
               : `الجسر رجّع خطأ ${res.status}: ${detail}`,
         };
       }
@@ -202,13 +220,12 @@ export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
 export const unlinkWhatsApp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    const url = process.env["WHATSAPP_BRIDGE_URL"];
-    const token = process.env["WHATSAPP_BRIDGE_TOKEN"];
+    const { url, token } = normalizeBridgeConfig();
     if (!url || !token) return { ok: false, error: "الجسر غير مُعد" };
     try {
-      const res = await fetch(`${url.replace(/\/$/, "")}/logout`, {
+      const res = await fetch(`${url}/logout`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: bridgeHeaders(token),
       });
       return { ok: res.ok, error: res.ok ? null : `Bridge ${res.status}` };
     } catch (e) {
