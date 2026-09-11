@@ -22,6 +22,8 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label],
     );
 
+  const search = useRouterState({ select: (s) => s.location.search as Record<string, unknown> });
+
   return (
     <nav dir="rtl" className="flex flex-col gap-5 px-4 py-6 text-right">
       {navGroups.map((group, gi) => {
@@ -35,7 +37,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               <button
                 type="button"
                 onClick={() => group.label && toggle(group.label)}
-                className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-[13px] font-semibold text-sidebar-foreground/80 transition-colors hover:text-sidebar-accent-foreground"
+                className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-[15px] font-bold text-sidebar-foreground/80 transition-colors hover:text-sidebar-accent-foreground"
               >
                 <span className="flex min-w-0 items-center gap-2 text-right">
                   {Icon ? <Icon className="size-[18px] shrink-0 text-primary/70" /> : null}
@@ -53,15 +55,19 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             {isOpen ? (
               <ul className="space-y-0.5">
                 {items.map((item) => {
-                  const active = pathname === item.to;
+                  const searchMatch = item.search
+                    ? Object.entries(item.search).every(([k, v]) => search?.[k] === v)
+                    : true;
+                  const active = pathname === item.to && searchMatch;
                   const badge = item.countKey ? counts?.[item.countKey] : undefined;
                   return (
-                    <li key={item.to}>
+                    <li key={item.to + (item.search?.["source"] ?? "")}>
                       <Link
                         to={item.to}
+                        {...(item.search ? { search: item.search } : {})}
                         onClick={onNavigate}
                         className={cn(
-                          "group flex items-center justify-between rounded-lg py-2 pe-2 ps-3 text-[13.5px] transition-colors",
+                          "group flex items-center justify-between rounded-lg py-2.5 pe-2 ps-3 text-[15.5px] transition-colors",
                           active
                             ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
                             : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60",
@@ -117,7 +123,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-[15.5px] leading-relaxed">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-3 md:h-24 md:px-6">
         <div className="relative z-10 flex items-center gap-1 md:gap-2">
           <button
@@ -151,7 +157,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             alt="مثراء العقارية"
             width={1152}
             height={576}
-            className="h-9 w-auto md:h-[96px]"
+            className="h-12 w-auto md:h-[124px]"
           />
         </Link>
 

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Inbox, Loader2, Search, TriangleAlert } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Chip } from "@/components/kit/Chip";
@@ -57,13 +57,21 @@ export const Route = createFileRoute("/_authenticated/requests")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    source: search["source"] === "listing" ? "listing" : "supply",
+  }),
   component: RequestsPage,
 });
 
 const statusOrder = ["new", "in_review", "contacted", "approved", "converted", "rejected", "closed"];
 
 function RequestsPage() {
-  const [source, setSource] = useState("supply");
+  const { source: initialSource } = Route.useSearch();
+  const [source, setSource] = useState(initialSource);
+  useEffect(() => {
+    setSource(initialSource);
+    setTab("all");
+  }, [initialSource]);
   const [tab, setTab] = useState("all");
   const queryClient = useQueryClient();
 
