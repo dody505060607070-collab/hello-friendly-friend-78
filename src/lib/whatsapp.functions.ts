@@ -159,12 +159,26 @@ export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
       const res = await fetch(`${url.replace(/\/$/, "")}/status`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = (await res.json()) as {
-        connection?: string;
-        qr?: string | null;
-        me?: string | null;
-        error?: string | null;
-      };
+      const raw = await res.text().catch(() => "");
+      let data: { connection?: string; qr?: string | null; me?: string | null; error?: string | null } = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = {};
+      }
+      if (!res.ok) {
+        const detail = (data.error ?? raw ?? "").toString().slice(0, 200);
+        return {
+          configured: true,
+          connection: "closed" as const,
+          qr: null,
+          me: null,
+          error:
+            res.status === 401 || res.status === 403
+              ? "التوكن غير مطابق للجسر (unauthorized). حدّث WHATSAPP_BRIDGE_TOKEN بنفس القيمة الموجودة في .env على السيرفر."
+              : `الجسر رجّع خطأ ${res.status}: ${detail}`,
+        };
+      }
       return {
         configured: true,
         connection: (data.connection ?? "closed") as "open" | "connecting" | "closed",
@@ -172,6 +186,7 @@ export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
         me: data.me ?? null,
         error: data.error ?? null,
       };
+
     } catch (e) {
       return {
         configured: true,
