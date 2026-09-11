@@ -22,6 +22,8 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label],
     );
 
+  const search = useRouterState({ select: (s) => s.location.search as Record<string, unknown> });
+
   return (
     <nav dir="rtl" className="flex flex-col gap-5 px-4 py-6 text-right">
       {navGroups.map((group, gi) => {
