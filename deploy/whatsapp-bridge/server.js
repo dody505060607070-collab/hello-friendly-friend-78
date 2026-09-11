@@ -74,7 +74,8 @@ async function start() {
       }
       if (conn === "close") {
         connection = "closed";
-        const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
+        const err = lastDisconnect?.error;
+        const code = err?.output?.statusCode ?? err?.status ?? err?.code ?? null;
         lastError = lastDisconnect?.error?.message ?? null;
         const loggedOut = code === DisconnectReason.loggedOut;
         console.log("انقطع الاتصال:", code, lastError);
