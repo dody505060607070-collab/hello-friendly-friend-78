@@ -35,7 +35,20 @@ function WhatsAppLinkPage() {
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["whatsapp-link-status"],
-    queryFn: () => fetchStatus(),
+    queryFn: async () => {
+      try {
+        return await fetchStatus();
+      } catch (e) {
+        return {
+          configured: true,
+          connection: "closed" as const,
+          qr: null,
+          me: null,
+          error: `تعذر الوصول للخادم: ${(e as Error).message}`,
+        };
+      }
+    },
+    retry: false,
     refetchInterval: 5000,
   });
 
