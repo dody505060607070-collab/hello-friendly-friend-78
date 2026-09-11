@@ -199,6 +199,8 @@ export async function twilioSend(input: {
 }): Promise<TwilioResult> {
   // الأولوية للجسر المجاني (الرقم المرتبط بالـQR)، وإن فشل نرجع لـTwilio.
   if (!input.contentSid) {
+    const viaCloud = await cloudSend(input.to, input.body);
+    if (viaCloud?.ok) return viaCloud;
     const viaBridge = await bridgeSend(input.to, input.body);
     if (viaBridge?.ok) return viaBridge;
   }
