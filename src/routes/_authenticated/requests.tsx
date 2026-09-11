@@ -66,7 +66,12 @@ export const Route = createFileRoute("/_authenticated/requests")({
 const statusOrder = ["new", "in_review", "contacted", "approved", "converted", "rejected", "closed"];
 
 function RequestsPage() {
-  const [source, setSource] = useState("supply");
+  const { source: initialSource } = Route.useSearch();
+  const [source, setSource] = useState(initialSource);
+  useEffect(() => {
+    setSource(initialSource);
+    setTab("all");
+  }, [initialSource]);
   const [tab, setTab] = useState("all");
   const queryClient = useQueryClient();
 
