@@ -1,17 +1,27 @@
 // جسر واتساب لمثراء — يعمل على Hostinger VPS
 // يربط رقم واتساب حقيقي عبر QR ويرسل منه مجانًا بدون Twilio.
-import { Boom } from "@hapi/boom";
 import express from "express";
 import pino from "pino";
 import QRCode from "qrcode";
-import baileys from "@whiskeysockets/baileys";
+import * as baileysNs from "@whiskeysockets/baileys";
 
-const {
-  default: makeWASocket,
-  DisconnectReason,
-  useMultiFileAuthState,
-  fetchLatestBaileysVersion,
-} = baileys;
+// توافق مع كل إصدارات Baileys (CJS/ESM، default أو named exports)
+const B = baileysNs?.default && typeof baileysNs.default === "object" ? { ...baileysNs.default, ...baileysNs } : baileysNs;
+
+const makeWASocket = typeof B.makeWASocket === "function"
+  ? B.makeWASocket
+  : (typeof B.default === "function" ? B.default : null);
+const DisconnectReason = B.DisconnectReason ?? {};
+const useMultiFileAuthState = B.useMultiFileAuthState;
+const fetchLatestBaileysVersion = B.fetchLatestBaileysVersion;
+
+if (typeof makeWASocket !== "function" || typeof useMultiFileAuthState !== "function") {
+  console.error(
+    "Baileys exports غير متوافقة. المتاح:",
+    Object.keys(B).slice(0, 40).join(", ")
+  );
+  process.exit(1);
+}
 
 const PORT = Number(process.env.PORT || 3010);
 const TOKEN = process.env.BRIDGE_TOKEN || "";
@@ -64,7 +74,8 @@ async function start() {
       }
       if (conn === "close") {
         connection = "closed";
-        const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
+        const err = lastDisconnect?.error;
+        const code = err?.output?.statusCode ?? err?.status ?? err?.code ?? null;
         lastError = lastDisconnect?.error?.message ?? null;
         const loggedOut = code === DisconnectReason.loggedOut;
         console.log("انقطع الاتصال:", code, lastError);
