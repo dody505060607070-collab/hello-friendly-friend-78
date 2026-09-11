@@ -37,7 +37,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               <button
                 type="button"
                 onClick={() => group.label && toggle(group.label)}
-                className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-[13px] font-semibold text-sidebar-foreground/80 transition-colors hover:text-sidebar-accent-foreground"
+                className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-[15px] font-bold text-sidebar-foreground/80 transition-colors hover:text-sidebar-accent-foreground"
               >
                 <span className="flex min-w-0 items-center gap-2 text-right">
                   {Icon ? <Icon className="size-[18px] shrink-0 text-primary/70" /> : null}
@@ -55,15 +55,19 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             {isOpen ? (
               <ul className="space-y-0.5">
                 {items.map((item) => {
-                  const active = pathname === item.to;
+                  const searchMatch = item.search
+                    ? Object.entries(item.search).every(([k, v]) => search?.[k] === v)
+                    : true;
+                  const active = pathname === item.to && searchMatch;
                   const badge = item.countKey ? counts?.[item.countKey] : undefined;
                   return (
-                    <li key={item.to}>
+                    <li key={item.to + (item.search?.["source"] ?? "")}>
                       <Link
                         to={item.to}
+                        {...(item.search ? { search: item.search } : {})}
                         onClick={onNavigate}
                         className={cn(
-                          "group flex items-center justify-between rounded-lg py-2 pe-2 ps-3 text-[13.5px] transition-colors",
+                          "group flex items-center justify-between rounded-lg py-2.5 pe-2 ps-3 text-[15.5px] transition-colors",
                           active
                             ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
                             : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60",
