@@ -24,11 +24,14 @@ export async function getAutomationConfigRow(): Promise<Config> {
     .select("enabled, webhook_url, events, shared_token")
     .eq("id", true)
     .maybeSingle();
+  // الرابط والمفتاح يُقرآن من الإعدادات المخزّنة أو من متغيرات البيئة — بلا أي واجهة إعداد.
+  const envUrl = process.env["N8N_WEBHOOK_URL"] ?? null;
+  const url = data?.webhook_url ?? envUrl;
   return {
-    enabled: Boolean(data?.enabled),
-    webhook_url: data?.webhook_url ?? null,
+    enabled: Boolean(url) && data?.enabled !== false,
+    webhook_url: url,
     events: Array.isArray(data?.events) ? (data?.events as string[]) : [],
-    shared_token: data?.shared_token ?? null,
+    shared_token: data?.shared_token ?? process.env["N8N_SHARED_TOKEN"] ?? null,
   };
 }
 
