@@ -123,7 +123,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-[15.5px] leading-relaxed">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-3 md:h-24 md:px-6">
         <div className="relative z-10 flex items-center gap-1 md:gap-2">
           <button
@@ -157,7 +157,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             alt="مثراء العقارية"
             width={1152}
             height={576}
-            className="h-9 w-auto md:h-[96px]"
+            className="h-12 w-auto md:h-[124px]"
           />
         </Link>
 

@@ -57,6 +57,9 @@ export const Route = createFileRoute("/_authenticated/requests")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    source: search["source"] === "listing" ? "listing" : "supply",
+  }),
   component: RequestsPage,
 });
 
