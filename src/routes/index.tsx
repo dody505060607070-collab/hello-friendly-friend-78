@@ -138,10 +138,15 @@ function HomePage() {
                 </option>
               ))}
             </select>
-            <div className="shine flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-[13.5px] font-bold text-primary-foreground">
-              <Search className="size-4" />
+            <button
+              type="button"
+              onClick={() => window.scrollBy({ top: 320, behavior: "smooth" })}
+              className="shine halo group flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-[13.5px] font-bold text-primary-foreground"
+            >
+              <Search className="size-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6" />
               {results ? `${results.length} نتيجة` : "ابحث عن عقارك"}
-            </div>
+            </button>
+
           </div>
         </div>
       </section>
