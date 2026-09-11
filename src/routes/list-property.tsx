@@ -92,6 +92,20 @@ function ListPropertyPage() {
         });
         if (error) throw error;
       }
+      try {
+        const { reportPublicRequest } = await import("@/lib/automation.functions");
+        await reportPublicRequest({
+          data: {
+            full_name: form.full_name,
+            phone: form.phone,
+            purpose: form.purpose,
+            city: form.city || undefined,
+            property_type: form.property_type || undefined,
+          },
+        });
+      } catch {
+        /* الأتمتة اختيارية */
+      }
       toast.success("تم إرسال طلبك بنجاح، سيتواصل معك فريقنا قريباً.");
       setForm({
         full_name: "",

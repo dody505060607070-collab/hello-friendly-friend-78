@@ -27,6 +27,7 @@ import { Route as ThankYouRouteImport } from './routes/thank-you'
 import { Route as AuthenticatedActivitiesRouteImport } from './routes/_authenticated/activities'
 import { Route as AuthenticatedActivityLogRouteImport } from './routes/_authenticated/activity-log'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
+import { Route as AuthenticatedAutomationRouteImport } from './routes/_authenticated/automation'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -59,6 +60,7 @@ import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_au
 import { Route as AuthenticatedOwnersIndexRouteImport } from './routes/_authenticated/owners.index'
 import { Route as AuthenticatedOwnersOwnerIdRouteImport } from './routes/_authenticated/owners.$ownerId'
 import { Route as AuthenticatedPaymentReminderPaymentIdRouteImport } from './routes/_authenticated/payment-reminder.$paymentId'
+import { Route as ApiPublicN8nRouteImport } from './routes/api/public/n8n'
 import { Route as ApiPublicTwilioWhatsappRouteImport } from './routes/api/public/twilio-whatsapp'
 import { Route as PortalContractsIndexRouteImport } from './routes/portal.contracts.index'
 import { Route as PortalContractsContractIdRouteImport } from './routes/portal.contracts.$contractId'
@@ -154,6 +156,11 @@ const AuthenticatedActivityLogRoute =
 const AuthenticatedAiRoute = AuthenticatedAiRouteImport.update({
   id: '/ai',
   path: '/ai',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAutomationRoute = AuthenticatedAutomationRouteImport.update({
+  id: '/automation',
+  path: '/automation',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
@@ -329,6 +336,11 @@ const AuthenticatedPaymentReminderPaymentIdRoute =
     path: '/payment-reminder/$paymentId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicN8nRoute = ApiPublicN8nRouteImport.update({
+  id: '/api/public/n8n',
+  path: '/api/public/n8n',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTwilioWhatsappRoute = ApiPublicTwilioWhatsappRouteImport.update({
   id: '/api/public/twilio-whatsapp',
   path: '/api/public/twilio-whatsapp',
@@ -379,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/ai': typeof AuthenticatedAiRoute
+  '/automation': typeof AuthenticatedAutomationRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -408,6 +421,7 @@ export interface FileRoutesByFullPath {
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
   '/payment-reminder/$paymentId': typeof AuthenticatedPaymentReminderPaymentIdRoute
+  '/api/public/n8n': typeof ApiPublicN8nRoute
   '/api/public/twilio-whatsapp': typeof ApiPublicTwilioWhatsappRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
@@ -435,6 +449,7 @@ export interface FileRoutesByTo {
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/ai': typeof AuthenticatedAiRoute
+  '/automation': typeof AuthenticatedAutomationRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -464,6 +479,7 @@ export interface FileRoutesByTo {
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
   '/payment-reminder/$paymentId': typeof AuthenticatedPaymentReminderPaymentIdRoute
+  '/api/public/n8n': typeof ApiPublicN8nRoute
   '/api/public/twilio-whatsapp': typeof ApiPublicTwilioWhatsappRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
@@ -494,6 +510,7 @@ export interface FileRoutesById {
   '/_authenticated/activities': typeof AuthenticatedActivitiesRoute
   '/_authenticated/activity-log': typeof AuthenticatedActivityLogRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
+  '/_authenticated/automation': typeof AuthenticatedAutomationRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -523,6 +540,7 @@ export interface FileRoutesById {
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/_authenticated/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
   '/_authenticated/payment-reminder/$paymentId': typeof AuthenticatedPaymentReminderPaymentIdRoute
+  '/api/public/n8n': typeof ApiPublicN8nRoute
   '/api/public/twilio-whatsapp': typeof ApiPublicTwilioWhatsappRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
@@ -553,6 +571,7 @@ export interface FileRouteTypes {
     | '/activities'
     | '/activity-log'
     | '/ai'
+    | '/automation'
     | '/clients'
     | '/crm'
     | '/dashboard'
@@ -582,6 +601,7 @@ export interface FileRouteTypes {
     | '/invoices/$invoiceId'
     | '/owners/$ownerId'
     | '/payment-reminder/$paymentId'
+    | '/api/public/n8n'
     | '/api/public/twilio-whatsapp'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
@@ -609,6 +629,7 @@ export interface FileRouteTypes {
     | '/activities'
     | '/activity-log'
     | '/ai'
+    | '/automation'
     | '/clients'
     | '/crm'
     | '/dashboard'
@@ -638,6 +659,7 @@ export interface FileRouteTypes {
     | '/invoices/$invoiceId'
     | '/owners/$ownerId'
     | '/payment-reminder/$paymentId'
+    | '/api/public/n8n'
     | '/api/public/twilio-whatsapp'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
@@ -667,6 +689,7 @@ export interface FileRouteTypes {
     | '/_authenticated/activities'
     | '/_authenticated/activity-log'
     | '/_authenticated/ai'
+    | '/_authenticated/automation'
     | '/_authenticated/clients'
     | '/_authenticated/crm'
     | '/_authenticated/dashboard'
@@ -696,6 +719,7 @@ export interface FileRouteTypes {
     | '/_authenticated/invoices/$invoiceId'
     | '/_authenticated/owners/$ownerId'
     | '/_authenticated/payment-reminder/$paymentId'
+    | '/api/public/n8n'
     | '/api/public/twilio-whatsapp'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
@@ -724,6 +748,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   ThankYouRoute: typeof ThankYouRoute
   PropertiesCodeRoute: typeof PropertiesCodeRoute
+  ApiPublicN8nRoute: typeof ApiPublicN8nRoute
   ApiPublicTwilioWhatsappRoute: typeof ApiPublicTwilioWhatsappRoute
   ApiPublicFilesSplatRoute: typeof ApiPublicFilesSplatRoute
 }
@@ -854,6 +879,13 @@ declare module '@tanstack/react-router' {
       path: '/ai'
       fullPath: '/ai'
       preLoaderRoute: typeof AuthenticatedAiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/automation': {
+      id: '/_authenticated/automation'
+      path: '/automation'
+      fullPath: '/automation'
+      preLoaderRoute: typeof AuthenticatedAutomationRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/clients': {
@@ -1080,6 +1112,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPaymentReminderPaymentIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/n8n': {
+      id: '/api/public/n8n'
+      path: '/api/public/n8n'
+      fullPath: '/api/public/n8n'
+      preLoaderRoute: typeof ApiPublicN8nRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/twilio-whatsapp': {
       id: '/api/public/twilio-whatsapp'
       path: '/api/public/twilio-whatsapp'
@@ -1129,6 +1168,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivitiesRoute: typeof AuthenticatedActivitiesRoute
   AuthenticatedActivityLogRoute: typeof AuthenticatedActivityLogRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
+  AuthenticatedAutomationRoute: typeof AuthenticatedAutomationRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -1165,6 +1205,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivitiesRoute: AuthenticatedActivitiesRoute,
   AuthenticatedActivityLogRoute: AuthenticatedActivityLogRoute,
   AuthenticatedAiRoute: AuthenticatedAiRoute,
+  AuthenticatedAutomationRoute: AuthenticatedAutomationRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
@@ -1237,6 +1278,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   ThankYouRoute: ThankYouRoute,
   PropertiesCodeRoute: PropertiesCodeRoute,
+  ApiPublicN8nRoute: ApiPublicN8nRoute,
   ApiPublicTwilioWhatsappRoute: ApiPublicTwilioWhatsappRoute,
   ApiPublicFilesSplatRoute: ApiPublicFilesSplatRoute,
 }

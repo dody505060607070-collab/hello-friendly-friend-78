@@ -154,6 +154,63 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_config: {
+        Row: {
+          enabled: boolean
+          events: Json
+          id: boolean
+          shared_token: string | null
+          updated_at: string
+          webhook_url: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          events?: Json
+          id?: boolean
+          shared_token?: string | null
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          events?: Json
+          id?: boolean
+          shared_token?: string | null
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
+      automation_events: {
+        Row: {
+          created_at: string
+          direction: string
+          event: string
+          id: string
+          payload: Json | null
+          response: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          direction?: string
+          event: string
+          id?: string
+          payload?: Json | null
+          response?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          event?: string
+          id?: string
+          payload?: Json | null
+          response?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       buildings: {
         Row: {
           address: string | null
