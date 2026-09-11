@@ -74,7 +74,6 @@ export const navGroups: NavGroup[] = [
     icon: Settings,
     items: [
       { label: "إعدادات الموقع", to: "/settings", module: "settings" },
-      { label: "الأتمتة (n8n)", to: "/automation", module: "settings" },
       { label: "الشركاء", to: "/partners", module: "settings" },
       { label: "الخدمات", to: "/services", module: "settings" },
     ],
