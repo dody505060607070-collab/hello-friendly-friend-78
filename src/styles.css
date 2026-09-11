@@ -214,48 +214,105 @@
   box-shadow: var(--shadow-float);
 }
 
-/* Sheen sweep on hover for buttons and cards */
+/* Sheen sweep + glow lift on hover for buttons and cards */
 @utility shine {
   position: relative;
   overflow: hidden;
+  isolation: isolate;
   transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease,
-    filter 0.25s ease;
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.35s ease;
 
   &::after {
     content: "";
     position: absolute;
     inset: 0;
-    transform: translateX(-120%);
-    background: linear-gradient(100deg, transparent 30%, oklch(1 0 0 / 35%) 50%, transparent 70%);
-    transition: transform 0.6s ease;
+    z-index: 1;
+    transform: translateX(-130%) skewX(-18deg);
+    background: linear-gradient(100deg, transparent 30%, oklch(1 0 0 / 45%) 50%, transparent 70%);
+    transition: transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-float);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow:
+      var(--shadow-float),
+      0 0 0 1px color-mix(in oklab, var(--color-primary) 25%, transparent),
+      0 12px 34px -12px color-mix(in oklab, var(--color-primary) 55%, transparent);
+    filter: saturate(1.05);
   }
 
   &:hover::after {
-    transform: translateX(120%);
+    transform: translateX(130%) skewX(-18deg);
   }
 
   &:active {
-    transform: translateY(0) scale(0.985);
+    transform: translateY(0) scale(0.97);
+    transition-duration: 0.09s;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent);
+    outline-offset: 3px;
+  }
+}
+
+/* Soft pulsing halo behind primary calls to action */
+@utility halo {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      60% 80% at 50% 50%,
+      color-mix(in oklab, var(--color-primary) 45%, transparent),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  &:hover::before {
+    opacity: 1;
+    animation: halo-pulse 2.2s ease-in-out infinite;
+  }
+}
+
+@utility pressable {
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.97);
+    transition-duration: 0.08s;
   }
 }
 
 @utility lift {
   transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-float);
+    transform: translateY(-6px) scale(1.012);
+    box-shadow:
+      var(--shadow-float),
+      0 18px 45px -22px color-mix(in oklab, var(--color-primary) 60%, transparent);
   }
 }
+
 
 @utility mesh-bg {
   background:
@@ -274,7 +331,60 @@
   }
 }
 
+@keyframes halo-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes scroll-wheel {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0);
+  }
+  25% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+    transform: translate(-50%, 12px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 14px);
+  }
+}
+
+@keyframes chevron-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+
+@utility animate-scroll-wheel {
+  animation: scroll-wheel 1.9s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+@utility animate-chevron {
+  animation: chevron-fade 1.9s ease-in-out infinite;
+}
+
 @keyframes pop-in {
+
   0% {
     opacity: 0;
     transform: translateY(24px) scale(0.94);

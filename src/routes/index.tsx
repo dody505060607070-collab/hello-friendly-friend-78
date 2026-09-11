@@ -138,10 +138,15 @@ function HomePage() {
                 </option>
               ))}
             </select>
-            <div className="shine flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-[13.5px] font-bold text-primary-foreground">
-              <Search className="size-4" />
+            <button
+              type="button"
+              onClick={() => window.scrollBy({ top: 320, behavior: "smooth" })}
+              className="shine halo group flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-[13.5px] font-bold text-primary-foreground"
+            >
+              <Search className="size-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6" />
               {results ? `${results.length} نتيجة` : "ابحث عن عقارك"}
-            </div>
+            </button>
+
           </div>
         </div>
       </section>
@@ -305,7 +310,7 @@ function HomePage() {
           </p>
           <Link
             to="/list-property"
-            className="shine rounded-xl bg-gold px-8 py-3.5 text-[14px] font-bold text-gold-foreground"
+            className="shine halo rounded-2xl bg-gold px-9 py-4 text-[14px] font-bold text-gold-foreground shadow-[0_18px_40px_-18px_rgba(0,0,0,0.6)]"
           >
             اعرض | اطلب عقارك
           </Link>
