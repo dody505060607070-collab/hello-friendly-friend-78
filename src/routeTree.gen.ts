@@ -50,6 +50,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTaskFormRouteImport } from './routes/_authenticated/task-form'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedTeamChatRouteImport } from './routes/_authenticated/team-chat'
+import { Route as AuthenticatedWhatsappLinkRouteImport } from './routes/_authenticated/whatsapp-link'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as PropertiesCodeRouteImport } from './routes/properties.$code'
 import { Route as AuthenticatedContractsIndexRouteImport } from './routes/_authenticated/contracts.index'
@@ -278,6 +279,12 @@ const AuthenticatedTeamChatRoute = AuthenticatedTeamChatRouteImport.update({
   path: '/team-chat',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedWhatsappLinkRoute =
+  AuthenticatedWhatsappLinkRouteImport.update({
+    id: '/whatsapp-link',
+    path: '/whatsapp-link',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const PortalIndexRoute = PortalIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -408,6 +415,7 @@ export interface FileRoutesByFullPath {
   '/task-form': typeof AuthenticatedTaskFormRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team-chat': typeof AuthenticatedTeamChatRoute
+  '/whatsapp-link': typeof AuthenticatedWhatsappLinkRoute
   '/properties/$code': typeof PropertiesCodeRoute
   '/portal/': typeof PortalIndexRoute
   '/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
@@ -465,6 +473,7 @@ export interface FileRoutesByTo {
   '/task-form': typeof AuthenticatedTaskFormRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team-chat': typeof AuthenticatedTeamChatRoute
+  '/whatsapp-link': typeof AuthenticatedWhatsappLinkRoute
   '/properties/$code': typeof PropertiesCodeRoute
   '/portal': typeof PortalIndexRoute
   '/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
@@ -525,6 +534,7 @@ export interface FileRoutesById {
   '/_authenticated/task-form': typeof AuthenticatedTaskFormRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/team-chat': typeof AuthenticatedTeamChatRoute
+  '/_authenticated/whatsapp-link': typeof AuthenticatedWhatsappLinkRoute
   '/properties/$code': typeof PropertiesCodeRoute
   '/portal/': typeof PortalIndexRoute
   '/_authenticated/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
@@ -585,6 +595,7 @@ export interface FileRouteTypes {
     | '/task-form'
     | '/tasks'
     | '/team-chat'
+    | '/whatsapp-link'
     | '/properties/$code'
     | '/portal/'
     | '/contracts/$contractId'
@@ -642,6 +653,7 @@ export interface FileRouteTypes {
     | '/task-form'
     | '/tasks'
     | '/team-chat'
+    | '/whatsapp-link'
     | '/properties/$code'
     | '/portal'
     | '/contracts/$contractId'
@@ -701,6 +713,7 @@ export interface FileRouteTypes {
     | '/_authenticated/task-form'
     | '/_authenticated/tasks'
     | '/_authenticated/team-chat'
+    | '/_authenticated/whatsapp-link'
     | '/properties/$code'
     | '/portal/'
     | '/_authenticated/contracts/$contractId'
@@ -1030,6 +1043,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeamChatRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/whatsapp-link': {
+      id: '/_authenticated/whatsapp-link'
+      path: '/whatsapp-link'
+      fullPath: '/whatsapp-link'
+      preLoaderRoute: typeof AuthenticatedWhatsappLinkRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/portal/': {
       id: '/portal/'
       path: '/'
@@ -1172,6 +1192,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTaskFormRoute: typeof AuthenticatedTaskFormRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedTeamChatRoute: typeof AuthenticatedTeamChatRoute
+  AuthenticatedWhatsappLinkRoute: typeof AuthenticatedWhatsappLinkRoute
   AuthenticatedContractsContractIdRoute: typeof AuthenticatedContractsContractIdRoute
   AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
   AuthenticatedOwnersOwnerIdRoute: typeof AuthenticatedOwnersOwnerIdRoute
@@ -1208,6 +1229,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTaskFormRoute: AuthenticatedTaskFormRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedTeamChatRoute: AuthenticatedTeamChatRoute,
+  AuthenticatedWhatsappLinkRoute: AuthenticatedWhatsappLinkRoute,
   AuthenticatedContractsContractIdRoute: AuthenticatedContractsContractIdRoute,
   AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
   AuthenticatedOwnersOwnerIdRoute: AuthenticatedOwnersOwnerIdRoute,
