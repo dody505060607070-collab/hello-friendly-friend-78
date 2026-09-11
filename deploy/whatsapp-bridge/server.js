@@ -24,7 +24,11 @@ if (typeof makeWASocket !== "function" || typeof useMultiFileAuthState !== "func
 }
 
 const PORT = Number(process.env.PORT || 3010);
-const TOKEN = process.env.BRIDGE_TOKEN || "";
+const TOKEN = String(process.env.BRIDGE_TOKEN || "")
+  .trim()
+  .replace(/^BRIDGE_TOKEN\s*=\s*/i, "")
+  .replace(/^['"]|['"]$/g, "")
+  .trim();
 const AUTH_DIR = process.env.AUTH_DIR || "./auth";
 
 if (!TOKEN) {
@@ -108,8 +112,11 @@ app.use(express.json({ limit: "2mb" }));
 
 app.use((req, res, next) => {
   if (req.path === "/health") return next();
-  const auth = req.headers.authorization || "";
-  if (auth !== `Bearer ${TOKEN}`) return res.status(401).json({ ok: false, error: "unauthorized" });
+  const auth = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
+  const bridgeHeader = String(req.headers["x-bridge-token"] || "").trim();
+  if (auth !== TOKEN && bridgeHeader !== TOKEN) {
+    return res.status(401).json({ ok: false, error: "unauthorized" });
+  }
   next();
 });
 
