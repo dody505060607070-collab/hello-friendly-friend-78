@@ -297,7 +297,9 @@ export const checkTwilioConfig = createServerFn({ method: "GET" })
 /** حالة ربط واتساب المجاني + رمز QR للمسح. */
 export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async (): Promise<LinkStatus> => {
+    const viaCloud = await cloudStatus();
+    if (viaCloud) return viaCloud;
     const { url, token } = normalizeBridgeConfig();
     if (!url || !token) {
       return { configured: false, connection: "closed" as const, qr: null, me: null, error: null };
