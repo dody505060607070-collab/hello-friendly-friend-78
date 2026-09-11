@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { KeyRound, Home } from "lucide-react";
+import { KeyRound, Home, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import desktopVideo from "@/assets/hero-desktop.mp4.asset.json";
@@ -72,16 +72,16 @@ export function HeroVideo() {
             >
               <Link
                 to="/rent"
-                className="shine inline-flex items-center gap-2 rounded-xl bg-white/95 px-7 py-3.5 text-[14.5px] font-bold text-foreground"
+                className="shine halo group inline-flex items-center gap-2 rounded-2xl bg-white/95 px-8 py-4 text-[14.5px] font-bold text-foreground shadow-[0_18px_40px_-18px_rgba(0,0,0,0.7)]"
               >
-                <KeyRound className="size-4" />
+                <KeyRound className="size-4 transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
                 عقارات الإيجار
               </Link>
               <Link
                 to="/sale"
-                className="shine glass-dark inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-[14.5px] font-bold text-white"
+                className="shine glass-dark group inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-[14.5px] font-bold text-white"
               >
-                <Home className="size-4" />
+                <Home className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110" />
                 عقارات البيع
               </Link>
             </div>
@@ -90,12 +90,29 @@ export function HeroVideo() {
       </div>
 
       {/* Scroll cue */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute bottom-5 left-1/2 h-10 w-6 -translate-x-1/2 rounded-full border border-white/45"
+      <button
+        type="button"
+        aria-label="انزل للأسفل"
+        onClick={() =>
+          window.scrollTo({ top: window.innerHeight * 0.72, behavior: "smooth" })
+        }
+        className="group absolute bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-white/80 transition-colors duration-300 hover:text-white"
       >
-        <span className="absolute left-1/2 top-2 size-1.5 -translate-x-1/2 animate-bounce rounded-full bg-white/80" />
-      </span>
+        <span className="text-[11px] font-semibold tracking-[0.25em] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          اكتشف
+        </span>
+        <span
+          aria-hidden
+          className="relative h-11 w-7 rounded-full border border-white/50 backdrop-blur-sm transition-all duration-300 group-hover:border-white group-hover:shadow-[0_0_18px_rgba(255,255,255,0.35)]"
+        >
+          <span className="absolute left-1/2 top-2.5 size-1.5 animate-scroll-wheel rounded-full bg-white" />
+        </span>
+        <span aria-hidden className="flex flex-col items-center -space-y-1.5">
+          <ChevronDown className="size-4 animate-chevron" />
+          <ChevronDown className="size-4 animate-chevron [animation-delay:220ms]" />
+        </span>
+      </button>
+
     </section>
   );
 }
