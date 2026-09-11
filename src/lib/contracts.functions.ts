@@ -495,5 +495,15 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
       details: { created, warnings } as never,
     });
 
+    const { dispatchAutomation } = await import("./automation.server");
+    await dispatchAutomation("contract.created", {
+      contractId,
+      created,
+      warnings,
+      contractNumber: str(e["contract_number"]) || null,
+      ownerName: str(e["owner_name"]) || null,
+      tenantName: str(e["tenant_name"]) || null,
+    });
+
     return { contractId, created, warnings, account };
   });

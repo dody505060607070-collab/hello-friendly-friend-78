@@ -24,7 +24,7 @@ type TwilioResult =
   | { ok: true; sid: string }
   | { ok: false; error: string; needsTemplate?: boolean };
 
-async function twilioSend(input: {
+export async function twilioSend(input: {
   to: string;
   body: string;
   contentSid?: string;
@@ -100,7 +100,16 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<TwilioResult> => {
     const { requireUnlocked } = await import("@/lib/kill-switch.server");
     await requireUnlocked();
-    return twilioSend({ to: data.to, body: data.body });
+    const result = await twilioSend({ to: data.to, body: data.body });
+    const { dispatchAutomation } = await import("@/lib/automation.server");
+    await dispatchAutomation("whatsapp.sent", {
+      to: data.to,
+      body: data.body,
+      ok: result.ok,
+      sid: result.ok ? result.sid : null,
+      error: result.ok ? null : result.error,
+    });
+    return result;
   });
 
 export const checkTwilioConfig = createServerFn({ method: "GET" })

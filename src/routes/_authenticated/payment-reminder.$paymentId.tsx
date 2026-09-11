@@ -191,6 +191,22 @@ function PaymentReminderPage() {
         });
         if (error) throw error;
       }
+      try {
+        const { reportReminderSent } = await import("@/lib/automation.functions");
+        await reportReminderSent({
+          data: {
+            paymentId: p.id,
+            contractId: contract?.id ?? null,
+            recipientName: tenant?.full_name ?? null,
+            recipientPhone: phone,
+            amount: Number(p.amount_due ?? 0),
+            dueDate: p.due_date ?? null,
+            message,
+          },
+        });
+      } catch {
+        /* الأتمتة اختيارية */
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-reminder-log", paymentId] });
