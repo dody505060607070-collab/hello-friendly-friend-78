@@ -331,7 +331,60 @@
   }
 }
 
+@keyframes halo-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes scroll-wheel {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0);
+  }
+  25% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+    transform: translate(-50%, 12px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 14px);
+  }
+}
+
+@keyframes chevron-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+
+@utility animate-scroll-wheel {
+  animation: scroll-wheel 1.9s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+@utility animate-chevron {
+  animation: chevron-fade 1.9s ease-in-out infinite;
+}
+
 @keyframes pop-in {
+
   0% {
     opacity: 0;
     transform: translateY(24px) scale(0.94);
