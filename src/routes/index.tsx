@@ -310,7 +310,7 @@ function HomePage() {
           </p>
           <Link
             to="/list-property"
-            className="shine rounded-xl bg-gold px-8 py-3.5 text-[14px] font-bold text-gold-foreground"
+            className="shine halo rounded-2xl bg-gold px-9 py-4 text-[14px] font-bold text-gold-foreground shadow-[0_18px_40px_-18px_rgba(0,0,0,0.6)]"
           >
             اعرض | اطلب عقارك
           </Link>
