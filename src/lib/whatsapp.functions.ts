@@ -24,12 +24,37 @@ type TwilioResult =
   | { ok: true; sid: string }
   | { ok: false; error: string; needsTemplate?: boolean };
 
+/** إرسال عبر جسر واتساب المجاني على الـVPS (رقمك الشخصي/رقم الشركة). */
+async function bridgeSend(to: string, body: string): Promise<TwilioResult | null> {
+  const url = process.env["WHATSAPP_BRIDGE_URL"];
+  const token = process.env["WHATSAPP_BRIDGE_TOKEN"];
+  if (!url || !token) return null;
+  try {
+    const res = await fetch(`${url.replace(/\/$/, "")}/send`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ to: toE164(to), body }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; id?: string; error?: string };
+    if (res.ok && data.ok) return { ok: true, sid: data.id ?? "" };
+    return { ok: false, error: data.error ?? `Bridge ${res.status}` };
+  } catch (e) {
+    return { ok: false, error: `تعذر الاتصال بجسر واتساب: ${(e as Error).message}` };
+  }
+}
+
 export async function twilioSend(input: {
   to: string;
   body: string;
   contentSid?: string;
   contentVariables?: Record<string, string>;
 }): Promise<TwilioResult> {
+  // الأولوية للجسر المجاني (الرقم المرتبط بالـQR)، وإن فشل نرجع لـTwilio.
+  if (!input.contentSid) {
+    const viaBridge = await bridgeSend(input.to, input.body);
+    if (viaBridge?.ok) return viaBridge;
+  }
+
   const sid = process.env["TWILIO_ACCOUNT_SID"];
   const token = process.env["TWILIO_AUTH_TOKEN"];
   const from = process.env["TWILIO_WHATSAPP_FROM"] ?? "whatsapp:+17372212163";
