@@ -73,19 +73,6 @@ function AuthPage() {
     }
   };
 
-  const google = async () => {
-    setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      setBusy(false);
-      toast.error("تعذّر الدخول عبر Google");
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: "/dashboard" });
-  };
 
   return (
     <main className="grid min-h-screen place-items-center bg-background px-4 py-10">
