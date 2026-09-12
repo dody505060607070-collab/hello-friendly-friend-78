@@ -225,6 +225,7 @@ function TeamChatPage() {
       const { error } = await supabase.from("group_messages").insert({
         sender_id: userId!,
         body: body.trim() || null,
+        channel,
         attachment_path: path,
         attachment_name: file.name,
         reply_to: replyTo?.id ?? null,
