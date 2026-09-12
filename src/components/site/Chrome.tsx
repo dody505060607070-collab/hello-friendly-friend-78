@@ -1,6 +1,8 @@
-import { ArrowUp } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ArrowUp, Building2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { useI18n } from "@/lib/i18n";
 import { whatsappLink } from "@/lib/site-data";
 
 /** شريط تقدّم التمرير أعلى الصفحة. */
