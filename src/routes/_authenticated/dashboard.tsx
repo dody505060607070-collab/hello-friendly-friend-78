@@ -509,7 +509,7 @@ function MetricCard({
             </p>
             <p className="mt-1 text-[11.5px] text-muted-foreground">{hint}</p>
           </div>
-          <span className="grid size-9 place-items-center rounded-lg border border-border bg-muted text-primary">
+          <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
             <Icon className="size-[18px]" />
           </span>
         </div>
@@ -556,7 +556,7 @@ function WorkItem({
       className="flex items-center justify-between rounded-xl border border-border px-4 py-3 transition-colors hover:bg-muted"
     >
       <span className="flex items-center gap-3">
-        <span className="grid size-9 place-items-center rounded-lg border border-border bg-muted text-primary">
+        <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
           <Icon className="size-[18px]" />
         </span>
         <span>
