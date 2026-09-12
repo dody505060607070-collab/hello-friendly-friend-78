@@ -160,14 +160,10 @@ function PaymentReminderPage() {
       if (!phone) throw new Error("لا يوجد رقم جوال محفوظ للمستأجر");
       const option = repeatOptions.find((o) => o.key === repeat) ?? { key: "once", label: "مرة واحدة", hours: 0 };
 
-      // فتح واتساب مباشرة على محادثة العميل مع الرسالة جاهزة
-      const waNumber = toE164(phone).replace(/[^\d]/g, "");
-      window.open(
-        `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`,
-        "_blank",
-        "noopener,noreferrer",
-      );
-
+      // إرسال تلقائي عبر Wassenger (الرقم المرتبط بالـQR)
+      const { sendWhatsAppMessage } = await import("@/lib/whatsapp.functions");
+      const result = await sendWhatsAppMessage({ data: { to: phone, body: message } });
+      if (!result.ok) throw new Error(result.error);
 
       const { error: logError } = await supabase.from("message_log").insert({
         recipient_name: tenant?.full_name ?? null,
@@ -176,7 +172,7 @@ function PaymentReminderPage() {
         payment_id: p.id,
         body: message,
         channel: "whatsapp",
-        result: "opened",
+        result: "sent",
         sent_by_system: false,
       });
       if (logError) throw logError;
@@ -216,7 +212,7 @@ function PaymentReminderPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-reminder-log", paymentId] });
       queryClient.invalidateQueries({ queryKey: ["reminder_followups"] });
-      toast.success("تم فتح واتساب برسالة التذكير جاهزة — اضغط إرسال داخل واتساب");
+      toast.success("تم إرسال رسالة التذكير عبر واتساب تلقائيًا");
     },
     onError: (e: Error) => toast.error(e.message),
   });

@@ -45,6 +45,136 @@ function bridgeHeaders(token: string): Record<string, string> {
 }
 
 /* ------------------------------------------------------------------ */
+/* Wassenger — خدمة واتساب سحابية بالـQR                                */
+/* الأسرار: WASSENGER_API_KEY / WASSENGER_DEVICE_ID                     */
+/* ------------------------------------------------------------------ */
+
+const WASSENGER_API = "https://api.wassenger.com/v1";
+
+function wassengerConfig() {
+  const key = (process.env["WASSENGER_API_KEY"] ?? "").trim().replace(/^['"]|['"]$/g, "");
+  const device = (process.env["WASSENGER_DEVICE_ID"] ?? "").trim().replace(/^['"]|['"]$/g, "");
+  return { key, device, ready: Boolean(key && device) };
+}
+
+async function wassengerFetch(path: string, init?: { method?: string; body?: unknown }) {
+  const { key } = wassengerConfig();
+  const res = await fetch(`${WASSENGER_API}${path}`, {
+    method: init?.method ?? "GET",
+    headers: { Token: key, "Content-Type": "application/json" },
+    ...(init?.body ? { body: JSON.stringify(init.body) } : {}),
+  });
+  const raw = await res.text().catch(() => "");
+  let data: Record<string, unknown> = {};
+  try {
+    data = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+  } catch {
+    data = {};
+  }
+  return { status: res.status, data, raw };
+}
+
+/** إرسال رسالة عبر Wassenger. */
+async function wassengerSend(to: string, body: string): Promise<TwilioResult | null> {
+  const cfg = wassengerConfig();
+  if (!cfg.ready) return null;
+  const phone = toE164(to);
+  try {
+    const { status, data, raw } = await wassengerFetch("/messages", {
+      method: "POST",
+      body: { phone, message: body, device: cfg.device },
+    });
+    if (status >= 200 && status < 300) {
+      return { ok: true, sid: (data["id"] as string | undefined) ?? "" };
+    }
+    const message =
+      (data["message"] as string | undefined) ??
+      (data["error"] as string | undefined) ??
+      raw.slice(0, 200);
+    return { ok: false, error: `Wassenger ${status}: ${message}` };
+  } catch (e) {
+    return { ok: false, error: `تعذر الاتصال بـ Wassenger: ${(e as Error).message}` };
+  }
+}
+
+/** حالة الجهاز + رمز QR من Wassenger. */
+async function wassengerStatus(): Promise<LinkStatus | null> {
+  const cfg = wassengerConfig();
+  if (!cfg.ready) return null;
+  try {
+    const { status, data, raw } = await wassengerFetch(`/devices/${cfg.device}`);
+    if (status === 401 || status === 403) {
+      return {
+        configured: true,
+        connection: "closed",
+        qr: null,
+        me: null,
+        error: "مفتاح Wassenger غير صحيح — تأكد من قيمة WASSENGER_API_KEY.",
+      };
+    }
+    if (status === 404) {
+      return {
+        configured: true,
+        connection: "closed",
+        qr: null,
+        me: null,
+        error: "رقم الجهاز (WASSENGER_DEVICE_ID) غير صحيح — انسخه من لوحة Wassenger.",
+      };
+    }
+    if (status < 200 || status >= 300) {
+      return {
+        configured: true,
+        connection: "closed",
+        qr: null,
+        me: null,
+        error: `Wassenger ${status}: ${raw.slice(0, 160)}`,
+      };
+    }
+    const session = (data["session"] as { status?: string } | undefined) ?? {};
+    const phone = (data["phone"] as string | undefined) ?? null;
+    const state = (session.status ?? (data["status"] as string | undefined) ?? "").toLowerCase();
+    if (state === "operative" || state === "connected" || state === "open") {
+      return { configured: true, connection: "open", qr: null, me: phone, error: null };
+    }
+    // غير متصل → اجلب رمز QR
+    let qr: string | null = null;
+    try {
+      const qrRes = await fetch(`${WASSENGER_API}/devices/${cfg.device}/scan`, {
+        headers: { Token: cfg.key },
+      });
+      if (qrRes.ok) {
+        const ct = qrRes.headers.get("content-type") ?? "";
+        if (ct.includes("json")) {
+          const j = (await qrRes.json().catch(() => ({}))) as { qr?: string; base64?: string };
+          const b = j.qr ?? j.base64 ?? null;
+          qr = b ? (b.startsWith("data:") ? b : `data:image/png;base64,${b}`) : null;
+        } else {
+          const buf = Buffer.from(await qrRes.arrayBuffer());
+          qr = `data:${ct || "image/png"};base64,${buf.toString("base64")}`;
+        }
+      }
+    } catch {
+      qr = null;
+    }
+    return {
+      configured: true,
+      connection: qr ? "connecting" : "closed",
+      qr,
+      me: phone,
+      error: qr ? null : "الهاتف غير متصل — امسح رمز QR من لوحة Wassenger.",
+    };
+  } catch (e) {
+    return {
+      configured: true,
+      connection: "closed",
+      qr: null,
+      me: null,
+      error: `تعذر الوصول لـ Wassenger: ${(e as Error).message}`,
+    };
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* مزوّد واتساب السحابي (Evolution API) — ربط بالـQR بدون خادم خاص      */
 /* الأسرار: WHATSAPP_API_URL / WHATSAPP_API_KEY / WHATSAPP_INSTANCE     */
 /* ------------------------------------------------------------------ */
@@ -197,8 +327,10 @@ export async function twilioSend(input: {
   contentSid?: string;
   contentVariables?: Record<string, string>;
 }): Promise<TwilioResult> {
-  // الأولوية للجسر المجاني (الرقم المرتبط بالـQR)، وإن فشل نرجع لـTwilio.
+  // الأولوية لـWassenger (الرقم المرتبط بالـQR)، وإن لم يكن مُعدًا نجرّب البدائل ثم Twilio.
   if (!input.contentSid) {
+    const viaWassenger = await wassengerSend(input.to, input.body);
+    if (viaWassenger) return viaWassenger;
     const viaCloud = await cloudSend(input.to, input.body);
     if (viaCloud?.ok) return viaCloud;
     const viaBridge = await bridgeSend(input.to, input.body);
@@ -300,6 +432,8 @@ export const checkTwilioConfig = createServerFn({ method: "GET" })
 export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<LinkStatus> => {
+    const viaWassenger = await wassengerStatus();
+    if (viaWassenger) return viaWassenger;
     const viaCloud = await cloudStatus();
     if (viaCloud) return viaCloud;
     const { url, token } = normalizeBridgeConfig();
@@ -353,6 +487,21 @@ export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
 export const unlinkWhatsApp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<{ ok: boolean; error: string | null }> => {
+    const wass = wassengerConfig();
+    if (wass.ready) {
+      try {
+        const { status, raw } = await wassengerFetch(`/devices/${wass.device}/disconnect`, {
+          method: "POST",
+        });
+        if (status >= 200 && status < 300) return { ok: true, error: null };
+        return {
+          ok: false,
+          error: `Wassenger ${status}: ${raw.slice(0, 160) || "افصل الجهاز من لوحة Wassenger"}`,
+        };
+      } catch (e) {
+        return { ok: false, error: (e as Error).message };
+      }
+    }
     const cfg = cloudConfig();
     if (cfg.ready) {
       try {
