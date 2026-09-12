@@ -210,6 +210,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
 
         <AiDock />
+        <CommandPalette />
       </div>
     </div>
   );
