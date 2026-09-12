@@ -208,6 +208,19 @@ function RemindersPage() {
         ]}
       />
 
+      <ToneLegend
+        tones={["overdue", "today", "urgent", "progress", "done"]}
+        labels={{
+          overdue: "متأخر / فشل الإرسال",
+          today: "الإرسال اليوم",
+          urgent: "خلال يومين",
+          progress: "مجدول لاحقًا",
+          done: "تم الإرسال",
+        }}
+      />
+
+      <AutoTaskFollowups />
+
       <section className="surface-card overflow-hidden">
         <div className="flex items-center gap-2 border-b border-border px-5 py-4">
           <Send className="size-4 text-primary" />
