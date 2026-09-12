@@ -38,7 +38,8 @@ type Msg = {
   is_pinned: boolean;
   deleted_at: string | null;
   created_at: string;
-  sender: { full_name: string; job_title: string | null; avatar_url: string | null } | null;
+  channel: string;
+  sender: { full_name: string; job_title: string | null; avatar_url: string | null; org: string | null } | null;
 };
 
 const EMOJIS = ["👍", "🙏", "🔥", "✅", "❤️", "😀", "😅", "🎉", "📌", "📞", "🏠", "💰", "⏰", "📄"];
