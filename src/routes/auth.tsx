@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { resolveClientLogin } from "@/lib/portal.functions";
 
 export const Route = createFileRoute("/auth")({
@@ -28,11 +27,9 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [audience, setAudience] = useState<"staff" | "client">("staff");
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -92,7 +89,7 @@ function AuthPage() {
         </div>
 
         <h1 className="mt-5 text-center text-xl font-bold text-foreground">
-          {audience === "client" ? "دخول بوابة العميل" : mode === "signin" ? "تسجيل الدخول للوحة التحكم" : "إنشاء حساب موظف"}
+          {audience === "client" ? "دخول بوابة العميل" : "تسجيل الدخول للوحة التحكم"}
         </h1>
         <p className="mt-2 text-center text-[13px] text-muted-foreground">
           {audience === "client"
@@ -101,20 +98,7 @@ function AuthPage() {
         </p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
-          {audience === "staff" && mode === "signup" ? (
-            <div className="space-y-2">
-              <Label htmlFor="name">الاسم الكامل</Label>
-              <Input
-                id="name"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="مثال: محمد مثراء"
-              />
-            </div>
-          ) : null}
-
-          {audience === "client" ? (
+                    {audience === "client" ? (
             <div className="space-y-2">
               <Label htmlFor="username">اسم المستخدم</Label>
               <Input
@@ -156,7 +140,7 @@ function AuthPage() {
           </div>
 
           <Button type="submit" className="w-full" disabled={busy}>
-            {audience === "client" ? "دخول بوابتي" : mode === "signin" ? "دخول" : "إنشاء الحساب"}
+            {audience === "client" ? "دخول بوابتي" : "دخول"}
           </Button>
         </form>
 
