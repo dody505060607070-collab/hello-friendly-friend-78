@@ -195,7 +195,6 @@ async function callLovable(input: Item[]): Promise<string> {
         input: payloadInput,
         store: false,
         reasoning: { effort: "low" },
-        stream: true,
       }),
     });
     if (attempt.ok) {
