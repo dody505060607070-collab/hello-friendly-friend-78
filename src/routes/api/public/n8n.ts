@@ -36,6 +36,9 @@ export const Route = createFileRoute("/api/public/n8n")({
             headers: { "Content-Type": "application/json" },
           });
 
+        // نتيجة تذكيرات الدفعات عندما يُشغَّل الإجراء الدوري الموحّد.
+        let reminders: { checked: number; sent: number; failed: number } | null = null;
+
         try {
           if (action === "send_whatsapp") {
             const to = String(body["to"] ?? "");
