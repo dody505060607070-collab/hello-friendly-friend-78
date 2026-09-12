@@ -193,10 +193,11 @@ export const Route = createFileRoute("/api/public/n8n")({
               status: "sent",
             });
 
-            return json({ ok: true, checked: (rows ?? []).length, sent, failed });
+            reminders = { checked: (rows ?? []).length, sent, failed };
+            // ثم نُكمل مباشرة إلى متابعة المهام حتى يكفي نداء واحد كل ساعة.
           }
 
-          if (action === "task_followups") {
+          if (action === "task_followups" || action === "process_reminders") {
             // متابعة تلقائية للمهام غير المنجزة عبر واتساب حسب الأولوية:
             // عاجلة كل 12 ساعة، عالية كل 24 ساعة، عادية/منخفضة كل 3 أيام.
             const dryRun = body["dry_run"] === true;
