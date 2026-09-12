@@ -44,12 +44,28 @@ export function useTableRows<T>({
   });
 }
 
-export function EmptyState({ text, hint }: { text: string; hint?: string }) {
+export function EmptyState({
+  text,
+  hint,
+  action,
+  icon: Icon = Inbox,
+}: {
+  text: string;
+  hint?: string;
+  action?: ReactNode;
+  icon?: typeof Inbox;
+}) {
   return (
-    <div className="grid place-items-center gap-2 px-6 py-16 text-center">
-      <Inbox className="size-8 text-muted-foreground/60" />
-      <p className="text-[14px] font-semibold text-foreground">{text}</p>
-      {hint ? <p className="max-w-md text-[12.5px] text-muted-foreground">{hint}</p> : null}
+    <div className="grid place-items-center gap-3 px-6 py-16 text-center">
+      <span className="relative grid size-16 place-items-center rounded-full bg-muted">
+        <span className="absolute inset-0 animate-ping rounded-full bg-primary/5" aria-hidden />
+        <Icon className="relative size-7 text-primary/70" />
+      </span>
+      <p className="text-[15px] font-bold text-foreground">{text}</p>
+      {hint ? (
+        <p className="max-w-md text-[12.5px] leading-6 text-muted-foreground">{hint}</p>
+      ) : null}
+      {action ? <div className="mt-1">{action}</div> : null}
     </div>
   );
 }
