@@ -43,6 +43,13 @@
       "when": 1789223992527,
       "tag": "0005_backup_runs_insert_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789230369601,
+      "tag": "0006_enable_realtime_notifications",
+      "breakpoints": true
     }
   ]
 }
