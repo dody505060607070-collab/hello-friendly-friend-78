@@ -60,6 +60,37 @@ const emptyForm = {
 
 type FormState = typeof emptyForm;
 
+function looksLikeUrl(value: string) {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function extractMapCoords(value: string): { lat: string; lng: string } | null {
+  if (!looksLikeUrl(value)) return null;
+  const patterns = [
+    /!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/,
+    /\/@(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+    /[?&](?:q|query|destination|ll)=(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+    /\/maps\/(?:place|search|dir)\/[^/]*\/@?(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+    /\bdaddr=(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+  ];
+  for (const re of patterns) {
+    const m = value.match(re);
+    if (m && m[1] != null && m[2] != null) {
+      const lat = parseFloat(m[1]);
+      const lng = parseFloat(m[2]);
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+        return { lat: lat.toString(), lng: lng.toString() };
+      }
+    }
+  }
+  return null;
+}
+
 function SectionCard({
   title,
   subtitle,
@@ -476,17 +507,29 @@ function TaskFormPage() {
 
       <SectionCard
         title="موقع المهمة"
-        subtitle="حدد وصف الموقع والإحداثيات؛ تظهر خريطة مصغّرة للموظف مع إمكانية فتح الاتجاهات."
+        subtitle="ألصق رابط Google Maps مباشرة، أو اكتب الإحداثيات يدويًا؛ تظهر خريطة مصغّرة للموظف مع إمكانية فتح الاتجاهات."
         icon={MapPin}
       >
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="وصف الموقع" className="sm:col-span-3">
+          <Field label="رابط / موقع الموقع" className="sm:col-span-3">
             <input
               className={inputClass}
+              dir="ltr"
               value={form.location_text}
-              onChange={(e) => set({ location_text: e.target.value })}
-              placeholder="مثال: حي الملقا - شارع أنس بن مالك"
+              onChange={(e) => {
+                const value = e.target.value;
+                const coords = extractMapCoords(value);
+                if (coords) {
+                  set({ location_text: value, location_lat: coords.lat, location_lng: coords.lng });
+                } else {
+                  set({ location_text: value });
+                }
+              }}
+              placeholder="https://maps.google.com/... أو وصف الموقع"
             />
+            <p className="mt-1.5 text-[12px] text-muted-foreground">
+              يمكنك نسخ رابط Google Maps كاملاً وسيتم استخراج الإحداثيات تلقائيًا.
+            </p>
           </Field>
           <Field label="خط العرض (Lat)">
             <input
@@ -516,8 +559,17 @@ function TaskFormPage() {
               >
                 فتح في خرائط Google
               </a>
+            ) : looksLikeUrl(form.location_text) ? (
+              <a
+                className="inline-flex h-10 items-center rounded-lg border border-border px-3 text-[13px] font-semibold text-primary"
+                href={form.location_text}
+                target="_blank"
+                rel="noreferrer"
+              >
+                فتح الرابط المباشر
+              </a>
             ) : (
-              <p className="text-[12.5px] text-muted-foreground">أدخل الإحداثيات لعرض الخريطة.</p>
+              <p className="text-[12.5px] text-muted-foreground">أدخل رابط Google Maps أو الإحداثيات.</p>
             )}
           </Field>
         </div>
