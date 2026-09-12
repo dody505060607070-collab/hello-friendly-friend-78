@@ -190,7 +190,13 @@ async function callLovable(input: Item[]): Promise<string> {
         Authorization: `Bearer ${key}`,
         "Lovable-API-Key": key,
       },
-      body: JSON.stringify({ model, input: payloadInput, store: false }),
+      body: JSON.stringify({
+        model,
+        input: payloadInput,
+        store: false,
+        reasoning: { effort: "low" },
+        stream: true,
+      }),
     });
     if (attempt.ok) {
       res = attempt;
