@@ -7,6 +7,7 @@ import logoAsset from "@/assets/mithra-logo.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveClientLogin } from "@/lib/portal.functions";
 
@@ -42,9 +43,53 @@ function AuthPage() {
         .select("id")
         .eq("user_id", data.session.user.id)
         .maybeSingle();
-      navigate({ to: account.data ? "/portal" : "/dashboard" });
+      if (account.data) {
+        navigate({ to: "/portal" });
+        return;
+      }
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.session.user.id)
+        .limit(1);
+      if (!roles || roles.length === 0) {
+        await supabase.auth.signOut();
+        toast.error("هذا البريد غير مسجّل ضمن موظفي مثراء. تواصل مع المدير العام.");
+        return;
+      }
+      navigate({ to: "/dashboard" });
     })();
   }, [navigate]);
+
+  const googleSignIn = async () => {
+    setBusy(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin + "/auth",
+      });
+      if (result.error) throw new Error("تعذّر تسجيل الدخول عبر Google");
+      if (result.redirected) return;
+
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id;
+      if (!userId) throw new Error("تعذّر تسجيل الدخول عبر Google");
+
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .limit(1);
+      if (!roles || roles.length === 0) {
+        await supabase.auth.signOut();
+        throw new Error("هذا البريد غير مسجّل ضمن موظفي مثراء. تواصل مع المدير العام.");
+      }
+      navigate({ to: "/dashboard" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "تعذّر تسجيل الدخول عبر Google");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
