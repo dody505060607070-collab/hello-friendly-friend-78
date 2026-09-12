@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { BellRing, Loader2, MessageSquare, Send, StopCircle } from "lucide-react";
+import { BellRing, Loader2, MessageSquare, RefreshCw, Send, StopCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -9,8 +9,10 @@ import { DataTable } from "@/components/kit/DataTable";
 import { EmptyState, formatDate, useTableRows } from "@/components/kit/LiveTable";
 import { Field, PrimaryButton, inputClass, textareaClass } from "@/components/kit/Modal";
 import { PageHero } from "@/components/kit/PageHero";
+import { ToneLegend } from "@/components/kit/ToneLegend";
 import { supabase } from "@/integrations/supabase/client";
 import { followupStatusLabels } from "@/lib/labels";
+import { followupRowTone, messageLogRowTone, rowToneClass } from "@/lib/row-tone";
 import { whatsappLink } from "@/lib/site-data";
 
 type FollowupRow = {
@@ -62,6 +64,161 @@ const repeatOptions = [
   { key: "biweekly", label: "كل أسبوعين" },
   { key: "monthly", label: "كل شهر" },
 ];
+
+const moduleOptions = [
+  { key: "all", label: "كل المهام" },
+  { key: "contract", label: "العقود" },
+  { key: "finance", label: "المالية" },
+  { key: "operations", label: "التشغيل" },
+  { key: "marketing", label: "التسويق" },
+  { key: "general", label: "عام" },
+];
+
+type TaskRow = {
+  id: string;
+  title: string;
+  task_type: string | null;
+  due_date: string | null;
+  status: string;
+  task_assignees: { user_id: string; profiles: { full_name: string; whatsapp: string | null; phone: string | null } | null }[];
+};
+
+/** متابعة تلقائية: أي مهمة متأخرة ولم تُنجز يُفتح لها تذكير واتساب متكرر للموظف حتى ينهيها. */
+function AutoTaskFollowups() {
+  const queryClient = useQueryClient();
+  const [module, setModule] = useState("all");
+  const [repeat, setRepeat] = useState("daily");
+
+  const overdue = useQuery({
+    queryKey: ["auto-followup-tasks", module],
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      let q = supabase
+        .from("tasks")
+        .select(
+          "id, title, task_type, due_date, status, task_assignees(user_id, profiles:user_id(full_name, whatsapp, phone))",
+        )
+        .not("status", "in", "(done,approved,cancelled)")
+        .lt("due_date", today)
+        .order("due_date", { ascending: true })
+        .limit(100);
+      if (module !== "all") q = q.eq("task_type", module);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as unknown as TaskRow[];
+    },
+  });
+
+  const tasks = overdue.data ?? [];
+
+  const run = useMutation({
+    mutationFn: async () => {
+      if (tasks.length === 0) throw new Error("لا توجد مهام متأخرة في هذه الوحدة");
+      const { data: existing } = await supabase
+        .from("reminder_followups")
+        .select("recipient_phone, message_body")
+        .eq("status", "pending");
+      const seen = new Set((existing ?? []).map((r) => `${r.recipient_phone}|${r.message_body}`));
+
+      const rows: {
+        recipient_name: string;
+        recipient_phone: string;
+        message_body: string;
+        repeat_interval: string;
+        status: string;
+        next_send_at: string;
+      }[] = [];
+
+      for (const task of tasks) {
+        for (const a of task.task_assignees ?? []) {
+          const phone = a.profiles?.whatsapp ?? a.profiles?.phone ?? "";
+          if (!phone) continue;
+          const body = `تذكير تلقائي: لسه ما خلّصتش المهمة «${task.title}»${
+            task.due_date ? ` — موعد التسليم كان ${task.due_date}` : ""
+          }. برجاء إنهاؤها وتحديث حالتها في النظام.`;
+          const key = `${phone}|${body}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          rows.push({
+            recipient_name: a.profiles?.full_name ?? "موظف",
+            recipient_phone: phone,
+            message_body: body,
+            repeat_interval: repeat,
+            status: "pending",
+            next_send_at: new Date().toISOString(),
+          });
+        }
+      }
+
+      if (rows.length === 0) throw new Error("كل المهام المتأخرة لها تذكير تلقائي بالفعل");
+      const { error } = await supabase.from("reminder_followups").insert(rows);
+      if (error) throw error;
+      return rows.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["reminder_followups"] });
+      toast.success(`تم تفعيل ${count} تذكير تلقائي متكرر حتى إنهاء المهام`);
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التشغيل"),
+  });
+
+  const withoutPhone = tasks.filter((t) =>
+    (t.task_assignees ?? []).every((a) => !(a.profiles?.whatsapp ?? a.profiles?.phone)),
+  ).length;
+
+  return (
+    <section className="surface-card overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-border px-5 py-4">
+        <RefreshCw className="size-4 text-primary" />
+        <div>
+          <h2 className="text-[14px] font-bold text-foreground">متابعة تلقائية للمهام غير المنجزة</h2>
+          <p className="text-[12px] text-muted-foreground">
+            كل مهمة متأخرة ولم تُنجز يُفتح لها تذكير واتساب متكرر للموظف، ويتوقف تلقائيًا عند إنهاء المهمة.
+          </p>
+        </div>
+      </div>
+      <div className="grid gap-4 px-5 py-5 sm:grid-cols-2 lg:grid-cols-4">
+        <Field label="الوحدة (Module)">
+          <select className={inputClass} value={module} onChange={(e) => setModule(e.target.value)}>
+            {moduleOptions.map((m) => (
+              <option key={m.key} value={m.key}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="تكرار التذكير">
+          <select className={inputClass} value={repeat} onChange={(e) => setRepeat(e.target.value)}>
+            {repeatOptions
+              .filter((o) => o.key !== "once")
+              .map((o) => (
+                <option key={o.key} value={o.key}>
+                  {o.label}
+                </option>
+              ))}
+          </select>
+        </Field>
+        <div className="flex items-end">
+          <div className={`w-full rounded-xl px-4 py-3 ${rowToneClass.overdue}`}>
+            <div className="text-[18px] font-bold">{tasks.length}</div>
+            <div className="text-[12px]">مهمة متأخرة غير منجزة</div>
+          </div>
+        </div>
+        <div className="flex items-end">
+          <PrimaryButton onClick={() => run.mutate()} disabled={run.isPending || overdue.isLoading}>
+            {run.isPending ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+            تشغيل المتابعة التلقائية
+          </PrimaryButton>
+        </div>
+        {withoutPhone > 0 ? (
+          <p className="text-[12px] text-destructive sm:col-span-2 lg:col-span-4">
+            {withoutPhone} مهمة لا يوجد لمسؤولها رقم واتساب محفوظ — أضف الرقم في ملف الموظف ليصله التذكير.
+          </p>
+        ) : null}
+      </div>
+    </section>
+  );
+}
 
 function RemindersPage() {
   const queryClient = useQueryClient();
@@ -206,6 +363,19 @@ function RemindersPage() {
         ]}
       />
 
+      <ToneLegend
+        tones={["overdue", "today", "urgent", "progress", "done"]}
+        labels={{
+          overdue: "متأخر / فشل الإرسال",
+          today: "الإرسال اليوم",
+          urgent: "خلال يومين",
+          progress: "مجدول لاحقًا",
+          done: "تم الإرسال",
+        }}
+      />
+
+      <AutoTaskFollowups />
+
       <section className="surface-card overflow-hidden">
         <div className="flex items-center gap-2 border-b border-border px-5 py-4">
           <Send className="size-4 text-primary" />
@@ -313,6 +483,7 @@ function RemindersPage() {
         </div>
         <DataTable<FollowupRow>
           rows={rows}
+          rowClassName={(r) => rowToneClass[followupRowTone(r)]}
           draggableRows
           dragLabel="تذكير"
           searchPlaceholder="بحث بالمستلم أو رقم العقد"
@@ -396,6 +567,7 @@ function RemindersPage() {
         </div>
         <DataTable<LogRow>
           rows={log.data ?? []}
+          rowClassName={(r) => rowToneClass[messageLogRowTone(r)]}
           searchPlaceholder="بحث في سجل الرسائل"
           emptyState={
             <EmptyState

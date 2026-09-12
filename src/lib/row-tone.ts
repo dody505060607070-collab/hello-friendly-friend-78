@@ -116,3 +116,29 @@ export function reservationRowTone(row: { status?: string | null; ends_at?: stri
   if (row.status === "hold") return "progress";
   return "none";
 }
+
+/** التذكيرات/المتابعات: فشل أو تأخّر موعد الإرسال = أحمر، اليوم = برتقالي، تم = أخضر */
+export function followupRowTone(row: {
+  status?: string | null;
+  next_send_at?: string | null;
+}): RowTone {
+  if (row.status === "failed") return "overdue";
+  if (row.status === "done" || row.status === "sent") return "done";
+  if (row.status === "stopped") return "none";
+  if (row.next_send_at) {
+    const d = new Date(row.next_send_at);
+    d.setHours(0, 0, 0, 0);
+    const today = startOfToday();
+    if (d.getTime() < today.getTime()) return "overdue";
+    if (d.getTime() === today.getTime()) return "today";
+    if (d.getTime() - today.getTime() <= 2 * 86400000) return "urgent";
+  }
+  return "progress";
+}
+
+/** سجل التواصل: فشل = أحمر، تم الإرسال = أخضر، في الانتظار = برتقالي */
+export function messageLogRowTone(row: { result?: string | null }): RowTone {
+  if (row.result === "failed") return "overdue";
+  if (row.result === "sent" || row.result === "opened") return "done";
+  return "today";
+}
