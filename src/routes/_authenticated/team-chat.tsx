@@ -159,14 +159,18 @@ function TeamChatPage() {
       const { error } = await supabase.from("group_messages").insert({
         sender_id: userId!,
         body: text,
+        channel,
         reply_to: replyTo?.id ?? null,
       });
       if (error) throw error;
       const mentions = text.match(/@([\p{L}\d_]+)/gu) ?? [];
-      const { data: staff } = await supabase
+      const { data: allStaff } = await supabase
         .from("profiles")
-        .select("id, full_name")
+        .select("id, full_name, org")
         .eq("is_active", true);
+      const staff = (allStaff ?? []).filter(
+        (s) => channel === "shared" || (s as { org?: string }).org === channel,
+      );
       if (mentions.length) {
         const targets = (staff ?? []).filter(
           (s) => s.id !== userId && mentions.some((m) => s.full_name.includes(m.slice(1))),
