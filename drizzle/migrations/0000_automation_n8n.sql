@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS public.automation_config (
 GRANT SELECT ON public.automation_config TO authenticated;
 GRANT ALL ON public.automation_config TO service_role;
 ALTER TABLE public.automation_config ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "staff read automation config" ON public.automation_config;
 CREATE POLICY "staff read automation config" ON public.automation_config
   FOR SELECT TO authenticated USING (public.is_staff(auth.uid()));
 
@@ -29,5 +30,6 @@ CREATE INDEX IF NOT EXISTS automation_events_created_idx ON public.automation_ev
 GRANT SELECT ON public.automation_events TO authenticated;
 GRANT ALL ON public.automation_events TO service_role;
 ALTER TABLE public.automation_events ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "staff read automation events" ON public.automation_events;
 CREATE POLICY "staff read automation events" ON public.automation_events
   FOR SELECT TO authenticated USING (public.is_staff(auth.uid()));
