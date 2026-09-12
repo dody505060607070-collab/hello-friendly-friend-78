@@ -216,7 +216,7 @@ function PaymentReminderPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-reminder-log", paymentId] });
       queryClient.invalidateQueries({ queryKey: ["reminder_followups"] });
-      toast.success("تم إرسال التذكير عبر واتساب مباشرة وتسجيله في سجل الرسائل");
+      toast.success("تم فتح واتساب برسالة التذكير جاهزة — اضغط إرسال داخل واتساب");
     },
     onError: (e: Error) => toast.error(e.message),
   });
