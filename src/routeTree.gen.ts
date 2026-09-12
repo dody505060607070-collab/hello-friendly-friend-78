@@ -42,6 +42,7 @@ import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authen
 import { Route as AuthenticatedOwnerFormRouteImport } from './routes/_authenticated/owner-form'
 import { Route as AuthenticatedPartnersRouteImport } from './routes/_authenticated/partners'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
+import { Route as AuthenticatedPropertiesImportRouteImport } from './routes/_authenticated/properties-import'
 import { Route as AuthenticatedPropertyFormRouteImport } from './routes/_authenticated/property-form'
 import { Route as AuthenticatedRemindersRouteImport } from './routes/_authenticated/reminders'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
@@ -242,6 +243,12 @@ const AuthenticatedPropertiesRoute = AuthenticatedPropertiesRouteImport.update({
   path: '/properties',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPropertiesImportRoute =
+  AuthenticatedPropertiesImportRouteImport.update({
+    id: '/properties-import',
+    path: '/properties-import',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPropertyFormRoute =
   AuthenticatedPropertyFormRouteImport.update({
     id: '/property-form',
@@ -432,6 +439,7 @@ export interface FileRoutesByFullPath {
   '/owner-form': typeof AuthenticatedOwnerFormRoute
   '/partners': typeof AuthenticatedPartnersRoute
   '/properties': typeof AuthenticatedPropertiesRoute
+  '/properties-import': typeof AuthenticatedPropertiesImportRoute
   '/property-form': typeof AuthenticatedPropertyFormRoute
   '/reminders': typeof AuthenticatedRemindersRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -494,6 +502,7 @@ export interface FileRoutesByTo {
   '/owner-form': typeof AuthenticatedOwnerFormRoute
   '/partners': typeof AuthenticatedPartnersRoute
   '/properties': typeof AuthenticatedPropertiesRoute
+  '/properties-import': typeof AuthenticatedPropertiesImportRoute
   '/property-form': typeof AuthenticatedPropertyFormRoute
   '/reminders': typeof AuthenticatedRemindersRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -559,6 +568,7 @@ export interface FileRoutesById {
   '/_authenticated/owner-form': typeof AuthenticatedOwnerFormRoute
   '/_authenticated/partners': typeof AuthenticatedPartnersRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
+  '/_authenticated/properties-import': typeof AuthenticatedPropertiesImportRoute
   '/_authenticated/property-form': typeof AuthenticatedPropertyFormRoute
   '/_authenticated/reminders': typeof AuthenticatedRemindersRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
@@ -624,6 +634,7 @@ export interface FileRouteTypes {
     | '/owner-form'
     | '/partners'
     | '/properties'
+    | '/properties-import'
     | '/property-form'
     | '/reminders'
     | '/reports'
@@ -686,6 +697,7 @@ export interface FileRouteTypes {
     | '/owner-form'
     | '/partners'
     | '/properties'
+    | '/properties-import'
     | '/property-form'
     | '/reminders'
     | '/reports'
@@ -750,6 +762,7 @@ export interface FileRouteTypes {
     | '/_authenticated/owner-form'
     | '/_authenticated/partners'
     | '/_authenticated/properties'
+    | '/_authenticated/properties-import'
     | '/_authenticated/property-form'
     | '/_authenticated/reminders'
     | '/_authenticated/reports'
@@ -1036,6 +1049,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPropertiesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/properties-import': {
+      id: '/_authenticated/properties-import'
+      path: '/properties-import'
+      fullPath: '/properties-import'
+      preLoaderRoute: typeof AuthenticatedPropertiesImportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/property-form': {
       id: '/_authenticated/property-form'
       path: '/property-form'
@@ -1261,6 +1281,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOwnerFormRoute: typeof AuthenticatedOwnerFormRoute
   AuthenticatedPartnersRoute: typeof AuthenticatedPartnersRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
+  AuthenticatedPropertiesImportRoute: typeof AuthenticatedPropertiesImportRoute
   AuthenticatedPropertyFormRoute: typeof AuthenticatedPropertyFormRoute
   AuthenticatedRemindersRoute: typeof AuthenticatedRemindersRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
@@ -1302,6 +1323,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOwnerFormRoute: AuthenticatedOwnerFormRoute,
   AuthenticatedPartnersRoute: AuthenticatedPartnersRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
+  AuthenticatedPropertiesImportRoute: AuthenticatedPropertiesImportRoute,
   AuthenticatedPropertyFormRoute: AuthenticatedPropertyFormRoute,
   AuthenticatedRemindersRoute: AuthenticatedRemindersRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
