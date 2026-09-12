@@ -43,9 +43,24 @@ type Msg = {
 
 const EMOJIS = ["👍", "🙏", "🔥", "✅", "❤️", "😀", "😅", "🎉", "📌", "📞", "🏠", "💰", "⏰", "📄"];
 
+const ORGS = [
+  { key: "mithraa", label: "مثراء" },
+  { key: "rashoudi", label: "الرشودي" },
+] as const;
+
+const CHANNELS = [
+  { key: "mithraa", label: "قناة مثراء" },
+  { key: "rashoudi", label: "قناة الرشودي" },
+  { key: "shared", label: "القناة المشتركة" },
+] as const;
+
+const orgLabel = (org: string | null | undefined) =>
+  ORGS.find((o) => o.key === org)?.label ?? "مثراء";
+
 function TeamChatPage() {
   const qc = useQueryClient();
   const { userId, isSuperAdmin } = useCurrentUser();
+  const [channel, setChannel] = useState<string>("shared");
   const [body, setBody] = useState("");
   const [search, setSearch] = useState("");
   const [replyTo, setReplyTo] = useState<Msg | null>(null);
