@@ -36,6 +36,13 @@
       "when": 1789223461561,
       "tag": "0004_features_20_ideas",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789223992527,
+      "tag": "0005_backup_runs_insert_policy",
+      "breakpoints": true
     }
   ]
 }
