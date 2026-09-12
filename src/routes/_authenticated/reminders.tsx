@@ -122,6 +122,11 @@ function RemindersPage() {
       if (!phone) throw new Error("لا يوجد رقم جوال محفوظ لهذا المستلم");
       if (!body.trim()) throw new Error("نص الرسالة مطلوب");
 
+      // إرسال فوري عبر Wassenger (الرقم المرتبط بالـQR)
+      const { sendWhatsAppMessage } = await import("@/lib/whatsapp.functions");
+      const result = await sendWhatsAppMessage({ data: { to: phone, body: body.trim() } });
+      if (!result.ok) throw new Error(result.error);
+
       const next = new Date();
       if (repeat === "daily") next.setDate(next.getDate() + 1);
       if (repeat === "weekly") next.setDate(next.getDate() + 7);
