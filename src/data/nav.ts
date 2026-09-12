@@ -91,6 +91,7 @@ export const navGroups: NavGroup[] = [
       { label: "الشركاء", to: "/partners", module: "settings" },
       { label: "الخدمات", to: "/services", module: "settings" },
       { label: "ربط واتساب", to: "/whatsapp-link", module: "settings" },
+      { label: "ربط n8n", to: "/automation", module: "settings" },
     ],
   },
   {
