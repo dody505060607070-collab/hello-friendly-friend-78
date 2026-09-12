@@ -293,18 +293,23 @@ function TeamChatPage() {
 
         <div className="flex items-center gap-2 overflow-x-auto border-b border-border px-4 py-2">
           <Users className="size-4 shrink-0 text-primary" />
-          {(staff.data ?? []).map((p) => (
-            <span
-              key={p.id}
-              className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/50 px-2 py-1 text-[11.5px] text-muted-foreground"
-              title={p.job_title ?? ""}
-            >
-              <span className="grid size-5 place-items-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
-                {p.full_name.slice(0, 1)}
+          {(staff.data ?? [])
+            .filter((p) => channel === "shared" || (p as { org?: string }).org === channel)
+            .map((p) => (
+              <span
+                key={p.id}
+                className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/50 px-2 py-1 text-[11.5px] text-muted-foreground"
+                title={p.job_title ?? ""}
+              >
+                <span className="grid size-5 place-items-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
+                  {p.full_name.slice(0, 1)}
+                </span>
+                {p.full_name}
+                <span className="rounded-full bg-primary/10 px-1.5 text-[10px] text-primary">
+                  {orgLabel((p as { org?: string }).org)}
+                </span>
               </span>
-              {p.full_name}
-            </span>
-          ))}
+            ))}
         </div>
 
         {pinned.length ? (
