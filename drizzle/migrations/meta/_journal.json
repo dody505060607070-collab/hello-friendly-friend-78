@@ -15,6 +15,13 @@
       "when": 1789148491605,
       "tag": "0001_automation_shared_token",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789171758657,
+      "tag": "0002_listing_uploads_policies_and_staff_booking",
+      "breakpoints": true
     }
   ]
 }
