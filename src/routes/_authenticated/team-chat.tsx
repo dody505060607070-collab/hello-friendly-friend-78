@@ -260,6 +260,24 @@ function TeamChatPage() {
       />
 
       <div className="surface-card overflow-hidden">
+        <div className="flex flex-wrap gap-1 border-b border-border bg-muted/40 px-3 py-2">
+          {visibleChannels.map((c) => (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => setChannel(c.key)}
+              className={cn(
+                "rounded-lg px-3 py-2 text-[12.5px] font-semibold transition-colors",
+                channel === c.key
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-card",
+              )}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+
         <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-accent/40 px-4 py-3">
           <div className="relative min-w-0">
             <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
