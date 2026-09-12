@@ -30,6 +30,7 @@ import { Route as AuthenticatedActivityLogRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
 import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
 import { Route as AuthenticatedAutomationRouteImport } from './routes/_authenticated/automation'
+import { Route as AuthenticatedBackupsRouteImport } from './routes/_authenticated/backups'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedCollectionsRouteImport } from './routes/_authenticated/collections'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
@@ -177,6 +178,11 @@ const AuthenticatedAlertsRoute = AuthenticatedAlertsRouteImport.update({
 const AuthenticatedAutomationRoute = AuthenticatedAutomationRouteImport.update({
   id: '/automation',
   path: '/automation',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBackupsRoute = AuthenticatedBackupsRouteImport.update({
+  id: '/backups',
+  path: '/backups',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
@@ -433,6 +439,7 @@ export interface FileRoutesByFullPath {
   '/ai': typeof AuthenticatedAiRoute
   '/alerts': typeof AuthenticatedAlertsRoute
   '/automation': typeof AuthenticatedAutomationRoute
+  '/backups': typeof AuthenticatedBackupsRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/collections': typeof AuthenticatedCollectionsRoute
   '/crm': typeof AuthenticatedCrmRoute
@@ -497,6 +504,7 @@ export interface FileRoutesByTo {
   '/ai': typeof AuthenticatedAiRoute
   '/alerts': typeof AuthenticatedAlertsRoute
   '/automation': typeof AuthenticatedAutomationRoute
+  '/backups': typeof AuthenticatedBackupsRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/collections': typeof AuthenticatedCollectionsRoute
   '/crm': typeof AuthenticatedCrmRoute
@@ -564,6 +572,7 @@ export interface FileRoutesById {
   '/_authenticated/ai': typeof AuthenticatedAiRoute
   '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
   '/_authenticated/automation': typeof AuthenticatedAutomationRoute
+  '/_authenticated/backups': typeof AuthenticatedBackupsRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/collections': typeof AuthenticatedCollectionsRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
@@ -631,6 +640,7 @@ export interface FileRouteTypes {
     | '/ai'
     | '/alerts'
     | '/automation'
+    | '/backups'
     | '/clients'
     | '/collections'
     | '/crm'
@@ -695,6 +705,7 @@ export interface FileRouteTypes {
     | '/ai'
     | '/alerts'
     | '/automation'
+    | '/backups'
     | '/clients'
     | '/collections'
     | '/crm'
@@ -761,6 +772,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai'
     | '/_authenticated/alerts'
     | '/_authenticated/automation'
+    | '/_authenticated/backups'
     | '/_authenticated/clients'
     | '/_authenticated/collections'
     | '/_authenticated/crm'
@@ -976,6 +988,13 @@ declare module '@tanstack/react-router' {
       path: '/automation'
       fullPath: '/automation'
       preLoaderRoute: typeof AuthenticatedAutomationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/backups': {
+      id: '/_authenticated/backups'
+      path: '/backups'
+      fullPath: '/backups'
+      preLoaderRoute: typeof AuthenticatedBackupsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/clients': {
@@ -1288,6 +1307,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
   AuthenticatedAlertsRoute: typeof AuthenticatedAlertsRoute
   AuthenticatedAutomationRoute: typeof AuthenticatedAutomationRoute
+  AuthenticatedBackupsRoute: typeof AuthenticatedBackupsRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedCollectionsRoute: typeof AuthenticatedCollectionsRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
@@ -1330,6 +1350,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiRoute: AuthenticatedAiRoute,
   AuthenticatedAlertsRoute: AuthenticatedAlertsRoute,
   AuthenticatedAutomationRoute: AuthenticatedAutomationRoute,
+  AuthenticatedBackupsRoute: AuthenticatedBackupsRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedCollectionsRoute: AuthenticatedCollectionsRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,

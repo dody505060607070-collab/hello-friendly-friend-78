@@ -105,6 +105,7 @@ export const navGroups: NavGroup[] = [
       { label: "الأدوار والصلاحيات", to: "/roles", module: "employees" },
       { label: "سجل الأنشطة", to: "/activity-log", module: "logs" },
       { label: "سجل الأخطاء", to: "/error-log", module: "logs" },
+      { label: "النسخ الاحتياطي", to: "/backups", module: "logs" },
     ],
   },
 ];
