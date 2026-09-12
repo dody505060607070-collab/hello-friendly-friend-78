@@ -314,6 +314,7 @@ export const Route = createFileRoute("/api/public/n8n")({
               failed,
               skipped,
               ...(dryRun ? { would_send: due } : {}),
+              ...(reminders ? { reminders } : {}),
             });
           }
 
