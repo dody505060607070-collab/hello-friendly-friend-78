@@ -336,6 +336,7 @@ function TeamChatPage() {
                 >
                   <p className="mb-1 text-[11px] opacity-75">
                     {m.sender?.full_name ?? "—"}
+                    {` • ${orgLabel(m.sender?.org)}`}
                     {m.sender?.job_title ? ` • ${m.sender.job_title}` : ""}
                   </p>
                   {parent ? (
