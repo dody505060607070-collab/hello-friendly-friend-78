@@ -70,13 +70,34 @@ function TeamChatPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
 
+  const myProfile = useQuery({
+    queryKey: ["my-profile-org", userId],
+    enabled: Boolean(userId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, org")
+        .eq("id", userId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const myOrg = (myProfile.data as { org?: string } | null)?.org ?? "mithraa";
+  const visibleChannels = useMemo(
+    () => (isSuperAdmin ? CHANNELS : CHANNELS.filter((c) => c.key === "shared" || c.key === myOrg)),
+    [isSuperAdmin, myOrg],
+  );
+
   const messages = useQuery({
-    queryKey: ["group-messages"],
+    queryKey: ["group-messages", channel],
     refetchInterval: 4000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("group_messages")
-        .select("id, sender_id, body, reply_to, is_pinned, deleted_at, created_at, attachment_path, attachment_name, edited_at, sender:sender_id(full_name, job_title, avatar_url)")
+        .select("id, sender_id, channel, body, reply_to, is_pinned, deleted_at, created_at, attachment_path, attachment_name, edited_at, sender:sender_id(full_name, job_title, avatar_url, org)")
+        .eq("channel", channel)
         .order("created_at")
         .limit(500);
       if (error) throw error;
@@ -89,7 +110,7 @@ function TeamChatPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, job_title, avatar_url")
+        .select("id, full_name, job_title, avatar_url, org")
         .eq("is_active", true)
         .order("full_name");
       if (error) throw error;
@@ -99,14 +120,14 @@ function TeamChatPage() {
 
   // بث لحظي لرسائل المجموعة
   useEffect(() => {
-    const channel = supabase
+    const live = supabase
       .channel("group-messages-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "group_messages" }, () => {
         qc.invalidateQueries({ queryKey: ["group-messages"] });
       })
       .subscribe();
     return () => {
-      void supabase.removeChannel(channel);
+      void supabase.removeChannel(live);
     };
   }, [qc]);
 
