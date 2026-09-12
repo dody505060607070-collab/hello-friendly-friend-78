@@ -160,9 +160,14 @@ function PaymentReminderPage() {
       if (!phone) throw new Error("لا يوجد رقم جوال محفوظ للمستأجر");
       const option = repeatOptions.find((o) => o.key === repeat) ?? { key: "once", label: "مرة واحدة", hours: 0 };
 
-      // إرسال مباشر عبر Twilio من الرقم الموحّد
-      const result = await sendWhatsAppMessage({ data: { to: phone, body: message } });
-      if (!result.ok) throw new Error(result.error);
+      // فتح واتساب مباشرة على محادثة العميل مع الرسالة جاهزة
+      const waNumber = toE164(phone).replace(/[^\d]/g, "");
+      window.open(
+        `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
+
 
       const { error: logError } = await supabase.from("message_log").insert({
         recipient_name: tenant?.full_name ?? null,
