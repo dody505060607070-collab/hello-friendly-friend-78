@@ -17,7 +17,12 @@ export function toE164(raw: string): string {
   if (digits.startsWith("966")) return `+${digits}`;
   if (digits.startsWith("05")) return `+966${digits.slice(1)}`;
   if (digits.startsWith("5") && digits.length === 9) return `+966${digits}`;
-  return digits.startsWith("00") ? `+${digits.slice(2)}` : `+${digits}`;
+  if (digits.startsWith("00")) return `+${digits.slice(2)}`;
+  // رقم محلي سعودي يبدأ بصفر (مثل 0512345678) → نضيف مفتاح السعودية
+  if (digits.startsWith("0")) return `+966${digits.replace(/^0+/, "")}`;
+  // رقم من 9 خانات بدون مفتاح دولة يُعتبر سعوديًا
+  if (digits.length === 9) return `+966${digits}`;
+  return `+${digits}`;
 }
 
 type TwilioResult =

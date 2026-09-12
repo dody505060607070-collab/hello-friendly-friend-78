@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Field, inputClass, textareaClass } from "@/components/kit/Modal";
+import { notifyTaskAssignment } from "@/lib/tasks.functions";
 import { PageHero } from "@/components/kit/PageHero";
 import { supabase } from "@/integrations/supabase/client";
 import { priorityLabels, taskStatusLabels } from "@/lib/labels";
@@ -238,13 +239,27 @@ function TaskFormPage() {
           .in("user_id", toRemove);
         if (error) throw error;
       }
-      return taskId;
+      let notify: { sent: number; failed: number; skipped: number } | null = null;
+      if (toAdd.length && taskId) {
+        try {
+          const res = await notifyTaskAssignment({ data: { taskId, userIds: toAdd } });
+          notify = { sent: res.sent, failed: res.failed, skipped: res.skipped };
+        } catch {
+          notify = { sent: 0, failed: toAdd.length, skipped: 0 };
+        }
+      }
+      return { taskId, notify };
     },
-    onSuccess: (newId) => {
+    onSuccess: ({ taskId: newId, notify }) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
       queryClient.invalidateQueries({ queryKey: ["task-assignees", newId] });
       toast.success(id ? "تم تحديث المهمة" : "تم إنشاء المهمة وتكليف الفريق");
+      if (notify) {
+        if (notify.sent) toast.success(`تم إرسال المهمة على واتساب (${notify.sent})`);
+        if (notify.failed) toast.error(`تعذّر إرسال واتساب لـ ${notify.failed} موظف`);
+        if (notify.skipped) toast.warning(`${notify.skipped} موظف بدون رقم واتساب أو الإشعارات مقفولة`);
+      }
       if (!id && newId) navigate({ to: "/task-form", search: { id: newId } });
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
