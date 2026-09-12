@@ -33,8 +33,6 @@ export const Route = createFileRoute("/_authenticated/reservations")({
   component: ReservationsPage,
 });
 
-const inputClass =
-  "h-10 w-full rounded-lg border border-input bg-background px-3 text-right text-[13px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/15";
 
 function NewReservationForm() {
   const navigate = useNavigate();
