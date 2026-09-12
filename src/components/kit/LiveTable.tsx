@@ -95,6 +95,7 @@ export function LiveTable<T>({
       {...(searchPlaceholder ? { searchPlaceholder } : {})}
       {...(selectable !== undefined ? { selectable } : {})}
       {...(showColumnsButton !== undefined ? { showColumnsButton } : {})}
+      {...(rowClassName ? { rowClassName } : {})}
       toolbarExtra={toolbarExtra}
       emptyState={<EmptyState text={emptyText} hint={emptyHint} />}
     />
