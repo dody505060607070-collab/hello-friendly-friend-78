@@ -176,7 +176,7 @@ function PaymentReminderPage() {
         payment_id: p.id,
         body: message,
         channel: "whatsapp",
-        result: result.sid ? `sent:${result.sid}` : "sent",
+        result: "opened",
         sent_by_system: false,
       });
       if (logError) throw logError;
