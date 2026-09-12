@@ -567,6 +567,7 @@ function RemindersPage() {
         </div>
         <DataTable<LogRow>
           rows={log.data ?? []}
+          rowClassName={(r) => rowToneClass[messageLogRowTone(r)]}
           searchPlaceholder="بحث في سجل الرسائل"
           emptyState={
             <EmptyState
