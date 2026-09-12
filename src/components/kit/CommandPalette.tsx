@@ -75,7 +75,7 @@ export function CommandPalette() {
         list.push({
           id: `p-${p.id}`,
           label: p.name,
-          hint: p.code ?? undefined,
+          ...(p.code ? { hint: p.code } : {}),
           to: "/properties",
           group: "العقارات",
           icon: Building2,
@@ -84,7 +84,7 @@ export function CommandPalette() {
         list.push({
           id: `c-${c.id}`,
           label: c.full_name,
-          hint: c.phone ?? undefined,
+          ...(c.phone ? { hint: c.phone } : {}),
           to: "/clients",
           group: "العملاء",
           icon: Users,
