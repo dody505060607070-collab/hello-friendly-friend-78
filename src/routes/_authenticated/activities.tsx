@@ -194,11 +194,9 @@ function ActivitiesPage() {
             </button>
           ))}
         </div>
-        {isSuperAdmin ? (
-          <PrimaryButton onClick={() => setOpen(true)}>
-            <Plus className="size-4" /> تسجيل نشاط
-          </PrimaryButton>
-        ) : null}
+        <PrimaryButton onClick={() => setOpen(true)}>
+          <Plus className="size-4" /> تسجيل نشاط
+        </PrimaryButton>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[380px_minmax(0,1fr)]">
@@ -238,7 +236,7 @@ function ActivitiesPage() {
           {active ? (
             <ActivityPanel
               activity={active}
-              canClose={isSuperAdmin}
+              canClose={isSuperAdmin || active.employee_id === userId || active.created_by === userId}
               onClose={(outcome) => close.mutate({ id: active.id, outcome })}
               closing={close.isPending}
             />
