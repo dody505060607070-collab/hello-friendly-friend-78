@@ -80,7 +80,7 @@ function extractMapCoords(value: string): { lat: string; lng: string } | null {
   ];
   for (const re of patterns) {
     const m = value.match(re);
-    if (m) {
+    if (m && m[1] != null && m[2] != null) {
       const lat = parseFloat(m[1]);
       const lng = parseFloat(m[2]);
       if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
