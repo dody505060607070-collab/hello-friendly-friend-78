@@ -245,12 +245,50 @@ type LinkStatus = {
   error: string | null;
 };
 
+/** إنشاء الاتصال لدى المزوّد إن لم يكن موجودًا، ثم طلب QR. */
+async function cloudEnsureInstance(instance: string): Promise<void> {
+  const created = await cloudJson(`/instance/create`, {
+    method: "POST",
+    body: {
+      instanceName: instance,
+      qrcode: true,
+      integration: "WHATSAPP-BAILEYS",
+      rejectCall: false,
+      groupsIgnore: true,
+      alwaysOnline: false,
+      readMessages: false,
+      syncFullHistory: false,
+    },
+  });
+  if (created.status === 401 || created.status === 403) {
+    throw new Error("AUTH");
+  }
+  // 201/200 = أُنشئ؛ 409/400 "already in use" = موجود مسبقًا — كلاهما مقبول
+}
+
 /** حالة الربط + رمز QR من المزوّد السحابي. */
 async function cloudStatus(): Promise<LinkStatus | null> {
   const cfg = cloudConfig();
   if (!cfg.ready) return null;
   try {
     const state = await cloudJson(`/instance/connectionState/${cfg.instance}`);
+    if (state.status === 404) {
+      // لا يوجد اتصال بهذا الاسم → أنشئه تلقائيًا ثم تابع
+      try {
+        await cloudEnsureInstance(cfg.instance);
+      } catch (e) {
+        if ((e as Error).message === "AUTH") {
+          return {
+            configured: true,
+            connection: "closed",
+            qr: null,
+            me: null,
+            error: "مفتاح خدمة واتساب غير صحيح — تأكد من قيمة WHATSAPP_API_KEY.",
+          };
+        }
+        throw e;
+      }
+    }
     const inst = (state.data["instance"] as { state?: string; owner?: string } | undefined) ?? {};
     const raw = inst.state ?? (state.data["state"] as string | undefined) ?? "";
     if (raw === "open") {
