@@ -40,6 +40,14 @@ export function FloatingActions() {
 
   return (
     <div className="fixed bottom-20 end-4 z-40 flex flex-col items-center gap-2 sm:bottom-28 sm:end-5 sm:gap-3">
+      <Link
+        to="/list-property"
+        aria-label={t("اعرض عقارك")}
+        className="group inline-flex items-center gap-2 rounded-full bg-gold px-3 py-2.5 text-[12.5px] font-bold text-gold-foreground shadow-float transition-transform hover:-translate-y-0.5 sm:px-4 sm:text-[13.5px]"
+      >
+        <Building2 className="size-4 sm:size-5" />
+        <span className="hidden sm:inline">{t("اعرض عقارك")}</span>
+      </Link>
       {show ? (
         <button
           type="button"
