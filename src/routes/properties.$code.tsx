@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { FavoriteButton } from "@/components/site/FavoriteButton";
 import { PropertyCard } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { StaffReserveBox } from "@/components/site/StaffReserveBox";
 import { SOCIAL_PLATFORMS, SocialGlyph } from "@/components/site/SocialIcons";
 import { supabase } from "@/integrations/supabase/client";
 import { recordView } from "@/lib/favorites";
