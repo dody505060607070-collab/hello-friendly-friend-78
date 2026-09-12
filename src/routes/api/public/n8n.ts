@@ -193,6 +193,126 @@ export const Route = createFileRoute("/api/public/n8n")({
             return json({ ok: true, checked: (rows ?? []).length, sent, failed });
           }
 
+          if (action === "task_followups") {
+            // متابعة تلقائية للمهام غير المنجزة عبر واتساب حسب الأولوية:
+            // عاجلة كل 12 ساعة، عالية كل 24 ساعة، عادية/منخفضة كل 3 أيام.
+            const dryRun = body["dry_run"] === true;
+            const { data: tasks, error: tErr } = await supabaseAdmin
+              .from("tasks")
+              .select("id, title, priority, status, due_date, due_time")
+              .in("status", ["new", "in_progress", "rejected"])
+              .limit(300);
+            if (tErr) throw new Error(tErr.message);
+
+            const taskIds = (tasks ?? []).map((t) => t.id);
+            const { data: assignees } = taskIds.length
+              ? await supabaseAdmin
+                  .from("task_assignees")
+                  .select("task_id, user_id")
+                  .in("task_id", taskIds)
+              : { data: [] };
+
+            const userIds = Array.from(new Set((assignees ?? []).map((a) => a.user_id)));
+            const { data: people } = userIds.length
+              ? await supabaseAdmin
+                  .from("profiles")
+                  .select("id, full_name, phone, whatsapp, whatsapp_notify, is_active")
+                  .in("id", userIds)
+              : { data: [] };
+            const personById = new Map((people ?? []).map((p) => [p.id, p]));
+
+            const { data: pastLogs } = await supabaseAdmin
+              .from("message_log")
+              .select("idempotency_key, created_at, result")
+              .like("idempotency_key", "task-fu:%")
+              .order("created_at", { ascending: false })
+              .limit(1000);
+            const lastSentAt = new Map<string, number>();
+            for (const log of pastLogs ?? []) {
+              const key = (log.idempotency_key ?? "").split("#")[0];
+              if (!key || lastSentAt.has(key)) continue;
+              lastSentAt.set(key, Date.parse(log.created_at));
+            }
+
+            const hourMs = 3600000;
+            const intervalFor = (priority: string | null) =>
+              priority === "urgent" ? 12 * hourMs : priority === "high" ? 24 * hourMs : 72 * hourMs;
+            const taskById = new Map((tasks ?? []).map((t) => [t.id, t]));
+            const now = Date.now();
+            const { twilioSend } = await import("@/lib/whatsapp.functions");
+
+            let sent = 0;
+            let failed = 0;
+            let skipped = 0;
+            const due: { task: string; to: string }[] = [];
+
+            for (const link of assignees ?? []) {
+              const task = taskById.get(link.task_id);
+              const person = personById.get(link.user_id);
+              if (!task || !person || person.is_active === false) {
+                skipped++;
+                continue;
+              }
+              const phone = person.whatsapp || person.phone;
+              if (!phone || person.whatsapp_notify === false) {
+                skipped++;
+                continue;
+              }
+              const key = `task-fu:${task.id}:${person.id}`;
+              const last = lastSentAt.get(key);
+              if (last && now - last < intervalFor(task.priority)) {
+                skipped++;
+                continue;
+              }
+
+              const priorityLabel =
+                task.priority === "urgent"
+                  ? "عاجلة"
+                  : task.priority === "high"
+                    ? "عالية"
+                    : task.priority === "low"
+                      ? "منخفضة"
+                      : "متوسطة";
+              const dueText = task.due_date
+                ? ` — موعد التسليم: ${task.due_date}${task.due_time ? ` ${String(task.due_time).slice(0, 5)}` : ""}`
+                : "";
+              const text = `تذكير بمهمة (${priorityLabel}): ${task.title}${dueText}\nالمهمة ما زالت غير منجزة، برجاء المتابعة وتحديث حالتها في النظام.`;
+
+              due.push({ task: task.title, to: phone });
+              if (dryRun) continue;
+
+              const result = await twilioSend({ to: phone, body: text });
+              await supabaseAdmin.from("message_log").insert({
+                recipient_name: person.full_name,
+                recipient_phone: phone,
+                body: text,
+                channel: "whatsapp",
+                result: result.ok ? "sent" : "failed",
+                failure_reason: result.ok ? null : result.error,
+                sent_by_system: true,
+                idempotency_key: `${key}#${now}`,
+              });
+              if (result.ok) sent++;
+              else failed++;
+            }
+
+            await supabaseAdmin.from("automation_events").insert({
+              event: "tasks.followups_processed",
+              direction: "in",
+              payload: { open_tasks: (tasks ?? []).length, sent, failed, skipped, dry_run: dryRun } as never,
+              status: "sent",
+            });
+
+            return json({
+              ok: true,
+              open_tasks: (tasks ?? []).length,
+              sent,
+              failed,
+              skipped,
+              ...(dryRun ? { would_send: due } : {}),
+            });
+          }
+
           if (action === "log") {
             await supabaseAdmin.from("automation_events").insert({
               event: String(body["event"] ?? "n8n.log"),
