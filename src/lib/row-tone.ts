@@ -67,3 +67,52 @@ export function dueRowTone(row: {
   }
   return "none";
 }
+
+const daysUntil = (date: string) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - startOfToday().getTime()) / 86400000);
+};
+
+/** العقود: منتهٍ = أحمر، يقارب الانتهاء (≤30 يوم) = برتقالي، ساري = أخضر خفيف */
+export function contractRowTone(row: { status?: string | null; end_date?: string | null }): RowTone {
+  if (row.status === "expired" || row.status === "terminated") return "overdue";
+  if (row.end_date) {
+    const left = daysUntil(row.end_date);
+    if (left < 0) return "overdue";
+    if (left === 0) return "today";
+    if (left <= 30) return "urgent";
+  }
+  if (row.status === "active") return "new";
+  return "none";
+}
+
+/** الفواتير: مدفوعة = أخضر، متأخرة = أحمر، مستحقة اليوم = برتقالي، جزئية = أزرق */
+export function invoiceRowTone(row: { status?: string | null; due_date?: string | null }): RowTone {
+  if (row.status === "paid") return "done";
+  if (row.status === "cancelled") return "none";
+  if (row.status === "overdue") return "overdue";
+  if (row.due_date) {
+    const left = daysUntil(row.due_date);
+    if (left < 0) return "overdue";
+    if (left === 0) return "today";
+    if (left <= 3) return "urgent";
+  }
+  if (row.status === "partial") return "progress";
+  return "none";
+}
+
+/** الحجوزات: منتهية/ملغاة = رمادي، تنتهي اليوم = برتقالي، نشطة = أخضر */
+export function reservationRowTone(row: { status?: string | null; ends_at?: string | null }): RowTone {
+  if (row.status === "cancelled" || row.status === "expired") return "overdue";
+  if (row.status === "converted" || row.status === "done") return "done";
+  if (row.ends_at) {
+    const left = daysUntil(row.ends_at);
+    if (left < 0) return "overdue";
+    if (left === 0) return "today";
+    if (left <= 2) return "urgent";
+  }
+  if (row.status === "active") return "new";
+  if (row.status === "hold") return "progress";
+  return "none";
+}

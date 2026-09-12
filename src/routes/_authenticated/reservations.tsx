@@ -4,8 +4,10 @@ import { CalendarClock, Plus } from "lucide-react";
 import { Chip } from "@/components/kit/Chip";
 import { LiveTable, formatDate } from "@/components/kit/LiveTable";
 import { PageHero } from "@/components/kit/PageHero";
+import { ToneLegend } from "@/components/kit/ToneLegend";
 import { Button } from "@/components/ui/button";
 import { reservationStatusLabels } from "@/lib/labels";
+import { reservationRowTone, rowToneClass } from "@/lib/row-tone";
 
 type Row = {
   id: string;
@@ -60,7 +62,20 @@ function ReservationsPage() {
 
       <NewReservationForm />
 
+      <ToneLegend
+        tones={["overdue", "today", "urgent", "progress", "new", "done"]}
+        labels={{
+          overdue: "منتهية / ملغاة",
+          today: "تنتهي اليوم",
+          urgent: "تنتهي خلال يومين",
+          progress: "معلّقة",
+          new: "نشطة",
+          done: "تم تحويلها",
+        }}
+      />
+
       <LiveTable<Row>
+        rowClassName={(r) => rowToneClass[reservationRowTone(r)]}
         table="reservations"
         select="id, status, starts_at, ends_at, extended_count, notes, properties:property_id(name, code), employee:employee_id(full_name), contact:contact_id(full_name)"
         orderBy={{ column: "created_at" }}

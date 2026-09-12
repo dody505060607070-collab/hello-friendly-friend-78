@@ -9,14 +9,21 @@ const dot: Record<Exclude<RowTone, "none">, string> = {
   progress: "bg-primary",
 };
 
-export function ToneLegend({ tones }: { tones: Exclude<RowTone, "none">[] }) {
+export function ToneLegend({
+  tones,
+  labels,
+}: {
+  tones: Exclude<RowTone, "none">[];
+  /** استبدال نص أي حالة بنص مناسب للصفحة */
+  labels?: Partial<Record<Exclude<RowTone, "none">, string>>;
+}) {
   return (
     <div className="surface-card flex flex-wrap items-center gap-x-5 gap-y-2 px-5 py-3">
       <span className="text-[12.5px] font-bold text-foreground">دليل الألوان:</span>
       {tones.map((t) => (
         <span key={t} className="inline-flex items-center gap-2 text-[12.5px] text-muted-foreground">
           <span className={`size-2.5 rounded-full ${dot[t]}`} aria-hidden />
-          {rowToneLabel[t]}
+          {labels?.[t] ?? rowToneLabel[t]}
         </span>
       ))}
     </div>

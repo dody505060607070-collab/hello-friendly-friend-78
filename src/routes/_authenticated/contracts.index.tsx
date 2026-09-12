@@ -22,6 +22,8 @@ import { analyzeContractPdf } from "@/lib/ai.functions";
 import { finalizeContractImport } from "@/lib/contracts.functions";
 import { ensureClientAccount } from "@/lib/portal.functions";
 import { contractStatusLabels, importStatusLabels } from "@/lib/labels";
+import { ToneLegend } from "@/components/kit/ToneLegend";
+import { contractRowTone, rowToneClass } from "@/lib/row-tone";
 
 type Row = {
   id: string;
@@ -310,6 +312,18 @@ function ContractsPage() {
         ]}
       />
 
+      {tab === "imports" ? null : (
+        <ToneLegend
+          tones={["overdue", "today", "urgent", "new"]}
+          labels={{
+            overdue: "منتهٍ / منهي",
+            today: "ينتهي اليوم",
+            urgent: "يقارب الانتهاء (خلال 30 يومًا)",
+            new: "ساري",
+          }}
+        />
+      )}
+
       {tab === "imports" ? (
         <DataTable<ImportRow>
           rows={imports.data ?? []}
@@ -354,6 +368,7 @@ function ContractsPage() {
       ) : (
         <DataTable<Row>
           rows={filtered}
+          rowClassName={(r) => rowToneClass[contractRowTone(r)]}
           onRowClick={(r) => navigate({ to: "/contracts/$contractId", params: { contractId: r.id } })}
           draggableRows
           dragLabel="عقد"
