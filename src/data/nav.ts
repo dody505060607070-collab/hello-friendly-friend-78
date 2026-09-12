@@ -40,6 +40,7 @@ export const navGroups: NavGroup[] = [
     icon: Factory,
     items: [
       { label: "العقارات", to: "/properties", countKey: "properties", module: "properties" },
+      { label: "استيراد من Excel", to: "/properties-import", module: "properties" },
       {
         label: "طلبات التقديم",
         to: "/requests",
@@ -64,6 +65,7 @@ export const navGroups: NavGroup[] = [
       { label: "إدارة العقود", to: "/contracts", countKey: "contracts", module: "contracts" },
       { label: "الفواتير", to: "/invoices", countKey: "invoices", module: "invoices" },
       { label: "إدارة التذكيرات", to: "/reminders", countKey: "followups", module: "reminders" },
+      { label: "تقرير التحصيلات", to: "/collections", module: "invoices" },
     ],
   },
   {
