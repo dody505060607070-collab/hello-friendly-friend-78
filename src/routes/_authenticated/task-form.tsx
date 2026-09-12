@@ -239,9 +239,18 @@ function TaskFormPage() {
           .in("user_id", toRemove);
         if (error) throw error;
       }
-      return taskId;
+      let notify: { sent: number; failed: number; skipped: number } | null = null;
+      if (toAdd.length && taskId) {
+        try {
+          const res = await notifyTaskAssignment({ data: { taskId, userIds: toAdd } });
+          notify = { sent: res.sent, failed: res.failed, skipped: res.skipped };
+        } catch {
+          notify = { sent: 0, failed: toAdd.length, skipped: 0 };
+        }
+      }
+      return { taskId, notify };
     },
-    onSuccess: (newId) => {
+    onSuccess: ({ taskId: newId, notify }) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
       queryClient.invalidateQueries({ queryKey: ["task-assignees", newId] });
