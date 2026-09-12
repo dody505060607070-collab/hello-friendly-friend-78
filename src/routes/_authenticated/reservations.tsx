@@ -41,134 +41,16 @@ const inputClass =
   "h-10 w-full rounded-lg border border-input bg-background px-3 text-right text-[13px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/15";
 
 function NewReservationForm() {
-  const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({
-    property_id: "",
-    contact_id: "",
-    starts_at: "",
-    ends_at: "",
-    notes: "",
-  });
-
-  const options = useQuery({
-    queryKey: ["reservation-form-options"],
-    queryFn: async () => {
-      const [props, contacts] = await Promise.all([
-        supabase.from("properties").select("id, name, code").order("created_at", { ascending: false }),
-        supabase.from("contacts").select("id, full_name").eq("is_active", true).order("full_name"),
-      ]);
-      return { properties: props.data ?? [], contacts: contacts.data ?? [] };
-    },
-  });
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.property_id || !form.starts_at || !form.ends_at) {
-      toast.error("اختر العقار وحدد وقت البداية والنهاية");
-      return;
-    }
-    setBusy(true);
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      const uid = userData.user?.id ?? null;
-      const { error } = await supabase.from("reservations").insert({
-        property_id: form.property_id,
-        contact_id: form.contact_id || null,
-        employee_id: uid,
-        created_by: uid,
-        starts_at: new Date(form.starts_at).toISOString(),
-        ends_at: new Date(form.ends_at).toISOString(),
-        notes: form.notes || null,
-        status: "active",
-      });
-      if (error) throw error;
-      toast.success("تم إنشاء الحجز بنجاح");
-      setForm({ property_id: "", contact_id: "", starts_at: "", ends_at: "", notes: "" });
-      setOpen(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "تعذّر إنشاء الحجز");
-    } finally {
-      setBusy(false);
-    }
-  };
-
+  const navigate = useNavigate();
   return (
-    <div className="mb-4 rounded-xl border border-border bg-card p-4 shadow-card">
-      <div className="flex items-center justify-between gap-3">
-        <Button type="button" onClick={() => setOpen((v) => !v)} size="sm">
-          <Plus className="size-4" />
-          {open ? "إغلاق" : "حجز جديد"}
-        </Button>
-        <p className="text-right text-[12px] text-muted-foreground">
-          أي موظف نشط يمكنه إنشاء حجز على أي عقار متاح.
-        </p>
-      </div>
-
-      {open ? (
-        <form onSubmit={submit} className="mt-4 grid gap-3 sm:grid-cols-2">
-          <select
-            className={inputClass}
-            value={form.property_id}
-            onChange={(e) => setForm({ ...form, property_id: e.target.value })}
-          >
-            <option value="">اختر العقار *</option>
-            {options.data?.properties.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-                {p.code ? ` — ${p.code}` : ""}
-              </option>
-            ))}
-          </select>
-
-          <select
-            className={inputClass}
-            value={form.contact_id}
-            onChange={(e) => setForm({ ...form, contact_id: e.target.value })}
-          >
-            <option value="">العميل (اختياري)</option>
-            {options.data?.contacts.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.full_name}
-              </option>
-            ))}
-          </select>
-
-          <label className="space-y-1">
-            <span className="block text-right text-[12px] font-bold">من</span>
-            <input
-              type="datetime-local"
-              className={inputClass}
-              value={form.starts_at}
-              onChange={(e) => setForm({ ...form, starts_at: e.target.value })}
-            />
-          </label>
-
-          <label className="space-y-1">
-            <span className="block text-right text-[12px] font-bold">إلى</span>
-            <input
-              type="datetime-local"
-              className={inputClass}
-              value={form.ends_at}
-              onChange={(e) => setForm({ ...form, ends_at: e.target.value })}
-            />
-          </label>
-
-          <textarea
-            rows={2}
-            className={`${inputClass} h-auto py-2 sm:col-span-2`}
-            placeholder="ملاحظات"
-            value={form.notes}
-            onChange={(e) => setForm({ ...form, notes: e.target.value })}
-          />
-
-          <div className="sm:col-span-2">
-            <Button type="submit" disabled={busy} className="w-full">
-              {busy ? "جارٍ الحفظ..." : "حفظ الحجز"}
-            </Button>
-          </div>
-        </form>
-      ) : null}
+    <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 shadow-card">
+      <Button type="button" size="sm" onClick={() => navigate({ to: "/reserve" })}>
+        <Plus className="size-4" />
+        حجز جديد
+      </Button>
+      <p className="text-right text-[12px] text-muted-foreground">
+        ينقلك لتصفّح العقارات كما يراها الزوار — اضغط على أي عقار لحجزه فورًا. علامة «محجوز» تظهر للموظفين فقط.
+      </p>
     </div>
   );
 }
