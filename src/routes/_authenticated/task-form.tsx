@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Field, inputClass, textareaClass } from "@/components/kit/Modal";
+import { notifyTaskAssignment } from "@/lib/tasks.functions";
 import { PageHero } from "@/components/kit/PageHero";
 import { supabase } from "@/integrations/supabase/client";
 import { priorityLabels, taskStatusLabels } from "@/lib/labels";
