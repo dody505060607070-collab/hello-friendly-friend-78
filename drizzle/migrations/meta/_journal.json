@@ -22,6 +22,13 @@
       "when": 1789171758657,
       "tag": "0002_listing_uploads_policies_and_staff_booking",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789172039953,
+      "tag": "0003_staff_can_create_activities",
+      "breakpoints": true
     }
   ]
 }
