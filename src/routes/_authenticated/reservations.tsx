@@ -62,7 +62,17 @@ function ReservationsPage() {
 
       <NewReservationForm />
 
-      <ToneLegend tones={["overdue", "today", "urgent", "progress", "new", "done"]} />
+      <ToneLegend
+        tones={["overdue", "today", "urgent", "progress", "new", "done"]}
+        labels={{
+          overdue: "منتهية / ملغاة",
+          today: "تنتهي اليوم",
+          urgent: "تنتهي خلال يومين",
+          progress: "معلّقة",
+          new: "نشطة",
+          done: "تم تحويلها",
+        }}
+      />
 
       <LiveTable<Row>
         rowClassName={(r) => rowToneClass[reservationRowTone(r)]}

@@ -313,7 +313,15 @@ function ContractsPage() {
       />
 
       {tab === "imports" ? null : (
-        <ToneLegend tones={["overdue", "today", "urgent", "new"]} />
+        <ToneLegend
+          tones={["overdue", "today", "urgent", "new"]}
+          labels={{
+            overdue: "منتهٍ / منهي",
+            today: "ينتهي اليوم",
+            urgent: "يقارب الانتهاء (خلال 30 يومًا)",
+            new: "ساري",
+          }}
+        />
       )}
 
       {tab === "imports" ? (
