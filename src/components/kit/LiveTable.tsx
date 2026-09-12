@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { Inbox, Loader2, TriangleAlert } from "lucide-react";
+import { Inbox, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { DataTable, type Column } from "@/components/kit/DataTable";
+import { TableSkeleton } from "@/components/kit/Skeleton";
 import { supabase } from "@/integrations/supabase/client";
 
 export type LiveTableProps<T> = {
@@ -84,12 +85,7 @@ export function LiveTable<T>({
   const { data, isLoading, error } = useTableRows<T>(queryProps);
 
   if (isLoading) {
-    return (
-      <div className="surface-card grid place-items-center gap-2 px-6 py-16 text-center">
-        <Loader2 className="size-6 animate-spin text-primary" />
-        <p className="text-[13px] text-muted-foreground">جاري تحميل البيانات…</p>
-      </div>
-    );
+    return <TableSkeleton cols={Math.min(6, Math.max(3, columns.length))} />;
   }
 
   if (error) {
