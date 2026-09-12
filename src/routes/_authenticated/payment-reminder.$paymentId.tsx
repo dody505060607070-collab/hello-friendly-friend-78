@@ -21,7 +21,7 @@ import { Chip } from "@/components/kit/Chip";
 import { PageHero } from "@/components/kit/PageHero";
 import { supabase } from "@/integrations/supabase/client";
 import { publicSettingsQuery } from "@/lib/site-data";
-import { sendWhatsAppMessage } from "@/lib/whatsapp.functions";
+import { toE164 } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/_authenticated/payment-reminder/$paymentId")({
   head: () => ({
@@ -160,9 +160,14 @@ function PaymentReminderPage() {
       if (!phone) throw new Error("لا يوجد رقم جوال محفوظ للمستأجر");
       const option = repeatOptions.find((o) => o.key === repeat) ?? { key: "once", label: "مرة واحدة", hours: 0 };
 
-      // إرسال مباشر عبر Twilio من الرقم الموحّد
-      const result = await sendWhatsAppMessage({ data: { to: phone, body: message } });
-      if (!result.ok) throw new Error(result.error);
+      // فتح واتساب مباشرة على محادثة العميل مع الرسالة جاهزة
+      const waNumber = toE164(phone).replace(/[^\d]/g, "");
+      window.open(
+        `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
+
 
       const { error: logError } = await supabase.from("message_log").insert({
         recipient_name: tenant?.full_name ?? null,
@@ -171,7 +176,7 @@ function PaymentReminderPage() {
         payment_id: p.id,
         body: message,
         channel: "whatsapp",
-        result: result.sid ? `sent:${result.sid}` : "sent",
+        result: "opened",
         sent_by_system: false,
       });
       if (logError) throw logError;
@@ -211,7 +216,7 @@ function PaymentReminderPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-reminder-log", paymentId] });
       queryClient.invalidateQueries({ queryKey: ["reminder_followups"] });
-      toast.success("تم إرسال التذكير عبر واتساب مباشرة وتسجيله في سجل الرسائل");
+      toast.success("تم فتح واتساب برسالة التذكير جاهزة — اضغط إرسال داخل واتساب");
     },
     onError: (e: Error) => toast.error(e.message),
   });
