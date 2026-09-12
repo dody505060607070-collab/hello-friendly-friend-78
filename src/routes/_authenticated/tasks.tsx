@@ -320,11 +320,12 @@ function TasksPage() {
             {
               header: "الموقع",
               cell: (r) => {
-                const isUrl = typeof r.location_text === "string" && /^https?:\/\//.test(r.location_text);
+                const locText = r.location_text ?? "";
+                const isUrl = /^https?:\/\//.test(locText);
                 if (isUrl) {
                   return (
                     <a
-                      href={r.location_text}
+                      href={locText}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-primary"
