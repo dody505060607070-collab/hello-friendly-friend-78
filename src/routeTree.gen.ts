@@ -27,6 +27,7 @@ import { Route as ThankYouRouteImport } from './routes/thank-you'
 import { Route as AuthenticatedActivitiesRouteImport } from './routes/_authenticated/activities'
 import { Route as AuthenticatedActivityLogRouteImport } from './routes/_authenticated/activity-log'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
+import { Route as AuthenticatedAutomationRouteImport } from './routes/_authenticated/automation'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -156,6 +157,11 @@ const AuthenticatedActivityLogRoute =
 const AuthenticatedAiRoute = AuthenticatedAiRouteImport.update({
   id: '/ai',
   path: '/ai',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAutomationRoute = AuthenticatedAutomationRouteImport.update({
+  id: '/automation',
+  path: '/automation',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
@@ -392,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/ai': typeof AuthenticatedAiRoute
+  '/automation': typeof AuthenticatedAutomationRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -450,6 +457,7 @@ export interface FileRoutesByTo {
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/ai': typeof AuthenticatedAiRoute
+  '/automation': typeof AuthenticatedAutomationRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -511,6 +519,7 @@ export interface FileRoutesById {
   '/_authenticated/activities': typeof AuthenticatedActivitiesRoute
   '/_authenticated/activity-log': typeof AuthenticatedActivityLogRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
+  '/_authenticated/automation': typeof AuthenticatedAutomationRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -572,6 +581,7 @@ export interface FileRouteTypes {
     | '/activities'
     | '/activity-log'
     | '/ai'
+    | '/automation'
     | '/clients'
     | '/crm'
     | '/dashboard'
@@ -630,6 +640,7 @@ export interface FileRouteTypes {
     | '/activities'
     | '/activity-log'
     | '/ai'
+    | '/automation'
     | '/clients'
     | '/crm'
     | '/dashboard'
@@ -690,6 +701,7 @@ export interface FileRouteTypes {
     | '/_authenticated/activities'
     | '/_authenticated/activity-log'
     | '/_authenticated/ai'
+    | '/_authenticated/automation'
     | '/_authenticated/clients'
     | '/_authenticated/crm'
     | '/_authenticated/dashboard'
@@ -880,6 +892,13 @@ declare module '@tanstack/react-router' {
       path: '/ai'
       fullPath: '/ai'
       preLoaderRoute: typeof AuthenticatedAiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/automation': {
+      id: '/_authenticated/automation'
+      path: '/automation'
+      fullPath: '/automation'
+      preLoaderRoute: typeof AuthenticatedAutomationRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/clients': {
@@ -1169,6 +1188,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivitiesRoute: typeof AuthenticatedActivitiesRoute
   AuthenticatedActivityLogRoute: typeof AuthenticatedActivityLogRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
+  AuthenticatedAutomationRoute: typeof AuthenticatedAutomationRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -1206,6 +1226,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivitiesRoute: AuthenticatedActivitiesRoute,
   AuthenticatedActivityLogRoute: AuthenticatedActivityLogRoute,
   AuthenticatedAiRoute: AuthenticatedAiRoute,
+  AuthenticatedAutomationRoute: AuthenticatedAutomationRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
