@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { Inbox, Loader2, TriangleAlert } from "lucide-react";
+import { Inbox, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { DataTable, type Column } from "@/components/kit/DataTable";
+import { TableSkeleton } from "@/components/kit/Skeleton";
 import { supabase } from "@/integrations/supabase/client";
 
 export type LiveTableProps<T> = {
@@ -44,12 +45,28 @@ export function useTableRows<T>({
   });
 }
 
-export function EmptyState({ text, hint }: { text: string; hint?: string }) {
+export function EmptyState({
+  text,
+  hint,
+  action,
+  icon: Icon = Inbox,
+}: {
+  text: string;
+  hint?: string;
+  action?: ReactNode;
+  icon?: typeof Inbox;
+}) {
   return (
-    <div className="grid place-items-center gap-2 px-6 py-16 text-center">
-      <Inbox className="size-8 text-muted-foreground/60" />
-      <p className="text-[14px] font-semibold text-foreground">{text}</p>
-      {hint ? <p className="max-w-md text-[12.5px] text-muted-foreground">{hint}</p> : null}
+    <div className="grid place-items-center gap-3 px-6 py-16 text-center">
+      <span className="relative grid size-16 place-items-center rounded-full bg-muted">
+        <span className="absolute inset-0 animate-ping rounded-full bg-primary/5" aria-hidden />
+        <Icon className="relative size-7 text-primary/70" />
+      </span>
+      <p className="text-[15px] font-bold text-foreground">{text}</p>
+      {hint ? (
+        <p className="max-w-md text-[12.5px] leading-6 text-muted-foreground">{hint}</p>
+      ) : null}
+      {action ? <div className="mt-1">{action}</div> : null}
     </div>
   );
 }
@@ -68,12 +85,7 @@ export function LiveTable<T>({
   const { data, isLoading, error } = useTableRows<T>(queryProps);
 
   if (isLoading) {
-    return (
-      <div className="surface-card grid place-items-center gap-2 px-6 py-16 text-center">
-        <Loader2 className="size-6 animate-spin text-primary" />
-        <p className="text-[13px] text-muted-foreground">جاري تحميل البيانات…</p>
-      </div>
-    );
+    return <TableSkeleton cols={Math.min(6, Math.max(3, columns.length))} />;
   }
 
   if (error) {

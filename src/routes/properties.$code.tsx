@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, MapPin, MessageCircle, Phone, Share2, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
+
+import { Lightbox } from "@/components/kit/Lightbox";
 import { toast } from "sonner";
 
 import { FavoriteButton } from "@/components/site/FavoriteButton";
@@ -63,6 +65,7 @@ function PropertyPage() {
   const { data: property, isLoading, error } = useQuery(publicPropertyQuery(code));
   const related = useQuery(publicPropertiesQuery(undefined, 12));
   const [active, setActive] = useState(0);
+  const [zoom, setZoom] = useState(false);
   const guarantees = useQuery({
     queryKey: ["public-property-guarantees", property?.id],
     enabled: Boolean(property?.id) && property?.purpose === "sale",
@@ -158,17 +161,34 @@ function PropertyPage() {
             <div className="relative overflow-hidden rounded-2xl border border-border bg-muted">
               <FavoriteButton code={property.code} className="absolute end-4 top-4 z-10 size-11" />
               {images[active]?.url ? (
-                <img
-                  src={images[active]!.url}
-                  alt={property.name}
-                  className="h-[360px] w-full object-cover md:h-[440px]"
-                />
+                <button
+                  type="button"
+                  onClick={() => setZoom(true)}
+                  className="block w-full cursor-zoom-in"
+                  aria-label="عرض الصورة بملء الشاشة"
+                >
+                  <img
+                    src={images[active]!.url}
+                    alt={property.name}
+                    className="h-[360px] w-full object-cover transition-transform duration-500 hover:scale-[1.03] md:h-[440px]"
+                  />
+                </button>
               ) : (
                 <div className="grid h-[360px] place-items-center text-muted-foreground">
                   <Building2 className="size-12" />
                 </div>
               )}
             </div>
+
+            {zoom ? (
+              <Lightbox
+                images={images.map((i) => i.url)}
+                index={active}
+                onIndexChange={setActive}
+                onClose={() => setZoom(false)}
+                alt={property.name}
+              />
+            ) : null}
 
             {images.length > 1 ? (
               <div className="mt-3 flex gap-3 overflow-x-auto pb-1">

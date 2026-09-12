@@ -9,6 +9,7 @@ import { DataTable } from "@/components/kit/DataTable";
 import { EmptyState, formatCurrency, formatDate, useTableRows } from "@/components/kit/LiveTable";
 import { Field, GhostButton, Modal, PrimaryButton, inputClass } from "@/components/kit/Modal";
 import { PageHero } from "@/components/kit/PageHero";
+import { StatBar } from "@/components/kit/StatCard";
 import { Pills } from "@/components/kit/Pills";
 import { supabase } from "@/integrations/supabase/client";
 import { stageLabels } from "@/lib/labels";
@@ -19,6 +20,7 @@ type Row = {
   deal_type: string | null;
   stage: string;
   expected_value: number | null;
+  probability: number | null;
   next_follow_up: string | null;
   close_reason: string | null;
   contact_id: string | null;
@@ -41,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/opportunities")({
 });
 
 const SELECT =
-  "id, title, deal_type, stage, expected_value, next_follow_up, close_reason, contact_id, created_at, contact:contact_id(full_name)";
+  "id, title, deal_type, stage, expected_value, probability, next_follow_up, close_reason, contact_id, created_at, contact:contact_id(full_name)";
 
 const stageOrder = ["new", "qualified", "viewing", "negotiation", "contract", "won", "lost"];
 
@@ -51,6 +53,7 @@ type FormState = {
   deal_type: string;
   stage: string;
   expected_value: string;
+  probability: string;
   next_follow_up: string;
 };
 
@@ -60,6 +63,7 @@ const emptyForm: FormState = {
   deal_type: "rent",
   stage: "new",
   expected_value: "",
+  probability: "50",
   next_follow_up: "",
 };
 
@@ -101,6 +105,7 @@ function OpportunitiesPage() {
         deal_type: form.deal_type,
         stage: form.stage,
         expected_value: form.expected_value ? Number(form.expected_value) : null,
+        probability: Number(form.probability || 50),
         next_follow_up: form.next_follow_up || null,
       });
       if (error) throw error;
@@ -130,6 +135,21 @@ function OpportunitiesPage() {
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التحديث"),
   });
 
+  const changeProbability = useMutation({
+    mutationFn: async (input: { id: string; probability: number }) => {
+      const { error } = await supabase
+        .from("opportunities")
+        .update({ probability: input.probability })
+        .eq("id", input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      toast.success("تم تحديث احتمالية الإغلاق");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التحديث"),
+  });
+
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("opportunities").delete().eq("id", id);
@@ -151,6 +171,9 @@ function OpportunitiesPage() {
       value: rows
         .filter((r) => !["won", "lost"].includes(r.stage))
         .reduce((sum, r) => sum + (r.expected_value ?? 0), 0),
+      weighted: rows
+        .filter((r) => !["won", "lost"].includes(r.stage))
+        .reduce((sum, r) => sum + ((r.expected_value ?? 0) * (r.probability ?? 50)) / 100, 0),
     }),
     [rows],
   );
@@ -171,6 +194,7 @@ function OpportunitiesPage() {
         stats={[
           { value: String(counts.open), label: "فرصة مفتوحة" },
           { value: formatCurrency(counts.value), label: "القيمة المتوقعة" },
+          { value: formatCurrency(counts.weighted), label: "القيمة المرجّحة بالاحتمالية" },
           { value: String(counts.won), label: "فرصة ناجحة" },
         ]}
       />
@@ -254,6 +278,40 @@ function OpportunitiesPage() {
               sortable: true,
               value: (r) => r.expected_value ?? 0,
               cell: (r) => formatCurrency(r.expected_value),
+            },
+            {
+              header: "احتمالية الإغلاق",
+              sortable: true,
+              value: (r) => r.probability ?? 50,
+              cell: (r) => {
+                const p = r.probability ?? 50;
+                return (
+                  <span className="flex w-32 flex-col gap-1">
+                    <span className="flex items-center justify-between text-[12px] font-semibold">
+                      <span>{p}%</span>
+                      <span className="text-muted-foreground">
+                        {formatCurrency(((r.expected_value ?? 0) * p) / 100)}
+                      </span>
+                    </span>
+                    <StatBar value={p} tone={p >= 70 ? "success" : p >= 40 ? "warning" : "danger"} />
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={5}
+                      defaultValue={p}
+                      onMouseUp={(e) =>
+                        changeProbability.mutate({ id: r.id, probability: Number(e.currentTarget.value) })
+                      }
+                      onTouchEnd={(e) =>
+                        changeProbability.mutate({ id: r.id, probability: Number(e.currentTarget.value) })
+                      }
+                      className="h-1 w-full accent-primary"
+                      aria-label="تعديل احتمالية الإغلاق"
+                    />
+                  </span>
+                );
+              },
             },
             {
               header: "المتابعة القادمة",
@@ -362,6 +420,18 @@ function OpportunitiesPage() {
               inputMode="numeric"
               value={form.expected_value}
               onChange={(e) => set({ expected_value: e.target.value })}
+            />
+          </Field>
+          <Field label="احتمالية الإغلاق (%)">
+            <input
+              className={inputClass}
+              dir="ltr"
+              type="number"
+              min={0}
+              max={100}
+              step={5}
+              value={form.probability}
+              onChange={(e) => set({ probability: e.target.value })}
             />
           </Field>
           <Field label="المتابعة القادمة">

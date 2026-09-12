@@ -211,6 +211,33 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_runs: {
+        Row: {
+          created_at: string
+          details: Json
+          id: string
+          rows_count: number
+          status: string
+          tables_count: number
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          id?: string
+          rows_count?: number
+          status?: string
+          tables_count?: number
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          id?: string
+          rows_count?: number
+          status?: string
+          tables_count?: number
+        }
+        Relationships: []
+      }
       buildings: {
         Row: {
           address: string | null
@@ -552,6 +579,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "contract_payments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_signatures: {
+        Row: {
+          contract_id: string
+          created_by: string | null
+          id: string
+          signature_data: string
+          signed_at: string
+          signer_name: string
+          signer_role: string
+        }
+        Insert: {
+          contract_id: string
+          created_by?: string | null
+          id?: string
+          signature_data: string
+          signed_at?: string
+          signer_name: string
+          signer_role?: string
+        }
+        Update: {
+          contract_id?: string
+          created_by?: string | null
+          id?: string
+          signature_data?: string
+          signed_at?: string
+          signer_name?: string
+          signer_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_signatures_contract_id_fkey"
             columns: ["contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
@@ -1506,6 +1571,7 @@ export type Database = {
           id: string
           listing_request_id: string | null
           next_follow_up: string | null
+          probability: number
           reservation_id: string | null
           stage: string
           supply_request_id: string | null
@@ -1523,6 +1589,7 @@ export type Database = {
           id?: string
           listing_request_id?: string | null
           next_follow_up?: string | null
+          probability?: number
           reservation_id?: string | null
           stage?: string
           supply_request_id?: string | null
@@ -1540,6 +1607,7 @@ export type Database = {
           id?: string
           listing_request_id?: string | null
           next_follow_up?: string | null
+          probability?: number
           reservation_id?: string | null
           stage?: string
           supply_request_id?: string | null

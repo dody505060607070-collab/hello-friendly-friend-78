@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as ListPropertyRouteImport } from './routes/list-property'
@@ -27,8 +28,11 @@ import { Route as ThankYouRouteImport } from './routes/thank-you'
 import { Route as AuthenticatedActivitiesRouteImport } from './routes/_authenticated/activities'
 import { Route as AuthenticatedActivityLogRouteImport } from './routes/_authenticated/activity-log'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
+import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
 import { Route as AuthenticatedAutomationRouteImport } from './routes/_authenticated/automation'
+import { Route as AuthenticatedBackupsRouteImport } from './routes/_authenticated/backups'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedCollectionsRouteImport } from './routes/_authenticated/collections'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEmployeeFormRouteImport } from './routes/_authenticated/employee-form'
@@ -40,6 +44,7 @@ import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authen
 import { Route as AuthenticatedOwnerFormRouteImport } from './routes/_authenticated/owner-form'
 import { Route as AuthenticatedPartnersRouteImport } from './routes/_authenticated/partners'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
+import { Route as AuthenticatedPropertiesImportRouteImport } from './routes/_authenticated/properties-import'
 import { Route as AuthenticatedPropertyFormRouteImport } from './routes/_authenticated/property-form'
 import { Route as AuthenticatedRemindersRouteImport } from './routes/_authenticated/reminders'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
@@ -87,6 +92,11 @@ const AboutRoute = AboutRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -160,9 +170,19 @@ const AuthenticatedAiRoute = AuthenticatedAiRouteImport.update({
   path: '/ai',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAlertsRoute = AuthenticatedAlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAutomationRoute = AuthenticatedAutomationRouteImport.update({
   id: '/automation',
   path: '/automation',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBackupsRoute = AuthenticatedBackupsRouteImport.update({
+  id: '/backups',
+  path: '/backups',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
@@ -170,6 +190,12 @@ const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCollectionsRoute =
+  AuthenticatedCollectionsRouteImport.update({
+    id: '/collections',
+    path: '/collections',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   id: '/crm',
   path: '/crm',
@@ -229,6 +255,12 @@ const AuthenticatedPropertiesRoute = AuthenticatedPropertiesRouteImport.update({
   path: '/properties',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPropertiesImportRoute =
+  AuthenticatedPropertiesImportRouteImport.update({
+    id: '/properties-import',
+    path: '/properties-import',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPropertyFormRoute =
   AuthenticatedPropertyFormRouteImport.update({
     id: '/property-form',
@@ -390,6 +422,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
@@ -404,8 +437,11 @@ export interface FileRoutesByFullPath {
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/ai': typeof AuthenticatedAiRoute
+  '/alerts': typeof AuthenticatedAlertsRoute
   '/automation': typeof AuthenticatedAutomationRoute
+  '/backups': typeof AuthenticatedBackupsRoute
   '/clients': typeof AuthenticatedClientsRoute
+  '/collections': typeof AuthenticatedCollectionsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/employee-form': typeof AuthenticatedEmployeeFormRoute
@@ -417,6 +453,7 @@ export interface FileRoutesByFullPath {
   '/owner-form': typeof AuthenticatedOwnerFormRoute
   '/partners': typeof AuthenticatedPartnersRoute
   '/properties': typeof AuthenticatedPropertiesRoute
+  '/properties-import': typeof AuthenticatedPropertiesImportRoute
   '/property-form': typeof AuthenticatedPropertyFormRoute
   '/reminders': typeof AuthenticatedRemindersRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -451,6 +488,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
@@ -464,8 +502,11 @@ export interface FileRoutesByTo {
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/ai': typeof AuthenticatedAiRoute
+  '/alerts': typeof AuthenticatedAlertsRoute
   '/automation': typeof AuthenticatedAutomationRoute
+  '/backups': typeof AuthenticatedBackupsRoute
   '/clients': typeof AuthenticatedClientsRoute
+  '/collections': typeof AuthenticatedCollectionsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/employee-form': typeof AuthenticatedEmployeeFormRoute
@@ -477,6 +518,7 @@ export interface FileRoutesByTo {
   '/owner-form': typeof AuthenticatedOwnerFormRoute
   '/partners': typeof AuthenticatedPartnersRoute
   '/properties': typeof AuthenticatedPropertiesRoute
+  '/properties-import': typeof AuthenticatedPropertiesImportRoute
   '/property-form': typeof AuthenticatedPropertyFormRoute
   '/reminders': typeof AuthenticatedRemindersRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -513,6 +555,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
@@ -527,8 +570,11 @@ export interface FileRoutesById {
   '/_authenticated/activities': typeof AuthenticatedActivitiesRoute
   '/_authenticated/activity-log': typeof AuthenticatedActivityLogRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
+  '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
   '/_authenticated/automation': typeof AuthenticatedAutomationRoute
+  '/_authenticated/backups': typeof AuthenticatedBackupsRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
+  '/_authenticated/collections': typeof AuthenticatedCollectionsRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/employee-form': typeof AuthenticatedEmployeeFormRoute
@@ -540,6 +586,7 @@ export interface FileRoutesById {
   '/_authenticated/owner-form': typeof AuthenticatedOwnerFormRoute
   '/_authenticated/partners': typeof AuthenticatedPartnersRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
+  '/_authenticated/properties-import': typeof AuthenticatedPropertiesImportRoute
   '/_authenticated/property-form': typeof AuthenticatedPropertyFormRoute
   '/_authenticated/reminders': typeof AuthenticatedRemindersRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
@@ -576,6 +623,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/compare'
     | '/contact'
     | '/favorites'
     | '/list-property'
@@ -590,8 +638,11 @@ export interface FileRouteTypes {
     | '/activities'
     | '/activity-log'
     | '/ai'
+    | '/alerts'
     | '/automation'
+    | '/backups'
     | '/clients'
+    | '/collections'
     | '/crm'
     | '/dashboard'
     | '/employee-form'
@@ -603,6 +654,7 @@ export interface FileRouteTypes {
     | '/owner-form'
     | '/partners'
     | '/properties'
+    | '/properties-import'
     | '/property-form'
     | '/reminders'
     | '/reports'
@@ -637,6 +689,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/compare'
     | '/contact'
     | '/favorites'
     | '/list-property'
@@ -650,8 +703,11 @@ export interface FileRouteTypes {
     | '/activities'
     | '/activity-log'
     | '/ai'
+    | '/alerts'
     | '/automation'
+    | '/backups'
     | '/clients'
+    | '/collections'
     | '/crm'
     | '/dashboard'
     | '/employee-form'
@@ -663,6 +719,7 @@ export interface FileRouteTypes {
     | '/owner-form'
     | '/partners'
     | '/properties'
+    | '/properties-import'
     | '/property-form'
     | '/reminders'
     | '/reports'
@@ -698,6 +755,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/about'
     | '/auth'
+    | '/compare'
     | '/contact'
     | '/favorites'
     | '/list-property'
@@ -712,8 +770,11 @@ export interface FileRouteTypes {
     | '/_authenticated/activities'
     | '/_authenticated/activity-log'
     | '/_authenticated/ai'
+    | '/_authenticated/alerts'
     | '/_authenticated/automation'
+    | '/_authenticated/backups'
     | '/_authenticated/clients'
+    | '/_authenticated/collections'
     | '/_authenticated/crm'
     | '/_authenticated/dashboard'
     | '/_authenticated/employee-form'
@@ -725,6 +786,7 @@ export interface FileRouteTypes {
     | '/_authenticated/owner-form'
     | '/_authenticated/partners'
     | '/_authenticated/properties'
+    | '/_authenticated/properties-import'
     | '/_authenticated/property-form'
     | '/_authenticated/reminders'
     | '/_authenticated/reports'
@@ -761,6 +823,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
+  CompareRoute: typeof CompareRoute
   ContactRoute: typeof ContactRoute
   FavoritesRoute: typeof FavoritesRoute
   ListPropertyRoute: typeof ListPropertyRoute
@@ -806,6 +869,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -906,6 +976,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/alerts': {
+      id: '/_authenticated/alerts'
+      path: '/alerts'
+      fullPath: '/alerts'
+      preLoaderRoute: typeof AuthenticatedAlertsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/automation': {
       id: '/_authenticated/automation'
       path: '/automation'
@@ -913,11 +990,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAutomationRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/backups': {
+      id: '/_authenticated/backups'
+      path: '/backups'
+      fullPath: '/backups'
+      preLoaderRoute: typeof AuthenticatedBackupsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/clients': {
       id: '/_authenticated/clients'
       path: '/clients'
       fullPath: '/clients'
       preLoaderRoute: typeof AuthenticatedClientsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/collections': {
+      id: '/_authenticated/collections'
+      path: '/collections'
+      fullPath: '/collections'
+      preLoaderRoute: typeof AuthenticatedCollectionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/crm': {
@@ -995,6 +1086,13 @@ declare module '@tanstack/react-router' {
       path: '/properties'
       fullPath: '/properties'
       preLoaderRoute: typeof AuthenticatedPropertiesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/properties-import': {
+      id: '/_authenticated/properties-import'
+      path: '/properties-import'
+      fullPath: '/properties-import'
+      preLoaderRoute: typeof AuthenticatedPropertiesImportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/property-form': {
@@ -1207,8 +1305,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivitiesRoute: typeof AuthenticatedActivitiesRoute
   AuthenticatedActivityLogRoute: typeof AuthenticatedActivityLogRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
+  AuthenticatedAlertsRoute: typeof AuthenticatedAlertsRoute
   AuthenticatedAutomationRoute: typeof AuthenticatedAutomationRoute
+  AuthenticatedBackupsRoute: typeof AuthenticatedBackupsRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
+  AuthenticatedCollectionsRoute: typeof AuthenticatedCollectionsRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmployeeFormRoute: typeof AuthenticatedEmployeeFormRoute
@@ -1220,6 +1321,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOwnerFormRoute: typeof AuthenticatedOwnerFormRoute
   AuthenticatedPartnersRoute: typeof AuthenticatedPartnersRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
+  AuthenticatedPropertiesImportRoute: typeof AuthenticatedPropertiesImportRoute
   AuthenticatedPropertyFormRoute: typeof AuthenticatedPropertyFormRoute
   AuthenticatedRemindersRoute: typeof AuthenticatedRemindersRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
@@ -1246,8 +1348,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivitiesRoute: AuthenticatedActivitiesRoute,
   AuthenticatedActivityLogRoute: AuthenticatedActivityLogRoute,
   AuthenticatedAiRoute: AuthenticatedAiRoute,
+  AuthenticatedAlertsRoute: AuthenticatedAlertsRoute,
   AuthenticatedAutomationRoute: AuthenticatedAutomationRoute,
+  AuthenticatedBackupsRoute: AuthenticatedBackupsRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
+  AuthenticatedCollectionsRoute: AuthenticatedCollectionsRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmployeeFormRoute: AuthenticatedEmployeeFormRoute,
@@ -1259,6 +1364,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOwnerFormRoute: AuthenticatedOwnerFormRoute,
   AuthenticatedPartnersRoute: AuthenticatedPartnersRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
+  AuthenticatedPropertiesImportRoute: AuthenticatedPropertiesImportRoute,
   AuthenticatedPropertyFormRoute: AuthenticatedPropertyFormRoute,
   AuthenticatedRemindersRoute: AuthenticatedRemindersRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
@@ -1309,6 +1415,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
+  CompareRoute: CompareRoute,
   ContactRoute: ContactRoute,
   FavoritesRoute: FavoritesRoute,
   ListPropertyRoute: ListPropertyRoute,

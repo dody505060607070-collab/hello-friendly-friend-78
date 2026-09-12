@@ -107,6 +107,9 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+import { CommandPalette, CommandPaletteButton } from "@/components/kit/CommandPalette";
+import { ThemeToggle } from "@/lib/theme";
+
 import { AiDock } from "./AiDock";
 import { NotificationsBell } from "./NotificationsBell";
 import { PushToggle } from "./PushToggle";
@@ -144,8 +147,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <LogOut className="size-[18px]" />
           </button>
           <LanguageToggle />
+          <ThemeToggle />
           <NotificationsBell />
           <PushToggle />
+          <CommandPaletteButton />
         </div>
 
         <Link
@@ -205,6 +210,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
 
         <AiDock />
+        <CommandPalette />
       </div>
     </div>
   );
