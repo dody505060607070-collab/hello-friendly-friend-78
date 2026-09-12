@@ -29,6 +29,7 @@ export function ScrollProgress() {
 /** زر الرجوع لأعلى + واتساب سريع. */
 export function FloatingActions() {
   const [show, setShow] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     const onScroll = () => setShow(window.scrollY > 500);
