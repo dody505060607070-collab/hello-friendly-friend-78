@@ -319,8 +319,22 @@ function TasksPage() {
             { header: "العقار", cell: (r) => r.property?.name ?? "—" },
             {
               header: "الموقع",
-              cell: (r) =>
-                r.location_lat != null && r.location_lng != null ? (
+              cell: (r) => {
+                const isUrl = typeof r.location_text === "string" && /^https?:\/\//.test(r.location_text);
+                if (isUrl) {
+                  return (
+                    <a
+                      href={r.location_text}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-primary"
+                    >
+                      <MapPin className="size-3.5" />
+                      فتح الموقع
+                    </a>
+                  );
+                }
+                return r.location_lat != null && r.location_lng != null ? (
                   <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${r.location_lat},${r.location_lng}`}
                     target="_blank"
@@ -332,7 +346,8 @@ function TasksPage() {
                   </a>
                 ) : (
                   (r.location_text ?? "—")
-                ),
+                );
+              },
             },
             {
               header: "الموعد",
