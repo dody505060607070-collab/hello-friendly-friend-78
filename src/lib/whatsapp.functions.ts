@@ -327,15 +327,10 @@ export async function twilioSend(input: {
   contentSid?: string;
   contentVariables?: Record<string, string>;
 }): Promise<TwilioResult> {
-  // الأولوية لـWassenger (الرقم المرتبط بالـQR)، ثم البدائل الأخرى، وإن فشلت نرجع لـTwilio.
+  // الأولوية لـWassenger (الرقم المرتبط بالـQR)، وإن لم يكن مُعدًا نجرّب البدائل ثم Twilio.
   if (!input.contentSid) {
     const viaWassenger = await wassengerSend(input.to, input.body);
-    if (viaWassenger?.ok) return viaWassenger;
-    if (viaWassenger && !wassengerConfig().ready) {
-      /* غير مُعد — جرّب البدائل */
-    } else if (viaWassenger) {
-      return viaWassenger; // مُعد لكن فشل — أظهر الخطأ الحقيقي بدل السقوط لبديل قديم
-    }
+    if (viaWassenger) return viaWassenger;
     const viaCloud = await cloudSend(input.to, input.body);
     if (viaCloud?.ok) return viaCloud;
     const viaBridge = await bridgeSend(input.to, input.body);
