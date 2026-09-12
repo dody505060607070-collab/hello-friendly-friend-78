@@ -22,6 +22,8 @@ import { analyzeContractPdf } from "@/lib/ai.functions";
 import { finalizeContractImport } from "@/lib/contracts.functions";
 import { ensureClientAccount } from "@/lib/portal.functions";
 import { contractStatusLabels, importStatusLabels } from "@/lib/labels";
+import { ToneLegend } from "@/components/kit/ToneLegend";
+import { contractRowTone, rowToneClass } from "@/lib/row-tone";
 
 type Row = {
   id: string;
