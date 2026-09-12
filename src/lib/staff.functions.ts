@@ -28,6 +28,7 @@ export const createStaffAccount = createServerFn({ method: "POST" })
       jobTitle?: string;
       hireDate?: string;
       adminNotes?: string;
+      org?: string;
       isSuperAdmin?: boolean;
     }) => input,
   )
