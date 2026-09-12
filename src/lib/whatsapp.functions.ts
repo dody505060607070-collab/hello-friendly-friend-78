@@ -487,6 +487,21 @@ export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
 export const unlinkWhatsApp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<{ ok: boolean; error: string | null }> => {
+    const wass = wassengerConfig();
+    if (wass.ready) {
+      try {
+        const { status, raw } = await wassengerFetch(`/devices/${wass.device}/disconnect`, {
+          method: "POST",
+        });
+        if (status >= 200 && status < 300) return { ok: true, error: null };
+        return {
+          ok: false,
+          error: `Wassenger ${status}: ${raw.slice(0, 160) || "افصل الجهاز من لوحة Wassenger"}`,
+        };
+      } catch (e) {
+        return { ok: false, error: (e as Error).message };
+      }
+    }
     const cfg = cloudConfig();
     if (cfg.ready) {
       try {
