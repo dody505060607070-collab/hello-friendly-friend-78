@@ -3,7 +3,9 @@ import type { LucideIcon } from "lucide-react";
 import { Chip } from "@/components/kit/Chip";
 import { LiveTable, formatDate } from "@/components/kit/LiveTable";
 import { PageHero } from "@/components/kit/PageHero";
+import { ToneLegend } from "@/components/kit/ToneLegend";
 import { priorityLabels, taskStatusLabels } from "@/lib/labels";
+import { rowToneClass, rowToneLabel, taskRowTone } from "@/lib/row-tone";
 
 type Row = {
   id: string;
