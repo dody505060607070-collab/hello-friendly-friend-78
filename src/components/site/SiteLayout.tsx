@@ -7,6 +7,7 @@ import logoAsset from "@/assets/mithra-logo-transparent.png.asset.json";
 import { FloatingActions, ScrollProgress } from "@/components/site/Chrome";
 import { AiWidget } from "@/components/site/AiWidget";
 import { useSession } from "@/hooks/useAuth";
+import { LanguageToggle } from "@/lib/i18n";
 import { COMPANY_EMAIL, COMPANY_PHONE } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
 
