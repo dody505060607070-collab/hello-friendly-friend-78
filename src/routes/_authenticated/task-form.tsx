@@ -60,6 +60,37 @@ const emptyForm = {
 
 type FormState = typeof emptyForm;
 
+function looksLikeUrl(value: string) {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function extractMapCoords(value: string): { lat: string; lng: string } | null {
+  if (!looksLikeUrl(value)) return null;
+  const patterns = [
+    /!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/,
+    /\/@(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+    /[?&](?:q|query|destination|ll)=(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+    /\/maps\/(?:place|search|dir)\/[^/]*\/@?(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+    /\bdaddr=(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+  ];
+  for (const re of patterns) {
+    const m = value.match(re);
+    if (m) {
+      const lat = parseFloat(m[1]);
+      const lng = parseFloat(m[2]);
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+        return { lat: lat.toString(), lng: lng.toString() };
+      }
+    }
+  }
+  return null;
+}
+
 function SectionCard({
   title,
   subtitle,
