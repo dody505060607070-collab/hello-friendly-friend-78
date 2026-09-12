@@ -58,23 +58,13 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (error) throw new Error("اسم المستخدم أو كلمة المرور غير صحيحة.");
         navigate({ to: "/portal" });
-      } else if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        navigate({ to: "/dashboard" });
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: { full_name: fullName },
-          },
-        });
-        if (error) throw error;
-        toast.success("تم إنشاء الحساب. إن طُلب تأكيد البريد فافتح الرسالة المرسلة إليك.");
-        const { data } = await supabase.auth.getSession();
-        if (data.session) navigate({ to: "/dashboard" });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error)
+          throw new Error(
+            "لا يوجد حساب موظف بهذا البريد أو كلمة المرور غير صحيحة. الحسابات يُنشئها المدير العام فقط.",
+          );
+        navigate({ to: "/dashboard" });
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "تعذّر إكمال العملية");
