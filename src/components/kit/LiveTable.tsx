@@ -20,6 +20,8 @@ export type LiveTableProps<T> = {
   emptyHint?: string;
   selectable?: boolean;
   showColumnsButton?: boolean;
+  /** تلوين الصف كاملًا حسب حالته */
+  rowClassName?: (row: T) => string | undefined;
 };
 
 export function useTableRows<T>({
@@ -60,6 +62,7 @@ export function LiveTable<T>({
   emptyHint = "ستظهر السجلات هنا بمجرد إضافتها في النظام.",
   selectable,
   showColumnsButton,
+  rowClassName,
   ...queryProps
 }: LiveTableProps<T>) {
   const { data, isLoading, error } = useTableRows<T>(queryProps);
