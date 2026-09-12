@@ -255,6 +255,11 @@ function TaskFormPage() {
       queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
       queryClient.invalidateQueries({ queryKey: ["task-assignees", newId] });
       toast.success(id ? "تم تحديث المهمة" : "تم إنشاء المهمة وتكليف الفريق");
+      if (notify) {
+        if (notify.sent) toast.success(`تم إرسال المهمة على واتساب (${notify.sent})`);
+        if (notify.failed) toast.error(`تعذّر إرسال واتساب لـ ${notify.failed} موظف`);
+        if (notify.skipped) toast.warning(`${notify.skipped} موظف بدون رقم واتساب أو الإشعارات مقفولة`);
+      }
       if (!id && newId) navigate({ to: "/task-form", search: { id: newId } });
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
