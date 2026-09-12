@@ -174,28 +174,9 @@ function AuthPage() {
         </form>
 
         {audience === "staff" ? (
-          <>
-            <div className="my-5 flex items-center gap-3 text-[12px] text-muted-foreground">
-              <span className="h-px flex-1 bg-border" />
-              أو
-              <span className="h-px flex-1 bg-border" />
-            </div>
-
-            <Button type="button" variant="outline" className="w-full" onClick={google} disabled={busy}>
-              الدخول باستخدام Google
-            </Button>
-          </>
-        ) : null}
-
-
-        {audience === "staff" ? (
-          <button
-            type="button"
-            className="mt-6 w-full text-[13px] text-primary underline-offset-4 hover:underline"
-            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          >
-            {mode === "signin" ? "ليس لديك حساب؟ إنشاء حساب" : "لدي حساب بالفعل — تسجيل الدخول"}
-          </button>
+          <p className="mt-6 text-center text-[12.5px] text-muted-foreground">
+            حسابات الموظفين يُنشئها المدير العام فقط. لا يوجد تسجيل ذاتي.
+          </p>
         ) : null}
       </div>
     </main>
