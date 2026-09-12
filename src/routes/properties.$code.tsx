@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { FavoriteButton } from "@/components/site/FavoriteButton";
 import { PropertyCard } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { StaffReserveBox } from "@/components/site/StaffReserveBox";
 import { SOCIAL_PLATFORMS, SocialGlyph } from "@/components/site/SocialIcons";
 import { supabase } from "@/integrations/supabase/client";
 import { recordView } from "@/lib/favorites";
@@ -218,6 +219,7 @@ function PropertyPage() {
           </div>
 
           <aside className="space-y-4">
+            <StaffReserveBox propertyId={property.id} propertyName={property.name} />
             <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
               <div className="flex items-center justify-between">
                 <span className="rounded-lg bg-primary px-3 py-1 text-[12px] font-bold text-primary-foreground">

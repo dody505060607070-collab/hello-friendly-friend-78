@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { resolveClientLogin } from "@/lib/portal.functions";
 
 export const Route = createFileRoute("/auth")({
@@ -28,11 +27,9 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [audience, setAudience] = useState<"staff" | "client">("staff");
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -58,23 +55,13 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (error) throw new Error("اسم المستخدم أو كلمة المرور غير صحيحة.");
         navigate({ to: "/portal" });
-      } else if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        navigate({ to: "/dashboard" });
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: { full_name: fullName },
-          },
-        });
-        if (error) throw error;
-        toast.success("تم إنشاء الحساب. إن طُلب تأكيد البريد فافتح الرسالة المرسلة إليك.");
-        const { data } = await supabase.auth.getSession();
-        if (data.session) navigate({ to: "/dashboard" });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error)
+          throw new Error(
+            "لا يوجد حساب موظف بهذا البريد أو كلمة المرور غير صحيحة. الحسابات يُنشئها المدير العام فقط.",
+          );
+        navigate({ to: "/dashboard" });
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "تعذّر إكمال العملية");
@@ -83,19 +70,6 @@ function AuthPage() {
     }
   };
 
-  const google = async () => {
-    setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      setBusy(false);
-      toast.error("تعذّر الدخول عبر Google");
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: "/dashboard" });
-  };
 
   return (
     <main className="grid min-h-screen place-items-center bg-background px-4 py-10">
@@ -115,7 +89,7 @@ function AuthPage() {
         </div>
 
         <h1 className="mt-5 text-center text-xl font-bold text-foreground">
-          {audience === "client" ? "دخول بوابة العميل" : mode === "signin" ? "تسجيل الدخول للوحة التحكم" : "إنشاء حساب موظف"}
+          {audience === "client" ? "دخول بوابة العميل" : "تسجيل الدخول للوحة التحكم"}
         </h1>
         <p className="mt-2 text-center text-[13px] text-muted-foreground">
           {audience === "client"
@@ -124,20 +98,7 @@ function AuthPage() {
         </p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
-          {audience === "staff" && mode === "signup" ? (
-            <div className="space-y-2">
-              <Label htmlFor="name">الاسم الكامل</Label>
-              <Input
-                id="name"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="مثال: محمد مثراء"
-              />
-            </div>
-          ) : null}
-
-          {audience === "client" ? (
+                    {audience === "client" ? (
             <div className="space-y-2">
               <Label htmlFor="username">اسم المستخدم</Label>
               <Input
@@ -179,33 +140,14 @@ function AuthPage() {
           </div>
 
           <Button type="submit" className="w-full" disabled={busy}>
-            {audience === "client" ? "دخول بوابتي" : mode === "signin" ? "دخول" : "إنشاء الحساب"}
+            {audience === "client" ? "دخول بوابتي" : "دخول"}
           </Button>
         </form>
 
         {audience === "staff" ? (
-          <>
-            <div className="my-5 flex items-center gap-3 text-[12px] text-muted-foreground">
-              <span className="h-px flex-1 bg-border" />
-              أو
-              <span className="h-px flex-1 bg-border" />
-            </div>
-
-            <Button type="button" variant="outline" className="w-full" onClick={google} disabled={busy}>
-              الدخول باستخدام Google
-            </Button>
-          </>
-        ) : null}
-
-
-        {audience === "staff" ? (
-          <button
-            type="button"
-            className="mt-6 w-full text-[13px] text-primary underline-offset-4 hover:underline"
-            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          >
-            {mode === "signin" ? "ليس لديك حساب؟ إنشاء حساب" : "لدي حساب بالفعل — تسجيل الدخول"}
-          </button>
+          <p className="mt-6 text-center text-[12.5px] text-muted-foreground">
+            حسابات الموظفين يُنشئها المدير العام فقط. لا يوجد تسجيل ذاتي.
+          </p>
         ) : null}
       </div>
     </main>
