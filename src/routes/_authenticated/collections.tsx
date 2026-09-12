@@ -9,7 +9,7 @@ import { CardsSkeleton } from "@/components/kit/Skeleton";
 import { StatBar, StatCard } from "@/components/kit/StatCard";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { exportToExcel } from "@/lib/export";
+import { exportWorkbook } from "@/lib/export";
 
 export const Route = createFileRoute("/_authenticated/collections")({
   head: () => ({
@@ -89,17 +89,19 @@ function CollectionsPage() {
   const rate = totals.due ? Math.round((totals.collected / totals.due) * 100) : 0;
 
   const download = () =>
-    exportToExcel(
-      rows.map((r) => ({
+    exportWorkbook(`تقرير-التحصيلات-${year}`, [
+      {
+        name: "التحصيلات",
+        rows: rows.map((r) => ({
         الشهر: monthLabel(r.month),
         "عدد الدفعات": r.count,
         "المستحق (ر.س)": Math.round(r.due),
         "المحصّل (ر.س)": Math.round(r.collected),
         "المتأخر (ر.س)": Math.round(r.overdue),
-        "نسبة التحصيل": r.due ? `${Math.round((r.collected / r.due) * 100)}%` : "—",
-      })),
-      `تقرير-التحصيلات-${year}`,
-    );
+          "نسبة التحصيل": r.due ? `${Math.round((r.collected / r.due) * 100)}%` : "—",
+        })),
+      },
+    ]);
 
   return (
     <>
