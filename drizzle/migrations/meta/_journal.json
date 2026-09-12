@@ -29,6 +29,13 @@
       "when": 1789172039953,
       "tag": "0003_staff_can_create_activities",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789223461561,
+      "tag": "0004_features_20_ideas",
+      "breakpoints": true
     }
   ]
 }
