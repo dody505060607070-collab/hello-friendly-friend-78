@@ -476,17 +476,29 @@ function TaskFormPage() {
 
       <SectionCard
         title="موقع المهمة"
-        subtitle="حدد وصف الموقع والإحداثيات؛ تظهر خريطة مصغّرة للموظف مع إمكانية فتح الاتجاهات."
+        subtitle="ألصق رابط Google Maps مباشرة، أو اكتب الإحداثيات يدويًا؛ تظهر خريطة مصغّرة للموظف مع إمكانية فتح الاتجاهات."
         icon={MapPin}
       >
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="وصف الموقع" className="sm:col-span-3">
+          <Field label="رابط / موقع الموقع" className="sm:col-span-3">
             <input
               className={inputClass}
+              dir="ltr"
               value={form.location_text}
-              onChange={(e) => set({ location_text: e.target.value })}
-              placeholder="مثال: حي الملقا - شارع أنس بن مالك"
+              onChange={(e) => {
+                const value = e.target.value;
+                const coords = extractMapCoords(value);
+                if (coords) {
+                  set({ location_text: value, location_lat: coords.lat, location_lng: coords.lng });
+                } else {
+                  set({ location_text: value });
+                }
+              }}
+              placeholder="https://maps.google.com/... أو وصف الموقع"
             />
+            <p className="mt-1.5 text-[12px] text-muted-foreground">
+              يمكنك نسخ رابط Google Maps كاملاً وسيتم استخراج الإحداثيات تلقائيًا.
+            </p>
           </Field>
           <Field label="خط العرض (Lat)">
             <input
@@ -516,8 +528,17 @@ function TaskFormPage() {
               >
                 فتح في خرائط Google
               </a>
+            ) : looksLikeUrl(form.location_text) ? (
+              <a
+                className="inline-flex h-10 items-center rounded-lg border border-border px-3 text-[13px] font-semibold text-primary"
+                href={form.location_text}
+                target="_blank"
+                rel="noreferrer"
+              >
+                فتح الرابط المباشر
+              </a>
             ) : (
-              <p className="text-[12.5px] text-muted-foreground">أدخل الإحداثيات لعرض الخريطة.</p>
+              <p className="text-[12.5px] text-muted-foreground">أدخل رابط Google Maps أو الإحداثيات.</p>
             )}
           </Field>
         </div>
