@@ -236,7 +236,7 @@ function ReservationsPage() {
         open={Boolean(selected)}
         onClose={() => setSelected(null)}
         title="تفاصيل الحجز"
-        subtitle={selected?.properties?.name ?? undefined}
+        subtitle={selected?.properties?.name ?? ""}
         footer={
           selected && !closed(selected.status) ? (
             <div className="flex flex-wrap items-center justify-end gap-2">
