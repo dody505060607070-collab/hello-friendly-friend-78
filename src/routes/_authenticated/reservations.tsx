@@ -1,9 +1,14 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, Plus } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 import { Chip } from "@/components/kit/Chip";
 import { LiveTable, formatDate } from "@/components/kit/LiveTable";
 import { PageHero } from "@/components/kit/PageHero";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import { reservationStatusLabels } from "@/lib/labels";
 
 type Row = {
