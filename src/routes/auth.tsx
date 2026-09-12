@@ -73,116 +73,120 @@ function AuthPage() {
 
 
   return (
-    <main className="grid min-h-screen bg-background lg:grid-cols-2">
-      {/* نموذج الدخول — يمين في RTL */}
-      <section className="flex items-center justify-center px-5 py-10 sm:px-10">
-        <div className="w-full max-w-md">
-          <Link to="/" aria-label="العودة للرئيسية">
-            <img src={logoAsset.url} alt="مثراء العقارية" className="mx-auto h-24 w-auto transition hover:scale-105 sm:h-28" />
-          </Link>
-
-          <div className="mt-8 grid grid-cols-2 gap-1 rounded-2xl bg-muted p-1.5 text-sm font-semibold">
-            {(["staff", "client"] as const).map((a) => (
-              <button
-                key={a}
-                type="button"
-                onClick={() => setAudience(a)}
-                className={`rounded-xl py-2.5 transition-all duration-300 ${
-                  audience === a
-                    ? "bg-card text-foreground shadow-md"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {a === "staff" ? "موظف" : "عميل"}
-              </button>
-            ))}
+    <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4 sm:p-6">
+      <section className="grid w-full max-w-4xl overflow-hidden rounded-3xl bg-card shadow-2xl lg:grid-cols-2">
+        {/* صورة العلامة — box صغير على الشمال في RTL */}
+        <aside className="relative hidden items-center justify-center p-6 lg:flex">
+          <div className="relative h-full max-h-[520px] w-full overflow-hidden rounded-2xl shadow-lg">
+            <img
+              src={authSideImg}
+              alt="مثراء العقارية"
+              className="h-full w-full object-cover"
+              width={1024}
+              height={1536}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[oklch(0.18_0.06_255/0.85)] via-transparent to-[oklch(0.18_0.06_255/0.35)]" />
+            <div className="absolute inset-x-0 bottom-0 p-6 text-center">
+              <p className="text-2xl font-bold tracking-wide text-white drop-shadow-lg">مثراء العقارية</p>
+              <p className="mt-2 text-xs leading-relaxed text-white/80">
+                منصة إدارة عقارية متكاملة.
+              </p>
+            </div>
           </div>
+        </aside>
 
-          <h1 className="mt-8 text-center text-2xl font-bold text-foreground">
-            {audience === "client" ? "دخول بوابة العميل" : "تسجيل الدخول للوحة التحكم"}
-          </h1>
-          <p className="mt-2 text-center text-[13px] leading-relaxed text-muted-foreground">
-            {audience === "client"
-              ? "اسم المستخدم هو رقم الهوية، ومعه كلمة المرور الخاصة بك."
-              : "الوصول للبيانات الداخلية متاح للموظفين المصرّح لهم فقط."}
-          </p>
+        {/* نموذج الدخول — يمين في RTL، أصغر وأنظف */}
+        <div className="flex items-center justify-center px-6 py-10 sm:px-10">
+          <div className="w-full max-w-sm">
+            <Link to="/" aria-label="العودة للرئيسية">
+              <img src={logoAsset.url} alt="مثراء العقارية" className="mx-auto h-20 w-auto transition hover:scale-105 sm:h-24" />
+            </Link>
 
-          <form onSubmit={submit} className="mt-8 space-y-5">
-            {audience === "client" ? (
-              <div className="space-y-2">
-                <Label htmlFor="username">اسم المستخدم</Label>
-                <Input
-                  id="username"
-                  dir="ltr"
-                  inputMode="numeric"
-                  required
-                  className="h-12 rounded-xl"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="1xxxxxxxxx"
-                />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label htmlFor="email">البريد الإلكتروني</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  dir="ltr"
-                  required
-                  className="h-12 rounded-xl"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@mithra.work"
-                />
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="password">كلمة المرور</Label>
-              <Input
-                id="password"
-                type="password"
-                dir="ltr"
-                required
-                minLength={audience === "client" ? 6 : 8}
-                className="h-12 rounded-xl"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-              />
+            <div className="mt-6 grid grid-cols-2 gap-1 rounded-2xl bg-muted p-1.5 text-sm font-semibold">
+              {(["staff", "client"] as const).map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => setAudience(a)}
+                  className={`rounded-xl py-2 transition-all duration-300 ${
+                    audience === a
+                      ? "bg-card text-foreground shadow-md"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {a === "staff" ? "موظف" : "عميل"}
+                </button>
+              ))}
             </div>
 
-            <Button type="submit" size="lg" className="h-12 w-full rounded-xl text-base" disabled={busy}>
-              {busy ? "جارٍ الدخول…" : audience === "client" ? "دخول بوابتي" : "دخول"}
-            </Button>
-          </form>
-
-          {audience === "staff" ? (
-            <p className="mt-8 text-center text-[12.5px] leading-relaxed text-muted-foreground">
-              حسابات الموظفين يُنشئها المدير العام فقط. لا يوجد تسجيل ذاتي.
+            <h1 className="mt-6 text-center text-xl font-bold text-foreground">
+              {audience === "client" ? "دخول بوابة العميل" : "تسجيل الدخول"}
+            </h1>
+            <p className="mt-1.5 text-center text-[12.5px] leading-relaxed text-muted-foreground">
+              {audience === "client"
+                ? "اسم المستخدم هو رقم الهوية، ومعه كلمة المرور الخاصة بك."
+                : "الوصول للبيانات الداخلية متاح للموظفين المصرّح لهم فقط."}
             </p>
-          ) : null}
+
+            <form onSubmit={submit} className="mt-6 space-y-4">
+              {audience === "client" ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="username">اسم المستخدم</Label>
+                  <Input
+                    id="username"
+                    dir="ltr"
+                    inputMode="numeric"
+                    required
+                    className="h-11 rounded-xl"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="1xxxxxxxxx"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">البريد الإلكتروني</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    dir="ltr"
+                    required
+                    className="h-11 rounded-xl"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@mithra.work"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label htmlFor="password">كلمة المرور</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  dir="ltr"
+                  required
+                  minLength={audience === "client" ? 6 : 8}
+                  className="h-11 rounded-xl"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <Button type="submit" size="lg" className="h-11 w-full rounded-xl text-sm" disabled={busy}>
+                {busy ? "جارٍ الدخول…" : audience === "client" ? "دخول بوابتي" : "دخول"}
+              </Button>
+            </form>
+
+            {audience === "staff" ? (
+              <p className="mt-6 text-center text-[11.5px] leading-relaxed text-muted-foreground">
+                حسابات الموظفين يُنشئها المدير العام فقط. لا يوجد تسجيل ذاتي.
+              </p>
+            ) : null}
+          </div>
         </div>
       </section>
-
-      {/* صورة العلامة — شمال في RTL */}
-      <aside className="relative hidden overflow-hidden lg:block">
-        <img
-          src={authSideImg}
-          alt="مثراء العقارية"
-          className="absolute inset-0 h-full w-full object-cover"
-          width={1024}
-          height={1536}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[oklch(0.18_0.06_255/0.85)] via-transparent to-[oklch(0.18_0.06_255/0.35)]" />
-        <div className="absolute inset-x-0 bottom-0 p-10 text-center">
-          <p className="text-4xl font-bold tracking-wide text-white drop-shadow-lg">مثراء العقارية</p>
-          <p className="mt-3 text-sm leading-relaxed text-white/80">
-            منصة إدارة عقارية متكاملة — عقارات، عقود، حجوزات، ومتابعات في مكان واحد.
-          </p>
-        </div>
-      </aside>
     </main>
   );
 }
