@@ -432,6 +432,8 @@ export const checkTwilioConfig = createServerFn({ method: "GET" })
 export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<LinkStatus> => {
+    const viaWassenger = await wassengerStatus();
+    if (viaWassenger) return viaWassenger;
     const viaCloud = await cloudStatus();
     if (viaCloud) return viaCloud;
     const { url, token } = normalizeBridgeConfig();
