@@ -483,6 +483,7 @@ function RemindersPage() {
         </div>
         <DataTable<FollowupRow>
           rows={rows}
+          rowClassName={(r) => rowToneClass[followupRowTone(r)]}
           draggableRows
           dragLabel="تذكير"
           searchPlaceholder="بحث بالمستلم أو رقم العقد"
