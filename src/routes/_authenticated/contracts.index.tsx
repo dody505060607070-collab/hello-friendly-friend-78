@@ -312,6 +312,10 @@ function ContractsPage() {
         ]}
       />
 
+      {tab === "imports" ? null : (
+        <ToneLegend tones={["overdue", "today", "urgent", "new"]} />
+      )}
+
       {tab === "imports" ? (
         <DataTable<ImportRow>
           rows={imports.data ?? []}
@@ -356,6 +360,7 @@ function ContractsPage() {
       ) : (
         <DataTable<Row>
           rows={filtered}
+          rowClassName={(r) => rowToneClass[contractRowTone(r)]}
           onRowClick={(r) => navigate({ to: "/contracts/$contractId", params: { contractId: r.id } })}
           draggableRows
           dragLabel="عقد"
