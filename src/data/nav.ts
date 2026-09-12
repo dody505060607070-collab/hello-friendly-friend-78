@@ -31,6 +31,7 @@ export const navGroups: NavGroup[] = [
     icon: Home,
     items: [
       { label: "لوحة التحكم", to: "/dashboard" },
+      { label: "مركز التنبيهات", to: "/alerts" },
       { label: "المساعد الذكي", to: "/ai" },
     ],
   },
