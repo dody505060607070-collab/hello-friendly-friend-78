@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 /**
  * نقطة دخول n8n إلى النظام.
  * POST /api/public/n8n  مع الترويسة X-Mithra-Token
- * body: { action: "send_whatsapp" | "notify_staff" | "log", ... }
+ * body: { action: "send_whatsapp" | "notify_staff" | "due_payments" | "process_reminders" | "log", ... }
  */
 export const Route = createFileRoute("/api/public/n8n")({
   server: {
@@ -54,7 +54,7 @@ export const Route = createFileRoute("/api/public/n8n")({
           }
 
           if (action === "notify_staff") {
-            const title = String(body["title"] ?? "تنبيه من الأتمتة");
+            const title = String(body["title"] ?? "تنبيه من الأتمة");
             const text = body["body"] ? String(body["body"]) : null;
             const link = body["link"] ? String(body["link"]) : null;
             const { data: staff } = await supabaseAdmin.from("user_roles").select("user_id");
@@ -125,6 +125,74 @@ export const Route = createFileRoute("/api/public/n8n")({
             return json({ ok: true, count: items.length, items });
           }
 
+          if (action === "process_reminders") {
+            // يبحث عن متابعات مستحقة ويرسلها، ثم يحدّث موعد الإرسال التالي حسب التكرار.
+            const now = new Date().toISOString();
+            const { data: rows, error: fetchError } = await supabaseAdmin
+              .from("reminder_followups")
+              .select(
+                "id, recipient_name, recipient_phone, message_body, repeat_interval, sent_count, last_sent_at, next_send_at, status",
+              )
+              .eq("status", "pending")
+              .lte("next_send_at", now)
+              .order("next_send_at", { ascending: true })
+              .limit(100);
+            if (fetchError) throw new Error(fetchError.message);
+
+            const { twilioSend } = await import("@/lib/whatsapp.functions");
+            let sent = 0;
+            let failed = 0;
+
+            for (const row of rows ?? []) {
+              const result = await twilioSend({ to: row.recipient_phone, body: row.message_body });
+              const next = calculateNextSend(row.repeat_interval);
+
+              await supabaseAdmin.from("message_log").insert({
+                recipient_name: row.recipient_name,
+                recipient_phone: row.recipient_phone,
+                body: row.message_body,
+                channel: "whatsapp",
+                result: result.ok ? "sent" : "failed",
+                failure_reason: result.ok ? null : result.error,
+                sent_by_system: true,
+              });
+
+              if (result.ok) {
+                sent++;
+                if (row.repeat_interval === "once" || !next) {
+                  await supabaseAdmin
+                    .from("reminder_followups")
+                    .update({ status: "done", sent_count: (row.sent_count ?? 0) + 1, last_sent_at: now })
+                    .eq("id", row.id);
+                } else {
+                  await supabaseAdmin
+                    .from("reminder_followups")
+                    .update({
+                      sent_count: (row.sent_count ?? 0) + 1,
+                      last_sent_at: now,
+                      next_send_at: next,
+                    })
+                    .eq("id", row.id);
+                }
+              } else {
+                failed++;
+                await supabaseAdmin
+                  .from("reminder_followups")
+                  .update({ status: "failed", last_sent_at: now })
+                  .eq("id", row.id);
+              }
+            }
+
+            await supabaseAdmin.from("automation_events").insert({
+              event: "reminders.processed",
+              direction: "in",
+              payload: { checked: (rows ?? []).length, sent, failed } as never,
+              status: "sent",
+            });
+
+            return json({ ok: true, checked: (rows ?? []).length, sent, failed });
+          }
+
           if (action === "log") {
             await supabaseAdmin.from("automation_events").insert({
               event: String(body["event"] ?? "n8n.log"),
@@ -143,3 +211,24 @@ export const Route = createFileRoute("/api/public/n8n")({
     },
   },
 });
+
+function calculateNextSend(interval: string | null): string | null {
+  if (!interval || interval === "once") return null;
+  const now = new Date();
+  const hourMs = 60 * 60 * 1000;
+  const dayMs = 24 * hourMs;
+
+  if (interval === "6h") return new Date(now.getTime() + 6 * hourMs).toISOString();
+  if (interval === "8h") return new Date(now.getTime() + 8 * hourMs).toISOString();
+  if (interval === "12h") return new Date(now.getTime() + 12 * hourMs).toISOString();
+  if (interval === "24h" || interval === "daily") return new Date(now.getTime() + dayMs).toISOString();
+  if (interval === "3d") return new Date(now.getTime() + 3 * dayMs).toISOString();
+  if (interval === "weekly") return new Date(now.getTime() + 7 * dayMs).toISOString();
+  if (interval === "biweekly") return new Date(now.getTime() + 14 * dayMs).toISOString();
+  if (interval === "monthly") {
+    const d = new Date(now);
+    d.setMonth(d.getMonth() + 1);
+    return d.toISOString();
+  }
+  return null;
+}
