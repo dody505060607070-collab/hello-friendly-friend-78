@@ -7,8 +7,10 @@ import { Chip } from "@/components/kit/Chip";
 import { DataTable } from "@/components/kit/DataTable";
 import { EmptyState, formatCurrency, formatDate } from "@/components/kit/LiveTable";
 import { PageHero } from "@/components/kit/PageHero";
+import { ToneLegend } from "@/components/kit/ToneLegend";
 import { supabase } from "@/integrations/supabase/client";
 import { invoiceStatusLabels } from "@/lib/labels";
+import { invoiceRowTone, rowToneClass } from "@/lib/row-tone";
 
 type Row = {
   id: string;
