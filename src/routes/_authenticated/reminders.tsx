@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { BellRing, Loader2, MessageSquare, Send, StopCircle } from "lucide-react";
+import { BellRing, Loader2, MessageSquare, RefreshCw, Send, StopCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -9,8 +9,10 @@ import { DataTable } from "@/components/kit/DataTable";
 import { EmptyState, formatDate, useTableRows } from "@/components/kit/LiveTable";
 import { Field, PrimaryButton, inputClass, textareaClass } from "@/components/kit/Modal";
 import { PageHero } from "@/components/kit/PageHero";
+import { ToneLegend } from "@/components/kit/ToneLegend";
 import { supabase } from "@/integrations/supabase/client";
 import { followupStatusLabels } from "@/lib/labels";
+import { followupRowTone, messageLogRowTone, rowToneClass } from "@/lib/row-tone";
 import { whatsappLink } from "@/lib/site-data";
 
 type FollowupRow = {
