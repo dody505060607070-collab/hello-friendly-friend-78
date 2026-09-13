@@ -251,7 +251,8 @@ function ListPropertyPage() {
     try {
       const attachments: { path: string; name: string }[] = [];
       for (const file of files) {
-        const path = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`;
+        const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const path = `public/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext || "jpg"}`;
         await uploadMedia("listing-uploads", path, file);
         attachments.push({ path: `listing-uploads/${path}`, name: file.name });
       }
