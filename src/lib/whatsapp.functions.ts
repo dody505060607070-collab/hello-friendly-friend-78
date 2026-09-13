@@ -14,6 +14,8 @@ export function toE164(raw: string): string {
   const digits = raw.replace(/[^\d+]/g, "");
   if (digits.startsWith("+")) return digits;
   if (digits.startsWith("00966")) return `+${digits.slice(2)}`;
+  // مفتاح مكرر بالخطأ مثل 9966xxxxxxxxx → +966xxxxxxxxx
+  if (digits.startsWith("9966") && digits.length >= 13) return `+${digits.slice(1)}`;
   if (digits.startsWith("966")) return `+${digits}`;
   if (digits.startsWith("05")) return `+966${digits.slice(1)}`;
   if (digits.startsWith("5") && digits.length === 9) return `+966${digits}`;
