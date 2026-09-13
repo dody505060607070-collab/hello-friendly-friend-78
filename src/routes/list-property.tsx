@@ -179,9 +179,16 @@ function ListPropertyPage() {
   });
   const [files, setFiles] = useState<File[]>([]);
 
+  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/avif"];
+
   const addFiles = (list: FileList | null) => {
     if (!list) return;
     const next = [...files, ...Array.from(list)].slice(0, 3);
+    const badType = next.find((f) => !ALLOWED_IMAGE_TYPES.includes(f.type));
+    if (badType) {
+      toast.error("يُسمح بالصور فقط (JPG / PNG / WEBP)");
+      return;
+    }
     const tooBig = next.find((f) => f.size > 5 * 1024 * 1024);
     if (tooBig) {
       toast.error("حد أقصى 5 ميجا للصورة الواحدة");
