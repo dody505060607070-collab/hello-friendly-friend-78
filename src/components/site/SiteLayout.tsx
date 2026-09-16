@@ -7,6 +7,7 @@ import logoAsset from "@/assets/mithra-logo-transparent.png.asset.json";
 import { FloatingActions, ScrollProgress } from "@/components/site/Chrome";
 import { AiWidget } from "@/components/site/AiWidget";
 import { useSession } from "@/hooks/useAuth";
+import { LanguageToggle } from "@/lib/i18n";
 import { COMPANY_EMAIL, COMPANY_PHONE } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-white/10 bg-primary/85 text-primary-foreground shadow-md backdrop-blur-xl">
       <div className="mx-auto flex h-[74px] max-w-6xl items-center justify-between gap-4 px-4">
         <div className="flex items-center gap-2">
+          <LanguageToggle className="border-primary-foreground/35 bg-transparent text-primary-foreground hover:bg-primary-foreground/10" />
           <Link
             to="/list-property"
             className="hidden rounded-lg border border-primary-foreground/35 px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-primary-foreground/10 md:inline-flex"

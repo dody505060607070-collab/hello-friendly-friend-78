@@ -14,10 +14,17 @@ export function toE164(raw: string): string {
   const digits = raw.replace(/[^\d+]/g, "");
   if (digits.startsWith("+")) return digits;
   if (digits.startsWith("00966")) return `+${digits.slice(2)}`;
+  // مفتاح مكرر بالخطأ مثل 9966xxxxxxxxx → +966xxxxxxxxx
+  if (digits.startsWith("9966") && digits.length >= 13) return `+${digits.slice(1)}`;
   if (digits.startsWith("966")) return `+${digits}`;
   if (digits.startsWith("05")) return `+966${digits.slice(1)}`;
   if (digits.startsWith("5") && digits.length === 9) return `+966${digits}`;
-  return digits.startsWith("00") ? `+${digits.slice(2)}` : `+${digits}`;
+  if (digits.startsWith("00")) return `+${digits.slice(2)}`;
+  // رقم محلي سعودي يبدأ بصفر (مثل 0512345678) → نضيف مفتاح السعودية
+  if (digits.startsWith("0")) return `+966${digits.replace(/^0+/, "")}`;
+  // رقم من 9 خانات بدون مفتاح دولة يُعتبر سعوديًا
+  if (digits.length === 9) return `+966${digits}`;
+  return `+${digits}`;
 }
 
 type TwilioResult =
@@ -245,12 +252,50 @@ type LinkStatus = {
   error: string | null;
 };
 
+/** إنشاء الاتصال لدى المزوّد إن لم يكن موجودًا، ثم طلب QR. */
+async function cloudEnsureInstance(instance: string): Promise<void> {
+  const created = await cloudJson(`/instance/create`, {
+    method: "POST",
+    body: {
+      instanceName: instance,
+      qrcode: true,
+      integration: "WHATSAPP-BAILEYS",
+      rejectCall: false,
+      groupsIgnore: true,
+      alwaysOnline: false,
+      readMessages: false,
+      syncFullHistory: false,
+    },
+  });
+  if (created.status === 401 || created.status === 403) {
+    throw new Error("AUTH");
+  }
+  // 201/200 = أُنشئ؛ 409/400 "already in use" = موجود مسبقًا — كلاهما مقبول
+}
+
 /** حالة الربط + رمز QR من المزوّد السحابي. */
 async function cloudStatus(): Promise<LinkStatus | null> {
   const cfg = cloudConfig();
   if (!cfg.ready) return null;
   try {
     const state = await cloudJson(`/instance/connectionState/${cfg.instance}`);
+    if (state.status === 404) {
+      // لا يوجد اتصال بهذا الاسم → أنشئه تلقائيًا ثم تابع
+      try {
+        await cloudEnsureInstance(cfg.instance);
+      } catch (e) {
+        if ((e as Error).message === "AUTH") {
+          return {
+            configured: true,
+            connection: "closed",
+            qr: null,
+            me: null,
+            error: "مفتاح خدمة واتساب غير صحيح — تأكد من قيمة WHATSAPP_API_KEY.",
+          };
+        }
+        throw e;
+      }
+    }
     const inst = (state.data["instance"] as { state?: string; owner?: string } | undefined) ?? {};
     const raw = inst.state ?? (state.data["state"] as string | undefined) ?? "";
     if (raw === "open") {

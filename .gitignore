@@ -30,3 +30,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets file (احذف السطر التالي لو أردت رفع الأسرار إلى مستودع خاص)
+deploy/.env.secrets
+deploy/.env
