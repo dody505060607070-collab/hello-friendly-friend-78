@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import generatedEnglish from "./translations.en.json";
 
 export type Lang = "ar" | "en";
 
@@ -6,6 +7,7 @@ const STORAGE_KEY = "mithraa-lang";
 
 /** قاموس الترجمة: المفتاح هو النص العربي الأصلي. */
 const EN: Record<string, string> = {
+  ...(generatedEnglish as Record<string, string>),
   // عام
   "لوحة التحكم": "Dashboard",
   "المساعد الذكي": "AI Assistant",
@@ -66,6 +68,50 @@ const EN: Record<string, string> = {
   "عقارات للإيجار": "For rent",
 };
 
+const arabicPattern = /[\u0600-\u06ff]/;
+const originalText = new WeakMap<Text, string>();
+const originalAttributes = new WeakMap<Element, Map<string, string>>();
+
+function translateValue(value: string) {
+  const whitespace = value.match(/^\s*/)?.[0] ?? "";
+  const trailing = value.match(/\s*$/)?.[0] ?? "";
+  const core = value.trim();
+  if (!core || !arabicPattern.test(core)) return value;
+  return `${whitespace}${EN[core] ?? core}${trailing}`;
+}
+
+function translateDocument(lang: Lang, root: ParentNode = document.body) {
+  const textWalker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let current = textWalker.nextNode();
+  while (current) {
+    const textNode = current as Text;
+    const parent = textNode.parentElement;
+    if (parent && !["SCRIPT", "STYLE", "NOSCRIPT"].includes(parent.tagName)) {
+      if (!originalText.has(textNode)) originalText.set(textNode, textNode.data);
+      const source = originalText.get(textNode) ?? textNode.data;
+      const next = lang === "en" ? translateValue(source) : source;
+      if (textNode.data !== next) textNode.data = next;
+    }
+    current = textWalker.nextNode();
+  }
+
+  const elements = root instanceof Element ? [root, ...root.querySelectorAll("*")] : [...root.querySelectorAll("*")];
+  for (const element of elements) {
+    for (const attribute of ["placeholder", "title", "aria-label"]) {
+      const value = element.getAttribute(attribute);
+      if (!value) continue;
+      let originals = originalAttributes.get(element);
+      if (!originals) {
+        originals = new Map();
+        originalAttributes.set(element, originals);
+      }
+      if (!originals.has(attribute)) originals.set(attribute, value);
+      const source = originals.get(attribute) ?? value;
+      element.setAttribute(attribute, lang === "en" ? translateValue(source) : source);
+    }
+  }
+}
+
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (text: string) => string };
 
 const LangContext = createContext<Ctx>({ lang: "ar", setLang: () => {}, t: (s) => s });
@@ -82,6 +128,21 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const html = document.documentElement;
     html.lang = lang;
     html.dir = lang === "ar" ? "rtl" : "ltr";
+    translateDocument(lang);
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === "characterData" && mutation.target.parentNode) {
+          originalText.delete(mutation.target as Text);
+          translateDocument(lang, mutation.target.parentNode);
+        }
+        for (const node of mutation.addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) translateDocument(lang, node as Element);
+          if (node.nodeType === Node.TEXT_NODE && node.parentNode) translateDocument(lang, node.parentNode);
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
   }, [lang]);
 
   const setLang = useCallback((l: Lang) => {
