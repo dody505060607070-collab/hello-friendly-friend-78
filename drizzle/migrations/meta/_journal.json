@@ -64,6 +64,13 @@
       "when": 1789308265203,
       "tag": "0008_security_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789593239520,
+      "tag": "0009_extend_cities_for_area_showcase",
+      "breakpoints": true
     }
   ]
 }

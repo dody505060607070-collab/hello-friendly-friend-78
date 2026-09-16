@@ -326,23 +326,38 @@ export type Database = {
       cities: {
         Row: {
           created_at: string
+          description: string | null
+          description_en: string | null
           id: string
+          image_url: string | null
           is_active: boolean
+          is_featured: boolean
           name: string
+          name_en: string | null
           sort_order: number
         }
         Insert: {
           created_at?: string
+          description?: string | null
+          description_en?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
+          is_featured?: boolean
           name: string
+          name_en?: string | null
           sort_order?: number
         }
         Update: {
           created_at?: string
+          description?: string | null
+          description_en?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
+          is_featured?: boolean
           name?: string
+          name_en?: string | null
           sort_order?: number
         }
         Relationships: []
