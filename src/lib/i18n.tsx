@@ -105,6 +105,12 @@ const EN: Record<string, string> = {
   "معارض ومكاتب في مواقع حيوية بمداخل مستقلة.": "Showrooms and offices in prime locations with private entrances.",
   "أراضٍ واستثمار": "Land and investment",
   "أراضٍ سكنية وتجارية بفرص نمو حقيقية.": "Residential and commercial land with genuine growth potential.",
+  "١ عقار متاح": "1 available property",
+  "عمارة — الصفاء": "Building — Al-Safa",
+  "الصفاء — بريدة": "Al-Safa — Buraidah",
+  "عرض التفاصيل": "View details",
+  "جميع الحقوق محفوظة © 2026 — مؤسسة مثراء": "All rights reserved © 2026 — Mithraa Establishment",
+  "مثراء AI": "Mithraa AI",
 };
 
 const arabicPattern = /[\u0600-\u06ff]/;
