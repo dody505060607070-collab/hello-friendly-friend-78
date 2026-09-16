@@ -109,7 +109,6 @@ const EN: Record<string, string> = {
   "عمارة — الصفاء": "Building — Al-Safa",
   "الصفاء — بريدة": "Al-Safa — Buraidah",
   "عرض التفاصيل": "View details",
-  "جميع الحقوق محفوظة © 2026 — مؤسسة مثراء": "All rights reserved © 2026 — Mithraa Establishment",
   "مثراء AI": "Mithraa AI",
 };
 
