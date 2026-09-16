@@ -29,6 +29,18 @@ export type PublicProperty = {
   property_images: { url: string; is_cover: boolean; sort_order: number }[];
 };
 
+export type PublicArea = {
+  id: string;
+  name: string;
+  name_en: string | null;
+  description: string | null;
+  description_en: string | null;
+  image_url: string | null;
+  is_featured: boolean;
+  sort_order: number;
+  property_count: number;
+};
+
 const PROPERTY_FIELDS =
   "id, code, name, purpose, property_type, city, district, price_text, price_value, description, is_featured, map_url, latitude, longitude, whatsapp_number, link_youtube, link_tiktok, link_instagram, link_snapchat, link_x, link_facebook, link_tour, created_at, property_images(url, is_cover, sort_order)";
 
@@ -76,6 +88,38 @@ export const publicPropertiesQuery = (purpose?: "rent" | "sale", limit?: number)
   queryOptions({
     queryKey: ["public-properties", purpose ?? "all", limit ?? 60],
     queryFn: () => fetchProperties(purpose, limit),
+    staleTime: 60_000,
+  });
+
+export const publicAreasQuery = (purpose?: "rent" | "sale") =>
+  queryOptions({
+    queryKey: ["public-areas", purpose ?? "all"],
+    queryFn: async () => {
+      const [citiesResult, propertiesResult] = await Promise.all([
+        supabase
+          .from("cities")
+          .select("id, name, name_en, description, description_en, image_url, is_featured, sort_order")
+          .eq("is_active", true)
+          .order("is_featured", { ascending: false })
+          .order("sort_order"),
+        (() => {
+          let query = supabase.from("properties").select("city").eq("is_visible", true);
+          if (purpose) query = query.eq("purpose", purpose);
+          return query;
+        })(),
+      ]);
+      if (citiesResult.error) throw citiesResult.error;
+      if (propertiesResult.error) throw propertiesResult.error;
+      const counts = new Map<string, number>();
+      for (const row of propertiesResult.data ?? []) {
+        const city = row.city?.trim();
+        if (city) counts.set(city, (counts.get(city) ?? 0) + 1);
+      }
+      return (citiesResult.data ?? []).map((city) => ({
+        ...city,
+        property_count: counts.get(city.name.trim()) ?? 0,
+      })) as PublicArea[];
+    },
     staleTime: 60_000,
   });
 

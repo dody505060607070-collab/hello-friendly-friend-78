@@ -12,6 +12,7 @@ import socialCard from "@/assets/mithra-social-card.jpg.asset.json";
 import videoInterior from "@/assets/video-interior.mp4.asset.json";
 import videoCity from "@/assets/video-city.mp4.asset.json";
 import { HeroVideo } from "@/components/site/HeroVideo";
+import { AreaShowcase } from "@/components/site/AreaShowcase";
 import { PropertyGrid } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PropertyMapSection } from "@/components/site/PropertyMapSection";
@@ -162,6 +163,8 @@ function HomePage() {
           />
         </section>
       ) : null}
+
+      <AreaShowcase />
 
       <Reveal as="section" className="mx-auto max-w-6xl px-4 py-16">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
