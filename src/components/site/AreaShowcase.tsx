@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ArrowUpLeft, Building2, MapPin } from "lucide-react";
+import { ArrowUpLeft, MapPin } from "lucide-react";
 
 import { Reveal } from "@/components/site/Reveal";
+import fallbackAreaImage from "@/assets/bg-city.jpg";
 import { useI18n } from "@/lib/i18n";
 import { publicAreasQuery } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
@@ -49,11 +50,7 @@ export function AreaShowcase({ purpose, currentCity }: { purpose?: "rent" | "sal
                   currentCity === area.name && "ring-2 ring-gold ring-offset-2 ring-offset-background",
                 )}
               >
-                {area.image_url ? (
-                  <img src={area.image_url} alt={title} loading="lazy" className="absolute inset-0 -z-10 size-full object-cover transition-transform duration-700 group-hover:scale-105 motion-reduce:transition-none" />
-                ) : (
-                  <Building2 className="absolute start-6 top-6 -z-10 size-14 text-primary-foreground/30" />
-                )}
+                <img src={area.image_url || fallbackAreaImage} alt={title} loading="lazy" className="absolute inset-0 -z-10 size-full object-cover transition-transform duration-700 group-hover:scale-105 motion-reduce:transition-none" />
                 <span className="absolute inset-0 -z-10 bg-gradient-to-t from-foreground/90 via-foreground/25 to-transparent" />
                 <span className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 text-background sm:p-6">
                   <span className="min-w-0">
