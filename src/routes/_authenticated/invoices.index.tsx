@@ -7,10 +7,8 @@ import { Chip } from "@/components/kit/Chip";
 import { DataTable } from "@/components/kit/DataTable";
 import { EmptyState, formatCurrency, formatDate } from "@/components/kit/LiveTable";
 import { PageHero } from "@/components/kit/PageHero";
-import { ToneLegend } from "@/components/kit/ToneLegend";
 import { supabase } from "@/integrations/supabase/client";
 import { invoiceStatusLabels } from "@/lib/labels";
-import { invoiceRowTone, rowToneClass } from "@/lib/row-tone";
 
 type Row = {
   id: string;
@@ -64,18 +62,8 @@ function InvoicesPage() {
       <Link to="/invoice-form" search={{ id: "", ownerId: "" }} className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground"><Plus className="size-4" />إنشاء فاتورة</Link>
       <nav className="text-[12.5px] text-muted-foreground">الفواتير &nbsp; / &nbsp; القائمة</nav>
     </div>
-    <ToneLegend
-      tones={["overdue", "today", "urgent", "progress", "done"]}
-      labels={{
-        overdue: "متأخرة السداد",
-        today: "تستحق اليوم",
-        urgent: "تستحق خلال 3 أيام",
-        progress: "سداد جزئي",
-        done: "مدفوعة",
-      }}
-    />
     {list.isLoading ? <div className="surface-card grid place-items-center py-20"><Loader2 className="size-6 animate-spin text-primary" /></div> :
-      <DataTable<Row> rows={rows} rowClassName={(r) => rowToneClass[invoiceRowTone(r)]} onRowClick={(r) => navigate({ to: "/invoices/$invoiceId", params: { invoiceId: r.id } })} showColumnsButton selectable dragLabel="فاتورة" exportFileName="قائمة الفواتير" searchPlaceholder="بحث برقم الفاتورة أو المالك" emptyState={<EmptyState text="لا توجد فواتير" hint="أنشئ فاتورة جديدة لتظهر هنا مع حالة السداد." />} columns={[
+      <DataTable<Row> rows={rows} onRowClick={(r) => navigate({ to: "/invoices/$invoiceId", params: { invoiceId: r.id } })} showColumnsButton selectable dragLabel="فاتورة" exportFileName="قائمة الفواتير" searchPlaceholder="بحث برقم الفاتورة أو المالك" emptyState={<EmptyState text="لا توجد فواتير" hint="أنشئ فاتورة جديدة لتظهر هنا مع حالة السداد." />} columns={[
         { header: "رقم الفاتورة", sortable: true, value: (r) => r.invoice_number, cell: (r) => <Link to="/invoices/$invoiceId" params={{ invoiceId: r.id }} dir="ltr" className="font-bold text-primary hover:underline">{r.invoice_number}</Link> },
         { header: "المالك", value: (r) => r.contact?.full_name, cell: (r) => r.contact?.full_name ?? "—" },
         { header: "التاريخ", sortable: true, value: (r) => r.issue_date, cell: (r) => formatDate(r.issue_date) },

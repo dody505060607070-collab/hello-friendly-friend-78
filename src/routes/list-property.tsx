@@ -179,16 +179,9 @@ function ListPropertyPage() {
   });
   const [files, setFiles] = useState<File[]>([]);
 
-  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/avif"];
-
   const addFiles = (list: FileList | null) => {
     if (!list) return;
     const next = [...files, ...Array.from(list)].slice(0, 3);
-    const badType = next.find((f) => !ALLOWED_IMAGE_TYPES.includes(f.type));
-    if (badType) {
-      toast.error("يُسمح بالصور فقط (JPG / PNG / WEBP)");
-      return;
-    }
     const tooBig = next.find((f) => f.size > 5 * 1024 * 1024);
     if (tooBig) {
       toast.error("حد أقصى 5 ميجا للصورة الواحدة");
@@ -251,8 +244,7 @@ function ListPropertyPage() {
     try {
       const attachments: { path: string; name: string }[] = [];
       for (const file of files) {
-        const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
-        const path = `public/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext || "jpg"}`;
+        const path = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`;
         await uploadMedia("listing-uploads", path, file);
         attachments.push({ path: `listing-uploads/${path}`, name: file.name });
       }

@@ -3,9 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { Chip } from "@/components/kit/Chip";
 import { LiveTable, formatDate } from "@/components/kit/LiveTable";
 import { PageHero } from "@/components/kit/PageHero";
-import { ToneLegend } from "@/components/kit/ToneLegend";
 import { priorityLabels, taskStatusLabels } from "@/lib/labels";
-import { rowToneClass, rowToneLabel, taskRowTone } from "@/lib/row-tone";
 
 type Row = {
   id: string;
@@ -34,10 +32,7 @@ export function TaskList({
     <>
       <PageHero title={title} subtitle={subtitle} icon={icon} />
 
-      <ToneLegend tones={["overdue", "today", "urgent", "progress", "new", "done"]} />
-
       <LiveTable<Row>
-        rowClassName={(r) => rowToneClass[taskRowTone(r)]}
         table="tasks"
         select="id, title, task_type, priority, status, due_date, due_time, created_at, property:property_id(name)"
         {...(taskType ? { filter: (q: any) => q.eq("task_type", taskType) } : {})}
@@ -47,24 +42,7 @@ export function TaskList({
         emptyText="لا توجد مهام"
         emptyHint="أنشئ مهمة وأسندها لموظف لتظهر هنا مع حالتها."
         columns={[
-          {
-            header: "المهمة",
-            className: "font-semibold",
-            value: (r) => r.title,
-            cell: (r) => {
-              const tone = taskRowTone(r);
-              return (
-                <span className="flex items-center gap-2">
-                  {r.title}
-                  {tone === "overdue" || tone === "today" ? (
-                    <span className="rounded-md border border-current px-1.5 py-0.5 text-[10.5px] font-bold">
-                      {rowToneLabel[tone]}
-                    </span>
-                  ) : null}
-                </span>
-              );
-            },
-          },
+          { header: "المهمة", cell: (r) => r.title, className: "font-semibold" },
           {
             header: "النوع",
             cell: (r) => (

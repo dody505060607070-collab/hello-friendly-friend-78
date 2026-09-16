@@ -31,7 +31,6 @@ export const navGroups: NavGroup[] = [
     icon: Home,
     items: [
       { label: "لوحة التحكم", to: "/dashboard" },
-      { label: "مركز التنبيهات", to: "/alerts" },
       { label: "المساعد الذكي", to: "/ai" },
     ],
   },
@@ -40,7 +39,6 @@ export const navGroups: NavGroup[] = [
     icon: Factory,
     items: [
       { label: "العقارات", to: "/properties", countKey: "properties", module: "properties" },
-      { label: "استيراد من Excel", to: "/properties-import", module: "properties" },
       {
         label: "طلبات التقديم",
         to: "/requests",
@@ -65,7 +63,6 @@ export const navGroups: NavGroup[] = [
       { label: "إدارة العقود", to: "/contracts", countKey: "contracts", module: "contracts" },
       { label: "الفواتير", to: "/invoices", countKey: "invoices", module: "invoices" },
       { label: "إدارة التذكيرات", to: "/reminders", countKey: "followups", module: "reminders" },
-      { label: "تقرير التحصيلات", to: "/collections", module: "invoices" },
     ],
   },
   {
@@ -105,7 +102,6 @@ export const navGroups: NavGroup[] = [
       { label: "الأدوار والصلاحيات", to: "/roles", module: "employees" },
       { label: "سجل الأنشطة", to: "/activity-log", module: "logs" },
       { label: "سجل الأخطاء", to: "/error-log", module: "logs" },
-      { label: "النسخ الاحتياطي", to: "/backups", module: "logs" },
     ],
   },
 ];

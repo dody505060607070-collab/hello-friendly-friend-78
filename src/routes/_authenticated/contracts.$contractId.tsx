@@ -4,7 +4,6 @@ import { ArrowRight, FileText, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { ContractSignature } from "@/components/contracts/ContractSignature";
 import { Chip } from "@/components/kit/Chip";
 import { GhostButton, Modal, PrimaryButton } from "@/components/kit/Modal";
 import { PageHero } from "@/components/kit/PageHero";
@@ -423,9 +422,6 @@ function ContractViewPage() {
             </Section>
           ) : null}
 
-          <Section title="التوقيع الإلكتروني">
-            <ContractSignature contractId={contractId} />
-          </Section>
         </div>
       )}
     </>

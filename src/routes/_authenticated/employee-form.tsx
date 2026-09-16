@@ -47,7 +47,6 @@ const emptyForm = {
   job_title: "",
   hire_date: "",
   admin_notes: "",
-  org: "mithraa",
   is_active: true,
   whatsapp_notify: true,
   is_super_admin: false,
@@ -71,7 +70,7 @@ function EmployeeFormPage() {
         supabase
           .from("profiles")
           .select(
-            "id, full_name, email, phone, whatsapp, job_title, hire_date, admin_notes, org, is_active, whatsapp_notify",
+            "id, full_name, email, phone, whatsapp, job_title, hire_date, admin_notes, is_active, whatsapp_notify",
           )
           .eq("id", id)
           .maybeSingle(),
@@ -98,7 +97,6 @@ function EmployeeFormPage() {
       job_title: data.profile.job_title ?? "",
       hire_date: data.profile.hire_date ?? "",
       admin_notes: data.profile.admin_notes ?? "",
-      org: (data.profile as { org?: string }).org ?? "mithraa",
       is_active: data.profile.is_active ?? true,
       whatsapp_notify: data.profile.whatsapp_notify ?? true,
       is_super_admin: data.isAdmin,
@@ -136,7 +134,6 @@ function EmployeeFormPage() {
             jobTitle: form.job_title,
             hireDate: form.hire_date,
             adminNotes: form.admin_notes,
-            org: form.org,
             isSuperAdmin: form.is_super_admin,
           },
         });
@@ -153,7 +150,6 @@ function EmployeeFormPage() {
           job_title: form.job_title.trim() || null,
           hire_date: form.hire_date || null,
           admin_notes: form.admin_notes.trim() || null,
-          org: form.org,
           is_active: form.is_active,
           whatsapp_notify: form.whatsapp_notify,
         })
@@ -265,16 +261,6 @@ function EmployeeFormPage() {
                   value={form.whatsapp}
                   onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
                 />
-              </Field>
-              <Field label="الشركة (قناة الشات)">
-                <select
-                  className={inputClass}
-                  value={form.org}
-                  onChange={(e) => setForm({ ...form, org: e.target.value })}
-                >
-                  <option value="mithraa">مثراء</option>
-                  <option value="rashoudi">الرشودي</option>
-                </select>
               </Field>
               <Field label="تاريخ التعيين">
                 <input

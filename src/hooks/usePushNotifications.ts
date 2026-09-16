@@ -35,25 +35,14 @@ export function usePushNotifications() {
 
   const enable = async (): Promise<PushStatus> => {
     if (typeof window === "undefined") return "unsupported";
-
-    // داخل الإطار (المعاينة) المتصفح يمنع الإذن و Service Worker
-    const inIframe = (() => {
-      try {
-        return window.top !== window.self;
-      } catch {
-        return true;
-      }
-    })();
-    if (inIframe) {
-      setStatus("open-in-new-tab");
-      return "open-in-new-tab";
-    }
-
-    if (!("Notification" in window)) {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
       setStatus("unsupported");
       return "unsupported";
     }
-
+    if (window.top !== window.self) {
+      setStatus("open-in-new-tab");
+      return "open-in-new-tab";
+    }
     const permission =
       Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
     if (permission !== "granted") {
@@ -61,42 +50,30 @@ export function usePushNotifications() {
       return "denied";
     }
 
-    // إشعارات سطح المكتب تعمل الآن حتى لو Push غير مدعوم
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setStatus("enabled");
-      return "enabled";
+    const { publicKey } = await getVapidPublicKey();
+    if (!publicKey) {
+      setStatus("not-configured");
+      return "not-configured";
     }
 
-    try {
-      const { publicKey } = await getVapidPublicKey();
-      if (!publicKey) {
-        setStatus("not-configured");
-        return "not-configured";
-      }
+    const reg = await navigator.serviceWorker.register("/push-sw.js", { scope: "/" });
+    await navigator.serviceWorker.ready;
+    const existing = await reg.pushManager.getSubscription();
+    const sub =
+      existing ??
+      (await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
+      }));
 
-      const reg = await navigator.serviceWorker.register("/push-sw.js", { scope: "/" });
-      await navigator.serviceWorker.ready;
-      const existing = await reg.pushManager.getSubscription();
-      const sub =
-        existing ??
-        (await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
-        }));
-
-      await savePushSubscription({
-        data: {
-          endpoint: sub.endpoint,
-          p256dh: bufferToBase64Url(sub.getKey("p256dh")),
-          auth: bufferToBase64Url(sub.getKey("auth")),
-          userAgent: navigator.userAgent,
-        },
-      });
-    } catch (err) {
-      // الإذن ممنوح — الإشعارات داخل المتصفح شغالة حتى لو فشل تسجيل Push
-      console.error("push subscribe failed", err);
-    }
-
+    await savePushSubscription({
+      data: {
+        endpoint: sub.endpoint,
+        p256dh: bufferToBase64Url(sub.getKey("p256dh")),
+        auth: bufferToBase64Url(sub.getKey("auth")),
+        userAgent: navigator.userAgent,
+      },
+    });
     setStatus("enabled");
     return "enabled";
   };

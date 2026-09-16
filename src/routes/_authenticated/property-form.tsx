@@ -22,7 +22,6 @@ import { toast } from "sonner";
 import { Field, inputClass, textareaClass } from "@/components/kit/Modal";
 import { SOCIAL_PLATFORMS, SocialGlyph } from "@/components/site/SocialIcons";
 import { PageHero } from "@/components/kit/PageHero";
-import { Stepper } from "@/components/kit/Stepper";
 import { Toggle } from "@/components/kit/Toggle";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -516,21 +515,6 @@ function PropertyFormPage() {
         title={id ? "تعديل عقار" : "إضافة عقار جديد"}
         subtitle="املأ البيانات بالترتيب؛ العقار يظهر على الموقع العام بمجرد تفعيل «مرئي على الموقع»."
         icon={Building2}
-      />
-
-      <Stepper
-        steps={[
-          { key: "basic", label: "البيانات الأساسية", done: Boolean(form.name.trim() && form.code.trim()) },
-          { key: "location", label: "الموقع", done: Boolean(form.city.trim() && form.district.trim()) },
-          {
-            key: "price",
-            label: "السعر",
-            done: Boolean(form.price_text.trim() || form.price_value.trim()),
-          },
-          { key: "desc", label: "الوصف", done: form.description.trim().length > 20 },
-          { key: "media", label: "الصور", done: (images.data?.length ?? 0) > 0 },
-          { key: "publish", label: "النشر", done: form.is_visible },
-        ]}
       />
 
       <div className="flex items-center justify-between gap-3">

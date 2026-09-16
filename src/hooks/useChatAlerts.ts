@@ -260,33 +260,4 @@ export function useChatAlerts() {
       void supabase.removeChannel(channel);
     };
   }, [qc]);
-
-  // أي إشعار جديد في الموقع (مهام، عقود، دفعات، طلبات…) — صوت قوي + إشعار نظام
-  useEffect(() => {
-    if (!userId) return;
-    const channel = supabase
-      .channel(`site-notifications-${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const row = payload.new as { title: string; body: string | null };
-          playChime();
-          systemNotify(row.title, row.body ?? "");
-          toast.message(row.title, { description: row.body ?? undefined });
-          qc.invalidateQueries({ queryKey: ["my-notifications", userId] });
-          qc.invalidateQueries({ queryKey: ["nav-counts"] });
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [qc, userId]);
 }

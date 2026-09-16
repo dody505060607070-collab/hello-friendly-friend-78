@@ -17,7 +17,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Field, inputClass, textareaClass } from "@/components/kit/Modal";
-import { notifyTaskAssignment } from "@/lib/tasks.functions";
 import { PageHero } from "@/components/kit/PageHero";
 import { supabase } from "@/integrations/supabase/client";
 import { priorityLabels, taskStatusLabels } from "@/lib/labels";
@@ -59,37 +58,6 @@ const emptyForm = {
 };
 
 type FormState = typeof emptyForm;
-
-function looksLikeUrl(value: string) {
-  try {
-    new URL(value);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function extractMapCoords(value: string): { lat: string; lng: string } | null {
-  if (!looksLikeUrl(value)) return null;
-  const patterns = [
-    /!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/,
-    /\/@(-?\d+\.?\d*),(-?\d+\.?\d*)/,
-    /[?&](?:q|query|destination|ll)=(-?\d+\.?\d*),(-?\d+\.?\d*)/,
-    /\/maps\/(?:place|search|dir)\/[^/]*\/@?(-?\d+\.?\d*),(-?\d+\.?\d*)/,
-    /\bdaddr=(-?\d+\.?\d*),(-?\d+\.?\d*)/,
-  ];
-  for (const re of patterns) {
-    const m = value.match(re);
-    if (m && m[1] != null && m[2] != null) {
-      const lat = parseFloat(m[1]);
-      const lng = parseFloat(m[2]);
-      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
-        return { lat: lat.toString(), lng: lng.toString() };
-      }
-    }
-  }
-  return null;
-}
 
 function SectionCard({
   title,
@@ -270,27 +238,13 @@ function TaskFormPage() {
           .in("user_id", toRemove);
         if (error) throw error;
       }
-      let notify: { sent: number; failed: number; skipped: number } | null = null;
-      if (toAdd.length && taskId) {
-        try {
-          const res = await notifyTaskAssignment({ data: { taskId, userIds: toAdd } });
-          notify = { sent: res.sent, failed: res.failed, skipped: res.skipped };
-        } catch {
-          notify = { sent: 0, failed: toAdd.length, skipped: 0 };
-        }
-      }
-      return { taskId, notify };
+      return taskId;
     },
-    onSuccess: ({ taskId: newId, notify }) => {
+    onSuccess: (newId) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
       queryClient.invalidateQueries({ queryKey: ["task-assignees", newId] });
       toast.success(id ? "تم تحديث المهمة" : "تم إنشاء المهمة وتكليف الفريق");
-      if (notify) {
-        if (notify.sent) toast.success(`تم إرسال المهمة على واتساب (${notify.sent})`);
-        if (notify.failed) toast.error(`تعذّر إرسال واتساب لـ ${notify.failed} موظف`);
-        if (notify.skipped) toast.warning(`${notify.skipped} موظف بدون رقم واتساب أو الإشعارات مقفولة`);
-      }
       if (!id && newId) navigate({ to: "/task-form", search: { id: newId } });
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
@@ -507,29 +461,17 @@ function TaskFormPage() {
 
       <SectionCard
         title="موقع المهمة"
-        subtitle="ألصق رابط Google Maps مباشرة، أو اكتب الإحداثيات يدويًا؛ تظهر خريطة مصغّرة للموظف مع إمكانية فتح الاتجاهات."
+        subtitle="حدد وصف الموقع والإحداثيات؛ تظهر خريطة مصغّرة للموظف مع إمكانية فتح الاتجاهات."
         icon={MapPin}
       >
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="رابط / موقع الموقع" className="sm:col-span-3">
+          <Field label="وصف الموقع" className="sm:col-span-3">
             <input
               className={inputClass}
-              dir="ltr"
               value={form.location_text}
-              onChange={(e) => {
-                const value = e.target.value;
-                const coords = extractMapCoords(value);
-                if (coords) {
-                  set({ location_text: value, location_lat: coords.lat, location_lng: coords.lng });
-                } else {
-                  set({ location_text: value });
-                }
-              }}
-              placeholder="https://maps.google.com/... أو وصف الموقع"
+              onChange={(e) => set({ location_text: e.target.value })}
+              placeholder="مثال: حي الملقا - شارع أنس بن مالك"
             />
-            <p className="mt-1.5 text-[12px] text-muted-foreground">
-              يمكنك نسخ رابط Google Maps كاملاً وسيتم استخراج الإحداثيات تلقائيًا.
-            </p>
           </Field>
           <Field label="خط العرض (Lat)">
             <input
@@ -559,17 +501,8 @@ function TaskFormPage() {
               >
                 فتح في خرائط Google
               </a>
-            ) : looksLikeUrl(form.location_text) ? (
-              <a
-                className="inline-flex h-10 items-center rounded-lg border border-border px-3 text-[13px] font-semibold text-primary"
-                href={form.location_text}
-                target="_blank"
-                rel="noreferrer"
-              >
-                فتح الرابط المباشر
-              </a>
             ) : (
-              <p className="text-[12.5px] text-muted-foreground">أدخل رابط Google Maps أو الإحداثيات.</p>
+              <p className="text-[12.5px] text-muted-foreground">أدخل الإحداثيات لعرض الخريطة.</p>
             )}
           </Field>
         </div>

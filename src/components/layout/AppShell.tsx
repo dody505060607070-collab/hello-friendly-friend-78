@@ -3,8 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Bell, ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
-import logoDark from "@/assets/mithra-logo-dark.png";
-import logoWhite from "@/assets/mithra-logo-white.png";
+import logoAsset from "@/assets/mithra-logo.png.asset.json";
 import { navGroups } from "@/data/nav";
 import { signOut, useCurrentUser } from "@/hooks/useAuth";
 import { navCountsQuery } from "@/lib/counts";
@@ -108,9 +107,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-import { CommandPalette, CommandPaletteButton } from "@/components/kit/CommandPalette";
-import { ThemeToggle } from "@/lib/theme";
-
 import { AiDock } from "./AiDock";
 import { NotificationsBell } from "./NotificationsBell";
 import { PushToggle } from "./PushToggle";
@@ -148,10 +144,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <LogOut className="size-[18px]" />
           </button>
           <LanguageToggle />
-          <ThemeToggle />
           <NotificationsBell />
           <PushToggle />
-          <CommandPaletteButton />
         </div>
 
         <Link
@@ -159,14 +153,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="pointer-events-none absolute left-1/2 -translate-x-1/2 md:pointer-events-auto"
         >
           <img
-            src={logoDark}
+            src={logoAsset.url}
             alt="مثراء العقارية"
-            className="h-14 w-auto dark:hidden md:h-20"
-          />
-          <img
-            src={logoWhite}
-            alt="مثراء العقارية"
-            className="hidden h-14 w-auto dark:block md:h-20"
+            width={1152}
+            height={576}
+            className="h-12 w-auto md:h-[124px]"
           />
         </Link>
 
@@ -214,7 +205,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
 
         <AiDock />
-        <CommandPalette />
       </div>
     </div>
   );

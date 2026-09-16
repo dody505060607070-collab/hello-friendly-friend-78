@@ -38,30 +38,14 @@ type Msg = {
   is_pinned: boolean;
   deleted_at: string | null;
   created_at: string;
-  channel: string;
-  sender: { full_name: string; job_title: string | null; avatar_url: string | null; org: string | null } | null;
+  sender: { full_name: string; job_title: string | null; avatar_url: string | null } | null;
 };
 
 const EMOJIS = ["👍", "🙏", "🔥", "✅", "❤️", "😀", "😅", "🎉", "📌", "📞", "🏠", "💰", "⏰", "📄"];
 
-const ORGS = [
-  { key: "mithraa", label: "مثراء" },
-  { key: "rashoudi", label: "الرشودي" },
-] as const;
-
-const CHANNELS = [
-  { key: "mithraa", label: "قناة مثراء" },
-  { key: "rashoudi", label: "قناة الرشودي" },
-  { key: "shared", label: "القناة المشتركة" },
-] as const;
-
-const orgLabel = (org: string | null | undefined) =>
-  ORGS.find((o) => o.key === org)?.label ?? "مثراء";
-
 function TeamChatPage() {
   const qc = useQueryClient();
   const { userId, isSuperAdmin } = useCurrentUser();
-  const [channel, setChannel] = useState<string>("shared");
   const [body, setBody] = useState("");
   const [search, setSearch] = useState("");
   const [replyTo, setReplyTo] = useState<Msg | null>(null);
@@ -71,34 +55,13 @@ function TeamChatPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
 
-  const myProfile = useQuery({
-    queryKey: ["my-profile-org", userId],
-    enabled: Boolean(userId),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, org")
-        .eq("id", userId!)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const myOrg = (myProfile.data as { org?: string } | null)?.org ?? "mithraa";
-  const visibleChannels = useMemo(
-    () => (isSuperAdmin ? CHANNELS : CHANNELS.filter((c) => c.key === "shared" || c.key === myOrg)),
-    [isSuperAdmin, myOrg],
-  );
-
   const messages = useQuery({
-    queryKey: ["group-messages", channel],
+    queryKey: ["group-messages"],
     refetchInterval: 4000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("group_messages")
-        .select("id, sender_id, channel, body, reply_to, is_pinned, deleted_at, created_at, attachment_path, attachment_name, edited_at, sender:sender_id(full_name, job_title, avatar_url, org)")
-        .eq("channel", channel)
+        .select("id, sender_id, body, reply_to, is_pinned, deleted_at, created_at, attachment_path, attachment_name, edited_at, sender:sender_id(full_name, job_title, avatar_url)")
         .order("created_at")
         .limit(500);
       if (error) throw error;
@@ -111,7 +74,7 @@ function TeamChatPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, job_title, avatar_url, org")
+        .select("id, full_name, job_title, avatar_url")
         .eq("is_active", true)
         .order("full_name");
       if (error) throw error;
@@ -121,14 +84,14 @@ function TeamChatPage() {
 
   // بث لحظي لرسائل المجموعة
   useEffect(() => {
-    const live = supabase
+    const channel = supabase
       .channel("group-messages-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "group_messages" }, () => {
         qc.invalidateQueries({ queryKey: ["group-messages"] });
       })
       .subscribe();
     return () => {
-      void supabase.removeChannel(live);
+      void supabase.removeChannel(channel);
     };
   }, [qc]);
 
@@ -159,18 +122,14 @@ function TeamChatPage() {
       const { error } = await supabase.from("group_messages").insert({
         sender_id: userId!,
         body: text,
-        channel,
         reply_to: replyTo?.id ?? null,
       });
       if (error) throw error;
       const mentions = text.match(/@([\p{L}\d_]+)/gu) ?? [];
-      const { data: allStaff } = await supabase
+      const { data: staff } = await supabase
         .from("profiles")
-        .select("id, full_name, org")
+        .select("id, full_name")
         .eq("is_active", true);
-      const staff = (allStaff ?? []).filter(
-        (s) => channel === "shared" || (s as { org?: string }).org === channel,
-      );
       if (mentions.length) {
         const targets = (staff ?? []).filter(
           (s) => s.id !== userId && mentions.some((m) => s.full_name.includes(m.slice(1))),
@@ -225,7 +184,6 @@ function TeamChatPage() {
       const { error } = await supabase.from("group_messages").insert({
         sender_id: userId!,
         body: body.trim() || null,
-        channel,
         attachment_path: path,
         attachment_name: file.name,
         reply_to: replyTo?.id ?? null,
@@ -260,24 +218,6 @@ function TeamChatPage() {
       />
 
       <div className="surface-card overflow-hidden">
-        <div className="flex flex-wrap gap-1 border-b border-border bg-muted/40 px-3 py-2">
-          {visibleChannels.map((c) => (
-            <button
-              key={c.key}
-              type="button"
-              onClick={() => setChannel(c.key)}
-              className={cn(
-                "rounded-lg px-3 py-2 text-[12.5px] font-semibold transition-colors",
-                channel === c.key
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-card",
-              )}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-
         <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-accent/40 px-4 py-3">
           <div className="relative min-w-0">
             <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -293,23 +233,18 @@ function TeamChatPage() {
 
         <div className="flex items-center gap-2 overflow-x-auto border-b border-border px-4 py-2">
           <Users className="size-4 shrink-0 text-primary" />
-          {(staff.data ?? [])
-            .filter((p) => channel === "shared" || (p as { org?: string }).org === channel)
-            .map((p) => (
-              <span
-                key={p.id}
-                className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/50 px-2 py-1 text-[11.5px] text-muted-foreground"
-                title={p.job_title ?? ""}
-              >
-                <span className="grid size-5 place-items-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
-                  {p.full_name.slice(0, 1)}
-                </span>
-                {p.full_name}
-                <span className="rounded-full bg-primary/10 px-1.5 text-[10px] text-primary">
-                  {orgLabel((p as { org?: string }).org)}
-                </span>
+          {(staff.data ?? []).map((p) => (
+            <span
+              key={p.id}
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/50 px-2 py-1 text-[11.5px] text-muted-foreground"
+              title={p.job_title ?? ""}
+            >
+              <span className="grid size-5 place-items-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
+                {p.full_name.slice(0, 1)}
               </span>
-            ))}
+              {p.full_name}
+            </span>
+          ))}
         </div>
 
         {pinned.length ? (
@@ -336,7 +271,6 @@ function TeamChatPage() {
                 >
                   <p className="mb-1 text-[11px] opacity-75">
                     {m.sender?.full_name ?? "—"}
-                    {` • ${orgLabel(m.sender?.org)}`}
                     {m.sender?.job_title ? ` • ${m.sender.job_title}` : ""}
                   </p>
                   {parent ? (
