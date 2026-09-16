@@ -66,6 +66,26 @@ const EN: Record<string, string> = {
   الكل: "All",
   "عقارات للبيع": "For sale",
   "عقارات للإيجار": "For rent",
+  "اكتشف": "Discover",
+  "دليل المناطق": "Area guide",
+  "استكشف المناطق العقارية": "Explore real estate areas",
+  "اكتشف عقارات المنطقة": "Discover properties in this area",
+  "اختر المنطقة المناسبة وشاهد العقارات المتاحة فيها مباشرة.": "Choose an area and view its available properties.",
+  "عقار متاح": "available property",
+  "عقارات متاحة": "available properties",
+  "كل العروض": "All listings",
+  "كل أنواع العقارات": "All property types",
+  "كل الأحياء": "All districts",
+  "أحدث عقارات الإيجار": "Latest rental properties",
+  "أحدث عقارات البيع": "Latest properties for sale",
+  "عرض الكل": "View all",
+  "خدماتنا": "Our services",
+  "تصنيفات نغطيها في بريدة": "Property categories in Buraidah",
+  "جولة بصرية": "Visual tour",
+  "عقار على الخريطة": "properties on the map",
+  "عندك عقار للإيجار أو البيع؟": "Have a property to rent or sell?",
+  "لاحقاً": "Later",
+  "موافق": "Accept",
 };
 
 const arabicPattern = /[\u0600-\u06ff]/;
@@ -77,7 +97,12 @@ function translateValue(value: string) {
   const trailing = value.match(/\s*$/)?.[0] ?? "";
   const core = value.trim();
   if (!core || !arabicPattern.test(core)) return value;
-  return `${whitespace}${EN[core] ?? core}${trailing}`;
+  if (EN[core]) return `${whitespace}${EN[core]}${trailing}`;
+  let translated = core;
+  for (const [arabic, english] of Object.entries(EN).sort((a, b) => b[0].length - a[0].length)) {
+    if (arabicPattern.test(arabic) && translated.includes(arabic)) translated = translated.split(arabic).join(english);
+  }
+  return `${whitespace}${translated}${trailing}`;
 }
 
 function translateDocument(lang: Lang, root: ParentNode = document.body) {
