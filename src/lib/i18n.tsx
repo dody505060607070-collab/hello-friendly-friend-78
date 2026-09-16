@@ -86,6 +86,25 @@ const EN: Record<string, string> = {
   "عندك عقار للإيجار أو البيع؟": "Have a property to rent or sell?",
   "لاحقاً": "Later",
   "موافق": "Accept",
+  "عمارة": "Building",
+  "الصفاء": "Al-Safa",
+  "قلب القصيم ووجهة للسكن والاستثمار العقاري.": "The heart of Al-Qassim for homes and property investment.",
+  "نغطي رحلة العقار كاملة: العرض، التفاوض، العقد، ثم المتابعة والتحصيل.": "We manage the complete property journey: listing, negotiation, contracts, follow-up, and collection.",
+  "لمحات من العقارات والأحياء التي نعمل بها.": "A visual glimpse of the properties and neighborhoods we serve.",
+  "أرسل تفاصيل عقارك وسيتواصل معك فريقنا لتقييمه وعرضه على العملاء المناسبين.": "Send your property details and our team will contact you to evaluate and present it to suitable clients.",
+  "مثراء العقارية — إيجار وبيع وإدارة أملاك في بريدة، القصيم.": "Mithraa Real Estate — leasing, sales, and property management in Buraidah, Al-Qassim.",
+  "السبت — الخميس 9ص — 10م": "Saturday–Thursday, 9 AM–10 PM",
+  "جميع الحقوق محفوظة © 2026 — مؤسسة مثراء": "All rights reserved © 2026 — Mithraa Establishment",
+  "نستخدم ملفات تعريف الارتباط (Cookies) لتحسين تجربتك وتذكّر تفضيلاتك أثناء تصفح العقارات.": "We use cookies to improve your experience and remember your preferences while browsing properties.",
+  "اعرض | اطلب عقارك": "List or request a property",
+  "لا توجد عقارات بيع معروضة حالياً.": "No properties are currently listed for sale.",
+  "لا توجد عقارات إيجار معروضة حالياً.": "No rental properties are currently listed.",
+  "سكني مفروش وجاهز": "Furnished, move-in-ready homes",
+  "شقق وفلل بتشطيب حديث جاهزة للسكن الفوري.": "Modern apartments and villas ready for immediate occupancy.",
+  "تجاري ومكاتب": "Commercial spaces and offices",
+  "معارض ومكاتب في مواقع حيوية بمداخل مستقلة.": "Showrooms and offices in prime locations with private entrances.",
+  "أراضٍ واستثمار": "Land and investment",
+  "أراضٍ سكنية وتجارية بفرص نمو حقيقية.": "Residential and commercial land with genuine growth potential.",
 };
 
 const arabicPattern = /[\u0600-\u06ff]/;
@@ -97,12 +116,7 @@ function translateValue(value: string) {
   const trailing = value.match(/\s*$/)?.[0] ?? "";
   const core = value.trim();
   if (!core || !arabicPattern.test(core)) return value;
-  if (EN[core]) return `${whitespace}${EN[core]}${trailing}`;
-  let translated = core;
-  for (const [arabic, english] of Object.entries(EN).sort((a, b) => b[0].length - a[0].length)) {
-    if (arabicPattern.test(arabic) && translated.includes(arabic)) translated = translated.split(arabic).join(english);
-  }
-  return `${whitespace}${translated}${trailing}`;
+  return `${whitespace}${EN[core] ?? core}${trailing}`;
 }
 
 function translateDocument(lang: Lang, root: ParentNode = document.body) {
