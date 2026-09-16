@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import heroImage from "@/assets/hero-sale.jpg";
 import heroVideo from "@/assets/video-sale.mp4.asset.json";
 import { InstallmentCalculator } from "@/components/site/InstallmentCalculator";
+import { AreaShowcase } from "@/components/site/AreaShowcase";
 import { PageHero } from "@/components/site/PageHero";
 import { PropertyGrid } from "@/components/site/PropertyCard";
 import { PropertyMapSection } from "@/components/site/PropertyMapSection";
@@ -13,6 +14,8 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { publicPropertiesQuery } from "@/lib/site-data";
 
 export const Route = createFileRoute("/sale")({
+  validateSearch: (search: Record<string, unknown>): { city?: string } =>
+    typeof search["city"] === "string" && search["city"] ? { city: search["city"] } : {},
   head: () => ({
     meta: [
       { title: "عقارات للبيع في بريدة | مثراء العقارية" },
@@ -35,6 +38,7 @@ export const Route = createFileRoute("/sale")({
 });
 
 function SalePage() {
+  const search = useSearch({ from: "/sale" });
   const { data, isLoading, error } = useQuery(publicPropertiesQuery("sale", 200));
   const [district, setDistrict] = useState("");
   const [type, setType] = useState("");
@@ -56,6 +60,7 @@ function SalePage() {
     const cap = Number(maxPrice) || 0;
     const list = (data ?? []).filter(
       (p) =>
+        (!search.city || p.city === search.city) &&
         (!district || p.district === district) &&
         (!type || p.property_type === type) &&
         (!q || `${p.name} ${p.code} ${p.district ?? ""}`.includes(q)) &&
@@ -66,7 +71,7 @@ function SalePage() {
     if (sort === "price-desc") sorted.sort((a, b) => (b.price_value ?? 0) - (a.price_value ?? 0));
     if (sort === "featured") sorted.sort((a, b) => Number(b.is_featured) - Number(a.is_featured));
     return sorted;
-  }, [data, district, type, term, maxPrice, sort]);
+  }, [data, district, type, term, maxPrice, sort, search.city]);
 
   const selectClass = "h-11 rounded-lg border border-input bg-card px-3 text-[13.5px]";
 
@@ -80,6 +85,8 @@ function SalePage() {
         subtitle="فرص شراء مدروسة في بريدة: فلل، أراضٍ، عمائر ومحلات — بمعلومات موثقة من ملاك حقيقيين."
         height="lg"
       />
+
+      <AreaShowcase purpose="sale" currentCity={search.city} />
 
       <section className="mx-auto max-w-6xl px-4 py-10">
         <Reveal className="glass-panel mb-8 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">

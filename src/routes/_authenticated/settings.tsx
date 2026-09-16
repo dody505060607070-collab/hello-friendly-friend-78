@@ -13,15 +13,17 @@ import {
   Plus,
   Settings as SettingsIcon,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Chip } from "@/components/kit/Chip";
-import { Field, inputClass, textareaClass } from "@/components/kit/Modal";
+import { Field, inputClass, Modal, PrimaryButton, textareaClass } from "@/components/kit/Modal";
 import { PageHero } from "@/components/kit/PageHero";
 import { Toggle } from "@/components/kit/Toggle";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadMedia } from "@/lib/media";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -467,7 +469,17 @@ function SettingsPage() {
 
 /* ------------------------------ الأنواع والأحياء ------------------------------ */
 
-type City = { id: string; name: string; sort_order: number; is_active: boolean };
+type City = {
+  id: string;
+  name: string;
+  name_en: string | null;
+  description: string | null;
+  description_en: string | null;
+  image_url: string | null;
+  is_featured: boolean;
+  sort_order: number;
+  is_active: boolean;
+};
 type District = {
   id: string;
   city_id: string | null;
@@ -483,13 +495,15 @@ function AreasPanel() {
   const [typeName, setTypeName] = useState("");
   const [districtName, setDistrictName] = useState("");
   const [activeCity, setActiveCity] = useState<string>("");
+  const [editingCity, setEditingCity] = useState<City | null>(null);
+  const [uploadingCityImage, setUploadingCityImage] = useState(false);
 
   const cities = useQuery({
     queryKey: ["cities"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cities")
-        .select("id, name, sort_order, is_active")
+        .select("id, name, name_en, description, description_en, image_url, is_featured, sort_order, is_active")
         .order("sort_order")
         .order("name");
       if (error) throw error;
@@ -543,6 +557,41 @@ function AreasPanel() {
 
   const cityDistricts = (districts.data ?? []).filter((d) => d.city_id === cityId);
 
+  const saveCity = async () => {
+    if (!editingCity?.name.trim()) return;
+    mutate.mutate({
+      table: "cities",
+      run: () => supabase.from("cities").update({
+        name: editingCity.name.trim(),
+        name_en: editingCity.name_en?.trim() || null,
+        description: editingCity.description?.trim() || null,
+        description_en: editingCity.description_en?.trim() || null,
+        image_url: editingCity.image_url?.trim() || null,
+        is_featured: editingCity.is_featured,
+        sort_order: Number(editingCity.sort_order) || 0,
+        is_active: editingCity.is_active,
+      }).eq("id", editingCity.id),
+    }, { onSuccess: () => setEditingCity(null) });
+  };
+
+  const uploadCityImage = async (file?: File) => {
+    if (!file || !editingCity) return;
+    if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
+      toast.error("اختر صورة لا يزيد حجمها عن 5 ميجابايت");
+      return;
+    }
+    setUploadingCityImage(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const uploaded = await uploadMedia("property-media", `areas/${editingCity.id}-${Date.now()}.${ext}`, file);
+      setEditingCity((current) => current ? { ...current, image_url: uploaded.url } : current);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذّر رفع الصورة");
+    } finally {
+      setUploadingCityImage(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <Note text="هذه القوائم تغذّي قوائم المدن والأحياء وأنواع العقار في نماذج إضافة العقار وفي فلاتر الموقع العام. أي عنصر تُوقفه يختفي من القوائم دون حذف بياناته." />
@@ -592,7 +641,7 @@ function AreasPanel() {
               >
                 <button
                   type="button"
-                  onClick={() => setActiveCity(city.id)}
+                  onClick={() => { setActiveCity(city.id); setEditingCity(city); }}
                   className="flex-1 text-start font-semibold"
                 >
                   {city.name}
@@ -795,6 +844,54 @@ function AreasPanel() {
           </ul>
         </section>
       </div>
+
+      <Modal
+        open={Boolean(editingCity)}
+        onClose={() => setEditingCity(null)}
+        title="تعديل المنطقة المصوّرة"
+        subtitle="تظهر المنطقة في شبكة المناطق على صفحات العقارات عند إضافة صورة أو تمييزها."
+        wide
+        footer={
+          <PrimaryButton onClick={saveCity} disabled={mutate.isPending || uploadingCityImage}>
+            {mutate.isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+            حفظ المنطقة
+          </PrimaryButton>
+        }
+      >
+        {editingCity ? (
+          <div className="space-y-5">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="اسم المنطقة بالعربية" required>
+                <input className={inputClass} value={editingCity.name} onChange={(e) => setEditingCity({ ...editingCity, name: e.target.value })} />
+              </Field>
+              <Field label="اسم المنطقة بالإنجليزية">
+                <input className={inputClass} dir="ltr" value={editingCity.name_en ?? ""} onChange={(e) => setEditingCity({ ...editingCity, name_en: e.target.value })} />
+              </Field>
+              <Field label="الوصف بالعربية">
+                <textarea className={textareaClass} value={editingCity.description ?? ""} onChange={(e) => setEditingCity({ ...editingCity, description: e.target.value })} />
+              </Field>
+              <Field label="الوصف بالإنجليزية">
+                <textarea className={textareaClass} dir="ltr" value={editingCity.description_en ?? ""} onChange={(e) => setEditingCity({ ...editingCity, description_en: e.target.value })} />
+              </Field>
+              <Field label="ترتيب الظهور">
+                <input className={inputClass} type="number" value={editingCity.sort_order} onChange={(e) => setEditingCity({ ...editingCity, sort_order: Number(e.target.value) })} />
+              </Field>
+              <div className="flex items-end gap-6 pb-2">
+                <Toggle label="منطقة مميزة" checked={editingCity.is_featured} onChange={(value) => setEditingCity({ ...editingCity, is_featured: value })} />
+                <Toggle label="ظاهرة للزوار" checked={editingCity.is_active} onChange={(value) => setEditingCity({ ...editingCity, is_active: value })} />
+              </div>
+            </div>
+            <div className="overflow-hidden rounded-lg border border-border bg-muted">
+              {editingCity.image_url ? <img src={editingCity.image_url} alt={editingCity.name} className="h-56 w-full object-cover" /> : <div className="grid h-40 place-items-center text-muted-foreground"><ImageIcon className="size-10" /></div>}
+            </div>
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-[13px] font-semibold text-foreground hover:bg-muted">
+              {uploadingCityImage ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+              رفع صورة المنطقة
+              <input type="file" accept="image/*" className="hidden" disabled={uploadingCityImage} onChange={(e) => uploadCityImage(e.target.files?.[0])} />
+            </label>
+          </div>
+        ) : null}
+      </Modal>
     </div>
   );
 }

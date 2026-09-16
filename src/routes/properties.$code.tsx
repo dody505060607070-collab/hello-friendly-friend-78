@@ -7,6 +7,7 @@ import { Lightbox } from "@/components/kit/Lightbox";
 import { toast } from "sonner";
 
 import { FavoriteButton } from "@/components/site/FavoriteButton";
+import { AreaShowcase } from "@/components/site/AreaShowcase";
 import { PropertyCard } from "@/components/site/PropertyCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { StaffReserveBox } from "@/components/site/StaffReserveBox";
@@ -354,6 +355,7 @@ function PropertyPage() {
           </section>
         ) : null}
       </div>
+      <AreaShowcase purpose={property.purpose === "sale" ? "sale" : "rent"} currentCity={property.city} />
     </SiteLayout>
   );
 }
