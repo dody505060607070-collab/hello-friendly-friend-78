@@ -132,7 +132,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type === "characterData" && mutation.target.parentNode) {
-          originalText.delete(mutation.target as Text);
+          const textNode = mutation.target as Text;
+          const saved = originalText.get(textNode);
+          if (saved && textNode.data === translateValue(saved)) continue;
+          originalText.set(textNode, textNode.data);
           translateDocument(lang, mutation.target.parentNode);
         }
         for (const node of mutation.addedNodes) {

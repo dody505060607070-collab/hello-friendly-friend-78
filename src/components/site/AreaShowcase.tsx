@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 export function AreaShowcase({ purpose, currentCity }: { purpose?: "rent" | "sale"; currentCity?: string | null | undefined }) {
   const { lang, t } = useI18n();
   const { data, isLoading } = useQuery(publicAreasQuery(purpose));
-  const areas = (data ?? []).filter((area) => area.image_url || area.is_featured).slice(0, 5);
+  const areas = (data ?? []).slice(0, 5);
   if (!isLoading && areas.length === 0) return null;
 
   return (
