@@ -26,7 +26,7 @@ export function toE164(raw: string): string {
   return `+${digits}`;
 }
 
-type TwilioResult =
+type SendResult =
   | { ok: true; sid: string }
   | { ok: false; error: string };
 
@@ -81,7 +81,7 @@ async function wassengerFetch(path: string, init?: { method?: string; body?: unk
 }
 
 /** إرسال رسالة عبر Wassenger. */
-async function wassengerSend(to: string, body: string): Promise<TwilioResult | null> {
+async function wassengerSend(to: string, body: string): Promise<SendResult | null> {
   const cfg = wassengerConfig();
   if (!cfg.ready) return null;
   const phone = toE164(to);
@@ -220,7 +220,7 @@ async function cloudJson(
 }
 
 /** إرسال رسالة عبر المزوّد السحابي. */
-async function cloudSend(to: string, body: string): Promise<TwilioResult | null> {
+async function cloudSend(to: string, body: string): Promise<SendResult | null> {
   const cfg = cloudConfig();
   if (!cfg.ready) return null;
   const number = toE164(to).replace(/[^\d]/g, "");
@@ -348,7 +348,7 @@ async function cloudStatus(): Promise<LinkStatus | null> {
 }
 
 /** إرسال عبر جسر واتساب المجاني على الـVPS (رقمك الشخصي/رقم الشركة). */
-async function bridgeSend(to: string, body: string): Promise<TwilioResult | null> {
+async function bridgeSend(to: string, body: string): Promise<SendResult | null> {
   const { url, token } = normalizeBridgeConfig();
   if (!url || !token) return null;
   try {
@@ -368,7 +368,7 @@ async function bridgeSend(to: string, body: string): Promise<TwilioResult | null
 export async function sendWhatsApp(input: {
   to: string;
   body: string;
-}): Promise<TwilioResult> {
+}): Promise<SendResult> {
   // الأولوية لـWassenger (الرقم المرتبط بالـQR)، ثم المزوّد السحابي، ثم الجسر الذاتي.
   const viaWassenger = await wassengerSend(input.to, input.body);
   if (viaWassenger) return viaWassenger;
@@ -391,7 +391,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
         })
         .parse(input),
   )
-  .handler(async ({ data }): Promise<TwilioResult> => {
+  .handler(async ({ data }): Promise<SendResult> => {
     const { requireUnlocked } = await import("@/lib/kill-switch.server");
     await requireUnlocked();
     const result = await sendWhatsApp({ to: data.to, body: data.body });
