@@ -25,6 +25,10 @@ import { PageHero } from "@/components/kit/PageHero";
 import { Stepper } from "@/components/kit/Stepper";
 import { Toggle } from "@/components/kit/Toggle";
 import { supabase } from "@/integrations/supabase/client";
+import { EditableSelect } from "@/components/properties/EditableSelect";
+import { LocationPicker } from "@/components/properties/LocationPicker";
+import { ImageManager } from "@/components/properties/ImageManager";
+import { BackfillCoordinatesButton } from "@/components/properties/BackfillCoordinatesButton";
 
 export const Route = createFileRoute("/_authenticated/property-form")({
   validateSearch: (search: Record<string, unknown>): { id: string; req?: string } => ({
@@ -639,22 +643,13 @@ function PropertyFormPage() {
             </Field>
           ) : null}
           <Field label="نوع العقار" hint="القائمة تُدار من إعدادات الموقع ← الأنواع والأحياء">
-            <select
-              className={inputClass}
+            <EditableSelect
+              table="property_types"
+              options={types.data ?? []}
               value={form.property_type}
-              onChange={(e) => set({ property_type: e.target.value })}
-            >
-              <option value="">— اختر —</option>
-              {(types.data ?? []).map((t) => (
-                <option key={t.id} value={t.name}>
-                  {t.name}
-                </option>
-              ))}
-              {form.property_type &&
-              !(types.data ?? []).some((t) => t.name === form.property_type) ? (
-                <option value={form.property_type}>{form.property_type}</option>
-              ) : null}
-            </select>
+              onChange={(name) => set({ property_type: name })}
+              onAdded={() => queryClient.invalidateQueries({ queryKey: ["property-types", "active"] })}
+            />
           </Field>
           <Field label="الحالة">
             <select
@@ -670,38 +665,23 @@ function PropertyFormPage() {
             </select>
           </Field>
           <Field label="المدينة">
-            <select
-              className={inputClass}
+            <EditableSelect
+              table="cities"
+              options={cities.data ?? []}
               value={form.city}
-              onChange={(e) => set({ city: e.target.value, district: "" })}
-            >
-              <option value="">— اختر —</option>
-              {(cities.data ?? []).map((c) => (
-                <option key={c.id} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-              {form.city && !(cities.data ?? []).some((c) => c.name === form.city) ? (
-                <option value={form.city}>{form.city}</option>
-              ) : null}
-            </select>
+              onChange={(name) => set({ city: name, district: "" })}
+              onAdded={() => queryClient.invalidateQueries({ queryKey: ["cities", "active"] })}
+            />
           </Field>
           <Field label="الحي">
-            <select
-              className={inputClass}
+            <EditableSelect
+              table="districts"
+              options={cityDistricts}
               value={form.district}
-              onChange={(e) => set({ district: e.target.value })}
-            >
-              <option value="">— اختر —</option>
-              {cityDistricts.map((d) => (
-                <option key={d.id} value={d.name}>
-                  {d.name}
-                </option>
-              ))}
-              {form.district && !cityDistricts.some((d) => d.name === form.district) ? (
-                <option value={form.district}>{form.district}</option>
-              ) : null}
-            </select>
+              onChange={(name) => set({ district: name })}
+              extraInsert={{ city_id: cities.data?.find((c) => c.name === form.city)?.id ?? null }}
+              onAdded={() => queryClient.invalidateQueries({ queryKey: ["districts", "active"] })}
+            />
           </Field>
           <Field label="المالك" hint="يُربط العقار بسجل المالك في قسم الملاك">
             <select
