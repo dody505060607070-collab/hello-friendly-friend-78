@@ -1,4 +1,3 @@
-import { uploadMedia, mediaUrl } from "@/lib/media";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -14,7 +13,6 @@ import {
   ShieldCheck,
 
   Trash2,
-  UploadCloud,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -135,10 +133,8 @@ function PropertyFormPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [imageUrl, setImageUrl] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [videoTitle, setVideoTitle] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [guaranteeName, setGuaranteeName] = useState("");
   const [guaranteeYears, setGuaranteeYears] = useState("");
 
@@ -449,26 +445,6 @@ function PropertyFormPage() {
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الاعتماد"),
   });
 
-  const addImage = useMutation({
-    mutationFn: async (url: string) => {
-      if (!id) throw new Error("احفظ العقار أولًا ثم أضِف الصور");
-      const { error } = await supabase.from("property_images").insert({
-        property_id: id,
-        url,
-        sort_order: images.data?.length ?? 0,
-        is_cover: !images.data?.length,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      setImageUrl("");
-      queryClient.invalidateQueries({ queryKey: ["property-images", id] });
-      queryClient.invalidateQueries({ queryKey: ["public-properties"] });
-      toast.success("تمت إضافة الصورة");
-    },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّرت إضافة الصورة"),
-  });
-
   const removeMedia = useMutation({
     mutationFn: async (input: { table: "property_images" | "property_videos"; rowId: string }) => {
       const { error } = await supabase.from(input.table).delete().eq("id", input.rowId);
@@ -483,28 +459,6 @@ function PropertyFormPage() {
       toast.success("تم الحذف");
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحذف"),
-  });
-
-  const setCover = useMutation({
-    mutationFn: async (rowId: string) => {
-      if (!id) return;
-      const clear = await supabase
-        .from("property_images")
-        .update({ is_cover: false })
-        .eq("property_id", id);
-      if (clear.error) throw clear.error;
-      const { error } = await supabase
-        .from("property_images")
-        .update({ is_cover: true })
-        .eq("id", rowId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["property-images", id] });
-      queryClient.invalidateQueries({ queryKey: ["public-properties"] });
-      toast.success("تم تعيين الصورة الرئيسية");
-    },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التحديث"),
   });
 
   const addVideo = useMutation({
@@ -527,27 +481,6 @@ function PropertyFormPage() {
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّرت الإضافة"),
   });
-
-  const uploadFiles = async (files: FileList | null) => {
-    if (!files?.length) return;
-    if (!id) {
-      toast.error("احفظ العقار أولًا ثم ارفع الصور");
-      return;
-    }
-    setUploading(true);
-    try {
-      for (const file of Array.from(files)) {
-        const path = `${id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
-        const { url } = await uploadMedia("property-media", path, file);
-        await addImage.mutateAsync(url);
-      }
-      toast.success("تم رفع الصور");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "تعذّر رفع الملفات");
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const cityDistricts = (districts.data ?? []).filter((d) => {
     const city = cities.data?.find((c) => c.name === form.city);
