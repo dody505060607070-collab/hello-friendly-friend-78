@@ -798,35 +798,18 @@ function PropertyFormPage() {
         subtitle="أدخل رابط خرائط جوجل أو الإحداثيات ليظهر العقار على خريطة الموقع."
         icon={MapPin}
       >
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="رابط خرائط جوجل" className="sm:col-span-3">
-            <input
-              className={inputClass}
-              dir="ltr"
-              value={form.map_url}
-              onChange={(e) => set({ map_url: e.target.value })}
-              placeholder="https://maps.google.com/..."
-            />
-          </Field>
-          <Field label="خط العرض (Latitude)">
-            <input
-              className={inputClass}
-              dir="ltr"
-              value={form.latitude}
-              onChange={(e) => set({ latitude: e.target.value })}
-              placeholder="26.3260"
-            />
-          </Field>
-          <Field label="خط الطول (Longitude)">
-            <input
-              className={inputClass}
-              dir="ltr"
-              value={form.longitude}
-              onChange={(e) => set({ longitude: e.target.value })}
-              placeholder="43.9750"
-            />
-          </Field>
-        </div>
+        <LocationPicker
+          mapUrl={form.map_url}
+          latitude={form.latitude}
+          longitude={form.longitude}
+          onMapUrlChange={(url) => set({ map_url: url })}
+          onCoordsChange={(lat, lng) => set({ latitude: lat, longitude: lng })}
+        />
+        {!id ? (
+          <div className="mt-4 border-t border-border pt-4">
+            <BackfillCoordinatesButton />
+          </div>
+        ) : null}
       </SectionCard>
 
       <SectionCard
