@@ -37,6 +37,52 @@ export const Route = createFileRoute("/_authenticated/employees")({
 });
 
 function EmployeesPage() {
+  const queryClient = useQueryClient();
+
+  const admins = useQuery({
+    queryKey: ["super-admins"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "super_admin");
+      if (error) throw error;
+      return (data ?? []).map((r) => r.user_id as string);
+    },
+  });
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["employees-list"] });
+    queryClient.invalidateQueries({ queryKey: ["super-admins"] });
+  };
+
+  const toggleAdmin = useMutation({
+    mutationFn: (input: { userId: string; enabled: boolean }) => setSuperAdmin({ data: input }),
+    onSuccess: (res) => {
+      refresh();
+      toast.success(res.isSuperAdmin ? "تم منح صلاحية المدير العام" : "تم سحب صلاحية المدير العام");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التعديل"),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: (input: { userId: string; isActive: boolean }) => setStaffActive({ data: input }),
+    onSuccess: () => {
+      refresh();
+      toast.success("تم تحديث حالة الحساب");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التعديل"),
+  });
+
+  const removeAccount = useMutation({
+    mutationFn: (userId: string) => deleteStaffAccount({ data: { userId } }),
+    onSuccess: () => {
+      refresh();
+      toast.success("تم حذف الحساب نهائيًا");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحذف"),
+  });
+
   const list = useQuery({
     queryKey: ["employees-list"],
     queryFn: async () => {
