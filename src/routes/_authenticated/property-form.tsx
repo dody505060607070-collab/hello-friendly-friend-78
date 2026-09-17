@@ -978,7 +978,7 @@ function PropertyFormPage() {
 
       <SectionCard
         title="صور العقار"
-        subtitle="ارفع الصور من جهازك أو أضِف روابط جاهزة، وحدّد الصورة الرئيسية."
+        subtitle="ارفع الصور من جهازك أو أضِف روابط جاهزة، وأعد ترتيبها واقصّها وحدّد الصورة الرئيسية."
         icon={ImageIcon}
       >
         {!id ? (
@@ -986,76 +986,7 @@ function PropertyFormPage() {
             احفظ بيانات العقار أولًا لتفعيل رفع الصور والفيديوهات.
           </p>
         ) : (
-          <div className="space-y-4">
-            <label className="grid cursor-pointer place-items-center gap-2 rounded-xl border border-dashed border-border bg-card px-6 py-10 text-center">
-              {uploading ? (
-                <Loader2 className="size-6 animate-spin text-primary" />
-              ) : (
-                <UploadCloud className="size-6 text-muted-foreground" />
-              )}
-              <span className="text-[13px] text-muted-foreground">
-                اسحب الصور هنا أو اضغط للاختيار
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(e) => uploadFiles(e.target.files)}
-              />
-            </label>
-
-            <div className="flex flex-wrap gap-2">
-              <input
-                className={inputClass + " max-w-md flex-1"}
-                dir="ltr"
-                placeholder="أو ألصق رابط صورة https://"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-              />
-              <button
-                type="button"
-                disabled={!imageUrl.trim() || addImage.isPending}
-                onClick={() => addImage.mutate(imageUrl.trim())}
-                className="inline-flex h-10 items-center gap-1 rounded-lg border border-border px-4 text-[12.5px] font-semibold text-primary disabled:opacity-50"
-              >
-                <Plus className="size-4" />
-                إضافة
-              </button>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {(images.data ?? []).map((img) => (
-                <figure
-                  key={img.id}
-                  className="overflow-hidden rounded-xl border border-border bg-card"
-                >
-                  <img src={img.url} alt="صورة العقار" className="h-32 w-full object-cover" />
-                  <figcaption className="flex items-center justify-between gap-2 px-3 py-2 text-[12px]">
-                    <button
-                      type="button"
-                      onClick={() => setCover.mutate(img.id)}
-                      className={
-                        img.is_cover ? "font-bold text-primary" : "font-semibold text-muted-foreground"
-                      }
-                    >
-                      {img.is_cover ? "الصورة الرئيسية" : "تعيين كرئيسية"}
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="حذف الصورة"
-                      onClick={() =>
-                        removeMedia.mutate({ table: "property_images", rowId: img.id })
-                      }
-                      className="text-destructive"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-          </div>
+          <ImageManager propertyId={id} />
         )}
       </SectionCard>
 
