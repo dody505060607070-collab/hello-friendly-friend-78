@@ -220,6 +220,7 @@ function ListPropertyPage() {
       });
       if (error) throw error;
       await notifyAutomation(req.full_name, req.phone, req.request_type, req.city, null);
+      await sendSelfConfirmation(req.phone, req.request_type === "buy" ? "طلب شراء عقار" : "طلب استئجار عقار");
       toast.success("تم إرسال طلبك بنجاح، سيتواصل معك فريقنا قريباً.");
       void navigate({ to: "/thank-you" });
     } catch (err) {
@@ -276,6 +277,7 @@ function ListPropertyPage() {
         "بريدة",
         offer.property_type,
       );
+      await sendSelfConfirmation(offer.phone, offer.purpose === "sale" ? "عرض عقار للبيع" : "عرض عقار للإيجار");
       toast.success("تم إرسال بيانات عقارك بنجاح، سيتواصل معك فريقنا قريباً.");
       void navigate({ to: "/thank-you" });
     } catch (err) {
@@ -643,5 +645,20 @@ async function notifyAutomation(
     });
   } catch {
     /* الأتمتة اختيارية */
+  }
+}
+
+
+async function sendSelfConfirmation(phone: string, requestTypeLabel: string) {
+  try {
+    const { sendWhatsAppMessage } = await import("@/lib/whatsapp.functions");
+    await sendWhatsAppMessage({
+      data: {
+        to: phone,
+        body: `شكراً لتواصلك مع مثراء العقارية.\nتم استلام طلبك (${requestTypeLabel}) بنجاح، وسيتواصل معك فريقنا في أقرب وقت.`,
+      },
+    });
+  } catch {
+    /* لا نوقف أو نراجع الحفظ إن فشل إرسال التأكيد */
   }
 }
