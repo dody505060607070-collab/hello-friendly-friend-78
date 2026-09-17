@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 type AuthedSupabase = SupabaseClient<Database>;
 
@@ -50,12 +50,12 @@ const SENSITIVE_COLUMNS = new Set([
   "refresh_token",
 ]);
 
-function sanitizeRow(row: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
+function sanitizeRow(row: Record<string, unknown>): Record<string, Json> {
+  const out: Record<string, Json> = {};
   for (const [key, value] of Object.entries(row)) {
     const lower = key.toLowerCase();
     if ([...SENSITIVE_COLUMNS].some((s) => lower.includes(s))) continue;
-    out[key] = value;
+    out[key] = (value ?? null) as Json;
   }
   return out;
 }
@@ -75,8 +75,8 @@ const PAGE_SIZE = 1000;
 async function fetchAllRows(
   supabase: AuthedSupabase,
   table: string,
-): Promise<{ rows: Record<string, unknown>[]; skipped: boolean }> {
-  const rows: Record<string, unknown>[] = [];
+): Promise<{ rows: Record<string, Json>[]; skipped: boolean }> {
+  const rows: Record<string, Json>[] = [];
   let from = 0;
 
   for (;;) {
@@ -112,7 +112,7 @@ export type BackupManifest = {
 
 export type FullBackupResult = {
   manifest: BackupManifest;
-  data: Record<string, Record<string, unknown>[]>;
+  data: Record<string, Record<string, Json>[]>;
 };
 
 /** تصدير نسخة احتياطية شاملة من كل الجداول التجارية (لمدير النظام فقط). */
@@ -123,7 +123,7 @@ export const createFullBackup = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const data: Record<string, Record<string, unknown>[]> = {};
+    const data: Record<string, Record<string, Json>[]> = {};
     const manifestTables: BackupManifest["tables"] = [];
     let totalRows = 0;
 
