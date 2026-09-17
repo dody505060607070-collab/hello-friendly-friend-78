@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { DatabaseBackup, Download, Loader2, ShieldCheck } from "lucide-react";
+import { DatabaseBackup, Download, FileJson, Loader2, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -10,6 +10,7 @@ import { PageHero } from "@/components/kit/PageHero";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { exportWorkbook, type ExportRow } from "@/lib/export";
+import { createFullBackup, type BackupManifest } from "@/lib/backup.functions";
 
 export const Route = createFileRoute("/_authenticated/backups")({
   head: () => ({
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/backups")({
       { title: "النسخ الاحتياطي | مثراء العقارية" },
       {
         name: "description",
-        content: "أخذ نسخة احتياطية من بيانات النظام وتنزيلها كملف Excel مع سجل لكل عملية.",
+        content: "أخذ نسخة احتياطية شاملة من بيانات النظام وتنزيلها كملف JSON أو Excel، مع سجل لكل عملية.",
       },
       { property: "og:title", content: "النسخ الاحتياطي | مثراء العقارية" },
       { property: "og:description", content: "نسخة احتياطية كاملة من بيانات النظام بضغطة واحدة." },
@@ -38,8 +39,22 @@ const TABLES = [
   { table: "reservations", label: "الحجوزات" },
 ] as const;
 
+function downloadJson(filename: string, content: unknown) {
+  const blob = new Blob([JSON.stringify(content, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 function BackupsPage() {
   const [running, setRunning] = useState(false);
+  const [runningFull, setRunningFull] = useState(false);
+  const [lastManifest, setLastManifest] = useState<BackupManifest | null>(null);
   const qc = useQueryClient();
 
   const history = useQuery({
@@ -96,23 +111,69 @@ function BackupsPage() {
     }
   };
 
+  const runFull = async () => {
+    setRunningFull(true);
+    try {
+      const result = await createFullBackup();
+      setLastManifest(result.manifest);
+
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      downloadJson(`مثراء-نسخة-شاملة-${stamp}.json`, result);
+
+      toast.success(`تم تصدير نسخة شاملة (JSON) تحتوي ${result.manifest.totalRows} سجلًا`);
+      await qc.invalidateQueries({ queryKey: ["backup-runs"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "تعذّر إنشاء النسخة الشاملة");
+    } finally {
+      setRunningFull(false);
+    }
+  };
+
   return (
     <>
       <PageHero
         title="النسخ الاحتياطي"
-        subtitle="نزّل نسخة كاملة من بياناتك كملف Excel واحتفظ بها خارج النظام، مع سجل بكل عملية نسخ."
+        subtitle="نزّل نسخة كاملة من بياناتك واحتفظ بها خارج النظام، مع سجل بكل عملية نسخ."
         icon={DatabaseBackup}
       />
 
       <div className="surface-card flex flex-wrap items-center justify-between gap-3 px-5 py-4">
         <p className="text-[12.5px] text-muted-foreground">
-          تشمل النسخة: {TABLES.map((t) => t.label).join("، ")}.
+          تشمل نسخة Excel السريعة: {TABLES.map((t) => t.label).join("، ")}.
         </p>
         <Button type="button" size="sm" onClick={run} disabled={running}>
           {running ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
-          إنشاء نسخة احتياطية الآن
+          نسخة Excel سريعة
         </Button>
       </div>
+
+      <div className="surface-card flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+        <p className="text-[12.5px] text-muted-foreground">
+          النسخة الشاملة (JSON) تشمل كل الجداول التجارية في النظام مع عدد صفوف كل جدول، وهي مخصّصة لمدير النظام فقط ولا
+          تتضمن أي أسرار أو كلمات مرور.
+        </p>
+        <Button type="button" size="sm" variant="outline" onClick={runFull} disabled={runningFull}>
+          {runningFull ? <Loader2 className="size-4 animate-spin" /> : <FileJson className="size-4" />}
+          نسخة شاملة (JSON)
+        </Button>
+      </div>
+
+      {lastManifest ? (
+        <section className="surface-card overflow-hidden">
+          <header className="flex items-center gap-2 border-b border-border px-5 py-4">
+            <FileJson className="size-4 text-primary" />
+            <h2 className="text-[14.5px] font-bold">آخر نسخة شاملة — {lastManifest.totalRows} سجل إجمالًا</h2>
+          </header>
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-1 px-5 py-4 text-[12.5px] sm:grid-cols-3">
+            {lastManifest.tables.map((t) => (
+              <li key={t.table} className="flex items-center justify-between gap-2 text-muted-foreground">
+                <span>{t.table}</span>
+                <span className="font-semibold text-foreground">{t.skipped ? "—" : t.rows}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="surface-card overflow-hidden">
         <header className="flex items-center gap-2 border-b border-border px-5 py-4">

@@ -151,11 +151,65 @@ function EmployeesPage() {
               ),
             },
             {
+              header: "مدير عام",
+              cell: (r) => {
+                const isAdmin = (admins.data ?? []).includes(r.id);
+                return (
+                  <button
+                    type="button"
+                    disabled={toggleAdmin.isPending}
+                    onClick={() => {
+                      const msg = isAdmin
+                        ? "سحب صلاحية المدير العام من هذا الحساب؟"
+                        : "منح هذا الحساب صلاحية المدير العام الكاملة؟";
+                      if (window.confirm(msg)) {
+                        toggleAdmin.mutate({ userId: r.id, enabled: !isAdmin });
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold"
+                  >
+                    <ShieldCheck
+                      className={`size-4 ${isAdmin ? "text-gold" : "text-muted-foreground"}`}
+                    />
+                    {isAdmin ? "مدير عام" : "منح الصلاحية"}
+                  </button>
+                );
+              },
+            },
+            {
               header: "إجراءات",
               cell: (r) => (
-                <Link to="/employee-form" search={{ id: r.id }} aria-label="تعديل">
-                  <Pencil className="size-4 text-muted-foreground hover:text-primary" />
-                </Link>
+                <div className="flex items-center gap-3">
+                  <Link to="/employee-form" search={{ id: r.id }} aria-label="تعديل">
+                    <Pencil className="size-4 text-muted-foreground hover:text-primary" />
+                  </Link>
+                  <button
+                    type="button"
+                    disabled={toggleActive.isPending}
+                    onClick={() =>
+                      toggleActive.mutate({ userId: r.id, isActive: !r.is_active })
+                    }
+                    className="text-[12.5px] font-semibold text-primary"
+                  >
+                    {r.is_active ? "تعطيل" : "تفعيل"}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="حذف الحساب"
+                    disabled={removeAccount.isPending}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `حذف حساب «${r.full_name}» نهائيًا؟ لا يمكن التراجع عن هذه الخطوة.`,
+                        )
+                      ) {
+                        removeAccount.mutate(r.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="size-4 text-muted-foreground hover:text-destructive" />
+                  </button>
+                </div>
               ),
             },
           ]}
