@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Eye, Loader2, Pencil, Plus, ReceiptText } from "lucide-react";
+import { Eye, Loader2, Pencil, Plus, ReceiptText, Trash2 } from "lucide-react";
 import { useMemo } from "react";
+import { toast } from "sonner";
 
 import { Chip } from "@/components/kit/Chip";
 import { DataTable } from "@/components/kit/DataTable";
@@ -9,6 +10,7 @@ import { EmptyState, formatCurrency, formatDate } from "@/components/kit/LiveTab
 import { PageHero } from "@/components/kit/PageHero";
 import { ToneLegend } from "@/components/kit/ToneLegend";
 import { supabase } from "@/integrations/supabase/client";
+import { deleteInvoice } from "@/lib/delete-helpers";
 import { invoiceStatusLabels } from "@/lib/labels";
 import { invoiceRowTone, rowToneClass } from "@/lib/row-tone";
 
@@ -39,6 +41,7 @@ export const Route = createFileRoute("/_authenticated/invoices/")({
 
 function InvoicesPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const list = useQuery({
     queryKey: ["invoices", "full-list"],
     queryFn: async () => {
@@ -53,6 +56,14 @@ function InvoicesPage() {
     paid: rows.filter((row) => row.status === "paid").length,
     outstanding: rows.filter((row) => !["paid", "cancelled"].includes(row.status)).reduce((sum, row) => sum + Number(row.total), 0),
   }), [rows]);
+  const removeInvoice = useMutation({
+    mutationFn: (id: string) => deleteInvoice(id),
+    onSuccess: () => {
+      toast.success("تم حذف الفاتورة");
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "تعذّر حذف الفاتورة"),
+  });
 
   return <>
     <PageHero title="الفواتير" subtitle="إدارة الفواتير وحالات إصدارها وسدادها" icon={ReceiptText} stats={[
@@ -84,7 +95,7 @@ function InvoicesPage() {
         { header: "قبل الضريبة", sortable: true, value: (r) => r.subtotal, cell: (r) => formatCurrency(r.subtotal) },
         { header: "الضريبة", sortable: true, value: (r) => r.vat_amount, cell: (r) => formatCurrency(r.vat_amount) },
         { header: "الإجمالي", sortable: true, value: (r) => r.total, cell: (r) => <strong>{formatCurrency(r.total)}</strong> },
-        { header: "إجراءات", cell: (r) => <div className="flex items-center gap-1"><Link to="/invoices/$invoiceId" params={{ invoiceId: r.id }} className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-primary" aria-label="عرض الفاتورة" title="عرض وتسجيل دفعة"><Eye className="size-4" /></Link><Link to="/invoice-form" search={{ id: r.id, ownerId: "" }} className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-primary" aria-label="تعديل الفاتورة" title="تعديل"><Pencil className="size-4" /></Link></div> },
+        { header: "إجراءات", cell: (r) => <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}><Link to="/invoices/$invoiceId" params={{ invoiceId: r.id }} className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-primary" aria-label="عرض الفاتورة" title="عرض وتسجيل دفعة"><Eye className="size-4" /></Link><Link to="/invoice-form" search={{ id: r.id, ownerId: "" }} className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-primary" aria-label="تعديل الفاتورة" title="تعديل"><Pencil className="size-4" /></Link><button type="button" onClick={() => { if (window.confirm(`سيتم حذف الفاتورة ${r.invoice_number} وجميع مدفوعاتها وبنودها نهائيًا. هل أنت متأكد؟`)) removeInvoice.mutate(r.id); }} disabled={removeInvoice.isPending} className="grid size-8 place-items-center rounded-lg text-destructive hover:bg-destructive/10" aria-label="حذف الفاتورة" title="حذف الفاتورة">{removeInvoice.isPending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}</button></div> },
       ]} />}
   </>;
 }

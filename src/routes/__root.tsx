@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -15,6 +16,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { KillSwitchGate } from "@/components/KillSwitchGate";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/lib/i18n";
+import { SITE_URL, SITE_NAME } from "@/lib/site-config";
 
 function NotFoundComponent() {
   return (
@@ -89,13 +91,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "مثراء العقارية — لوحة الإدارة" },
+      { title: `${SITE_NAME} — لوحة الإدارة` },
       {
         name: "description",
         content: "نظام إدارة عقاري متكامل: العقارات، العقود، الفواتير، الملاك والمهام.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: SITE_NAME },
+      { property: "og:title", content: SITE_NAME },
+      {
+        property: "og:description",
+        content: "نظام إدارة عقاري متكامل: العقارات، العقود، الفواتير، الملاك والمهام.",
+      },
+      { property: "og:url", content: SITE_URL },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "apple-mobile-web-app-title", content: SITE_NAME },
+      { name: "theme-color", content: "#2d4a86" },
     ],
     links: [
       {
@@ -109,6 +122,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&display=swap",
       },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/favicon.png" },
+      { rel: "canonical", href: SITE_URL },
     ],
   }),
   shellComponent: RootShell,
@@ -132,6 +148,44 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function AppServiceWorkerRegistrar() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!import.meta.env.PROD) return;
+    if (!("serviceWorker" in navigator)) return;
+
+    navigator.serviceWorker.register("/app-sw.js", { scope: "/" }).catch((error) => {
+      console.error("app-sw registration failed", error);
+    });
+  }, []);
+
+  return null;
+}
+
+function HomeStructuredData() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  if (pathname !== "/") return null;
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    name: SITE_NAME,
+    url: SITE_URL,
+    image: `${SITE_URL}/favicon.png`,
+    logo: `${SITE_URL}/favicon.png`,
+    areaServed: "SA",
+    inLanguage: "ar",
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      // eslint-disable-next-line react/no-danger
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+    />
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -139,6 +193,8 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <AuthProvider>
+          <AppServiceWorkerRegistrar />
+          <HomeStructuredData />
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <Toaster richColors position="top-center" />

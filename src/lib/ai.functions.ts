@@ -2,28 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/responses";
-const MODEL = "openai/gpt-6-astra";
+const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const MODEL = "google/gemini-3-flash-preview";
 
 type Part = { type: "input_text"; text: string } | { type: "input_file"; filename: string; file_data: string };
 type Item = { role: "system" | "user" | "assistant"; content: Part[] };
-
-/**
- * The Responses API only accepts `output_text` parts on assistant items;
- * `input_text` on an assistant turn fails with 400 invalid_value.
- */
-function normalize(input: Item[]) {
-  return input.map((item) => ({
-    role: item.role,
-    content: item.content.map((part) =>
-      item.role === "assistant" && part.type === "input_text"
-        ? { type: "output_text", text: part.text }
-        : part,
-    ),
-  }));
-}
-
-const FALLBACK_MODELS = [MODEL];
 
 /** يحوّل عناصر Responses إلى نص/أجزاء صالحة لمزوّدي الاحتياط. */
 function toPlainMessages(input: Item[]) {
@@ -65,7 +48,7 @@ type CallOpts = { json?: boolean; fast?: boolean; maxTokens?: number };
 
 /** المزوّد الاحتياطي الثاني: Gemini (يدعم الملفات). */
 async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
-  const keys = [process.env["GEMINI_API_KEY"], process.env["GEMINI_BACKUP_API_KEY"]].filter(
+  const keys = [process.env["GEMINI_API_KEY"], process.env["GEMINI_API_KEY_BACKUP"]].filter(
     (k): k is string => Boolean(k),
   );
   if (!keys.length) throw new Error("مفاتيح Gemini غير مهيأة.");
@@ -140,86 +123,59 @@ async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
 
 
 /**
- * ترتيب المزوّدين: Google Gemini أولًا (مفتاح مباشر لا يعتمد على منصة الاستضافة)،
- * ثم Groq، وأخيرًا بوابة Lovable فقط إن وُجد مفتاحها — حتى يعمل النظام كاملًا على
- * خادم Hostinger VPS بدون أي اعتماد على Lovable.
+ * سلسلة تعويض المزوّدين، تُقرأ المفاتيح من process.env داخل كل معالج:
+ * (1) Gemini بمفتاحه الأساسي ثم الاحتياطي إن وُجد، (2) Groq، (3) بوابة Lovable
+ * كملاذ أخير متاح دائمًا. أي مزوّد بلا مفتاح أو يفشل يُتخطّى دون تسريب تفاصيله.
  */
 async function callGateway(input: Item[], opts: CallOpts = {}): Promise<string> {
   const errors: string[] = [];
-  try {
-    return await callGemini(input, opts);
-  } catch (e) {
-    errors.push(e instanceof Error ? e.message : String(e));
-  }
-  try {
-    return await callGroq(input, opts);
-  } catch (e) {
-    errors.push(e instanceof Error ? e.message : String(e));
-  }
-  // محاولة أخيرة على Gemini بعد مهلة قصيرة (ازدحام مؤقت) قبل الاستسلام
-  try {
-    await new Promise((r) => setTimeout(r, 2000));
-    return await callGemini(input, opts);
-  } catch (e) {
-    errors.push(e instanceof Error ? e.message : String(e));
-  }
-  if (process.env["LOVABLE_API_KEY"]) {
+  if (process.env["GEMINI_API_KEY"] || process.env["GEMINI_API_KEY_BACKUP"]) {
     try {
-      return await callLovable(input);
+      return await callGemini(input, opts);
     } catch (e) {
       errors.push(e instanceof Error ? e.message : String(e));
     }
   }
-  throw new Error(`تعذّر الوصول لأي مزوّد ذكاء اصطناعي. (${errors.join(" | ").slice(0, 400)})`);
+  if (process.env["GROQ_API_KEY"]) {
+    try {
+      return await callGroq(input, opts);
+    } catch (e) {
+      errors.push(e instanceof Error ? e.message : String(e));
+    }
+  }
+  if (process.env["LOVABLE_API_KEY"]) {
+    try {
+      return await callLovable(input, opts);
+    } catch (e) {
+      errors.push(e instanceof Error ? e.message : String(e));
+    }
+  }
+  throw new Error("تعذّر الوصول للمساعد الذكي حاليًا، يرجى المحاولة لاحقًا أو التواصل معنا مباشرة.");
 }
 
-async function callLovable(input: Item[]): Promise<string> {
+async function callLovable(input: Item[], opts: CallOpts = {}): Promise<string> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("خدمة الذكاء الاصطناعي غير مهيأة على الخادم.");
 
-  const payloadInput = normalize(input);
-  let res: Response | null = null;
-  let lastBody = "";
-  let lastStatus = 0;
+  const plain = toPlainMessages(input);
+  if (plain.some((m) => m.files.length)) throw new Error("بوابة Lovable لا تدعم الملفات هنا.");
 
-  for (const model of FALLBACK_MODELS) {
-    const attempt = await fetch(GATEWAY, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
-        "Lovable-API-Key": key,
-      },
-      body: JSON.stringify({
-        model,
-        input: payloadInput,
-        store: false,
-        reasoning: { effort: "low" },
-      }),
-    });
-    if (attempt.ok) {
-      res = attempt;
-      break;
-    }
-    lastStatus = attempt.status;
-    lastBody = await attempt.text();
-    // 400 = بنية الطلب خاطئة، تغيير النموذج لن يفيد.
-    if (attempt.status === 400 || attempt.status === 401) break;
-  }
-
-  if (!res) throw new Error(`Lovable ${lastStatus}: ${lastBody.slice(0, 200)}`);
-
-  const json = (await res.json()) as {
-    output_text?: string;
-    output?: { content?: { text?: string }[] }[];
-  };
-  if (typeof json.output_text === "string" && json.output_text.trim()) return json.output_text;
-  const parts: string[] = [];
-  for (const item of json.output ?? [])
-    for (const c of item.content ?? []) if (typeof c.text === "string") parts.push(c.text);
-  const joined = parts.join("\n").trim();
-  if (!joined) throw new Error("Lovable: رد فارغ.");
-  return joined;
+  const res = await fetch(GATEWAY, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: plain.map((m) => ({ role: m.role, content: m.text })),
+      temperature: 0,
+      ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
+      ...(opts.json ? { response_format: { type: "json_object" } } : {}),
+    }),
+  });
+  if (!res.ok) throw new Error(`Lovable ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  const text = json.choices?.[0]?.message?.content?.trim();
+  if (!text) throw new Error("Lovable: رد فارغ.");
+  return text;
 }
 
 const SCOPE_RULE = `نطاقك محصور في العقارات وأعمال شركة مثراء العقارية (عقارات، ملاك، مستأجرون، عقود، إيجار، بيع، فواتير، مدفوعات، تذكيرات، مهام، عملاء، تقارير، سوق العقار في السعودية).
@@ -401,7 +357,35 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
 const PUBLIC_PROMPT = `أنت "مساعد مثراء" — مساعد ذكي على الموقع العام لشركة مثراء العقارية في بريدة، السعودية.
 مهمتك مساعدة الزوار: شرح أقسام الموقع (الإيجار، البيع، من نحن، تواصل معنا، اعرض/اطلب عقارك)، توضيح خطوات عرض عقار أو طلب عقار، والإجابة عن أسئلة عامة عن العقارات في بريدة.
 ${SCOPE_RULE}
-أجب بالعربية الفصحى المبسطة بإجابات قصيرة ومهذبة. لا تذكر بيانات داخلية أو أسعار غير مؤكدة، وإن لزم التفاصيل اطلب من الزائر التواصل عبر صفحة «تواصل معنا» أو الواتساب.`;
+أجب بالعربية الفصحى المبسطة بإجابات قصيرة ومهذبة.
+أدناه قائمة بالعقارات المتاحة فعليًا على الموقع (منشورة ومرئية) بصيغة JSON. اعتمد عليها فقط عند اقتراح عقارات — لا تخترع عقارات أو أسعارًا غير واردة فيها.
+عند اقتراح أي عقار من القائمة، اذكر اسمه والسعر والمدينة/الحي باختصار، وأرفق رابطه المباشر كما هو نصًا (مثل /properties/CODE) ليتمكن الزائر من فتحه مباشرة.
+إن لم تجد عقارًا مناسبًا في القائمة، وضّح ذلك واقترح على الزائر التواصل عبر صفحة «تواصل معنا» أو الواتساب.`;
+
+async function fetchPublicListingsContext(): Promise<string> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("properties")
+      .select("code, name, price_value, price_text, purpose, property_type, city, district, status, is_visible")
+      .eq("is_visible", true)
+      .eq("status", "available")
+      .order("is_featured", { ascending: false })
+      .limit(80);
+    const listings = (data ?? []).map((p) => ({
+      name: p.name,
+      price: p.price_value ?? p.price_text ?? null,
+      purpose: p.purpose,
+      type: p.property_type,
+      location: [p.city, p.district].filter(Boolean).join(" - "),
+      code: p.code,
+      url: `/properties/${p.code}`,
+    }));
+    return JSON.stringify(listings);
+  } catch {
+    return "[]";
+  }
+}
 
 export const askPublicAi = createServerFn({ method: "POST" })
   .inputValidator((input: { messages: { role: "user" | "assistant"; content: string }[] }) => input)
@@ -411,6 +395,16 @@ export const askPublicAi = createServerFn({ method: "POST" })
     const items: Item[] = [
       { role: "system", content: [{ type: "input_text", text: PUBLIC_PROMPT }] },
     ];
+    const listingsJson = await fetchPublicListingsContext();
+    items.push({
+      role: "user",
+      content: [
+        {
+          type: "input_text",
+          text: `قائمة العقارات المتاحة حاليًا (JSON):\n${listingsJson.slice(0, 20000)}`,
+        },
+      ],
+    });
     for (const m of data.messages.slice(-12)) {
       items.push({
         role: m.role,

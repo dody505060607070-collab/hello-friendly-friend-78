@@ -17,6 +17,7 @@ import { Route as CompareRouteImport } from './routes/compare'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as ListPropertyRouteImport } from './routes/list-property'
+import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RentRouteImport } from './routes/rent'
@@ -48,7 +49,6 @@ import { Route as AuthenticatedPropertiesImportRouteImport } from './routes/_aut
 import { Route as AuthenticatedPropertyFormRouteImport } from './routes/_authenticated/property-form'
 import { Route as AuthenticatedRemindersRouteImport } from './routes/_authenticated/reminders'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
-import { Route as AuthenticatedRequestsRouteImport } from './routes/_authenticated/requests'
 import { Route as AuthenticatedReservationsRouteImport } from './routes/_authenticated/reservations'
 import { Route as AuthenticatedReserveRouteImport } from './routes/_authenticated/reserve'
 import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/roles'
@@ -59,16 +59,20 @@ import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedTeamChatRouteImport } from './routes/_authenticated/team-chat'
 import { Route as AuthenticatedWhatsappLinkRouteImport } from './routes/_authenticated/whatsapp-link'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
+import { Route as PortalOwnerRouteImport } from './routes/portal.owner'
 import { Route as PropertiesCodeRouteImport } from './routes/properties.$code'
 import { Route as AuthenticatedContractsIndexRouteImport } from './routes/_authenticated/contracts.index'
 import { Route as AuthenticatedContractsContractIdRouteImport } from './routes/_authenticated/contracts.$contractId'
 import { Route as AuthenticatedInvoicesIndexRouteImport } from './routes/_authenticated/invoices.index'
 import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
+import { Route as AuthenticatedListingRequestsIndexRouteImport } from './routes/_authenticated/listing-requests.index'
+import { Route as AuthenticatedListingRequestsIdRouteImport } from './routes/_authenticated/listing-requests.$id'
 import { Route as AuthenticatedOwnersIndexRouteImport } from './routes/_authenticated/owners.index'
 import { Route as AuthenticatedOwnersOwnerIdRouteImport } from './routes/_authenticated/owners.$ownerId'
 import { Route as AuthenticatedPaymentReminderPaymentIdRouteImport } from './routes/_authenticated/payment-reminder.$paymentId'
+import { Route as AuthenticatedSupplyRequestsIndexRouteImport } from './routes/_authenticated/supply-requests.index'
+import { Route as AuthenticatedSupplyRequestsIdRouteImport } from './routes/_authenticated/supply-requests.$id'
 import { Route as ApiPublicN8nRouteImport } from './routes/api/public/n8n'
-import { Route as ApiPublicTwilioWhatsappRouteImport } from './routes/api/public/twilio-whatsapp'
 import { Route as PortalContractsIndexRouteImport } from './routes/portal.contracts.index'
 import { Route as PortalContractsContractIdRouteImport } from './routes/portal.contracts.$contractId'
 import { Route as PortalInvoicesIndexRouteImport } from './routes/portal.invoices.index'
@@ -112,6 +116,11 @@ const FavoritesRoute = FavoritesRouteImport.update({
 const ListPropertyRoute = ListPropertyRouteImport.update({
   id: '/list-property',
   path: '/list-property',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfflineRoute = OfflineRouteImport.update({
+  id: '/offline',
+  path: '/offline',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalRoute = PortalRouteImport.update({
@@ -277,11 +286,6 @@ const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedRequestsRoute = AuthenticatedRequestsRouteImport.update({
-  id: '/requests',
-  path: '/requests',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedReservationsRoute =
   AuthenticatedReservationsRouteImport.update({
     id: '/reservations',
@@ -334,6 +338,11 @@ const PortalIndexRoute = PortalIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PortalRoute,
 } as any)
+const PortalOwnerRoute = PortalOwnerRouteImport.update({
+  id: '/owner',
+  path: '/owner',
+  getParentRoute: () => PortalRoute,
+} as any)
 const PropertiesCodeRoute = PropertiesCodeRouteImport.update({
   id: '/properties/$code',
   path: '/properties/$code',
@@ -363,6 +372,18 @@ const AuthenticatedInvoicesInvoiceIdRoute =
     path: '/invoices/$invoiceId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedListingRequestsIndexRoute =
+  AuthenticatedListingRequestsIndexRouteImport.update({
+    id: '/listing-requests/',
+    path: '/listing-requests/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedListingRequestsIdRoute =
+  AuthenticatedListingRequestsIdRouteImport.update({
+    id: '/listing-requests/$id',
+    path: '/listing-requests/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOwnersIndexRoute =
   AuthenticatedOwnersIndexRouteImport.update({
     id: '/owners/',
@@ -381,14 +402,21 @@ const AuthenticatedPaymentReminderPaymentIdRoute =
     path: '/payment-reminder/$paymentId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSupplyRequestsIndexRoute =
+  AuthenticatedSupplyRequestsIndexRouteImport.update({
+    id: '/supply-requests/',
+    path: '/supply-requests/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSupplyRequestsIdRoute =
+  AuthenticatedSupplyRequestsIdRouteImport.update({
+    id: '/supply-requests/$id',
+    path: '/supply-requests/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicN8nRoute = ApiPublicN8nRouteImport.update({
   id: '/api/public/n8n',
   path: '/api/public/n8n',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicTwilioWhatsappRoute = ApiPublicTwilioWhatsappRouteImport.update({
-  id: '/api/public/twilio-whatsapp',
-  path: '/api/public/twilio-whatsapp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalContractsIndexRoute = PortalContractsIndexRouteImport.update({
@@ -426,6 +454,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
+  '/offline': typeof OfflineRoute
   '/portal': typeof PortalRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/rent': typeof RentRoute
@@ -457,7 +486,6 @@ export interface FileRoutesByFullPath {
   '/property-form': typeof AuthenticatedPropertyFormRoute
   '/reminders': typeof AuthenticatedRemindersRoute
   '/reports': typeof AuthenticatedReportsRoute
-  '/requests': typeof AuthenticatedRequestsRoute
   '/reservations': typeof AuthenticatedReservationsRoute
   '/reserve': typeof AuthenticatedReserveRoute
   '/roles': typeof AuthenticatedRolesRoute
@@ -467,19 +495,23 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AuthenticatedTasksRoute
   '/team-chat': typeof AuthenticatedTeamChatRoute
   '/whatsapp-link': typeof AuthenticatedWhatsappLinkRoute
+  '/portal/owner': typeof PortalOwnerRoute
   '/properties/$code': typeof PropertiesCodeRoute
   '/portal/': typeof PortalIndexRoute
   '/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
+  '/listing-requests/$id': typeof AuthenticatedListingRequestsIdRoute
   '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
   '/payment-reminder/$paymentId': typeof AuthenticatedPaymentReminderPaymentIdRoute
+  '/supply-requests/$id': typeof AuthenticatedSupplyRequestsIdRoute
   '/api/public/n8n': typeof ApiPublicN8nRoute
-  '/api/public/twilio-whatsapp': typeof ApiPublicTwilioWhatsappRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
   '/contracts/': typeof AuthenticatedContractsIndexRoute
   '/invoices/': typeof AuthenticatedInvoicesIndexRoute
+  '/listing-requests/': typeof AuthenticatedListingRequestsIndexRoute
   '/owners/': typeof AuthenticatedOwnersIndexRoute
+  '/supply-requests/': typeof AuthenticatedSupplyRequestsIndexRoute
   '/portal/contracts/': typeof PortalContractsIndexRoute
   '/portal/invoices/': typeof PortalInvoicesIndexRoute
   '/api/public/files/$': typeof ApiPublicFilesSplatRoute
@@ -492,6 +524,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
+  '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
@@ -522,7 +555,6 @@ export interface FileRoutesByTo {
   '/property-form': typeof AuthenticatedPropertyFormRoute
   '/reminders': typeof AuthenticatedRemindersRoute
   '/reports': typeof AuthenticatedReportsRoute
-  '/requests': typeof AuthenticatedRequestsRoute
   '/reservations': typeof AuthenticatedReservationsRoute
   '/reserve': typeof AuthenticatedReserveRoute
   '/roles': typeof AuthenticatedRolesRoute
@@ -532,19 +564,23 @@ export interface FileRoutesByTo {
   '/tasks': typeof AuthenticatedTasksRoute
   '/team-chat': typeof AuthenticatedTeamChatRoute
   '/whatsapp-link': typeof AuthenticatedWhatsappLinkRoute
+  '/portal/owner': typeof PortalOwnerRoute
   '/properties/$code': typeof PropertiesCodeRoute
   '/portal': typeof PortalIndexRoute
   '/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
+  '/listing-requests/$id': typeof AuthenticatedListingRequestsIdRoute
   '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
   '/payment-reminder/$paymentId': typeof AuthenticatedPaymentReminderPaymentIdRoute
+  '/supply-requests/$id': typeof AuthenticatedSupplyRequestsIdRoute
   '/api/public/n8n': typeof ApiPublicN8nRoute
-  '/api/public/twilio-whatsapp': typeof ApiPublicTwilioWhatsappRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
   '/contracts': typeof AuthenticatedContractsIndexRoute
   '/invoices': typeof AuthenticatedInvoicesIndexRoute
+  '/listing-requests': typeof AuthenticatedListingRequestsIndexRoute
   '/owners': typeof AuthenticatedOwnersIndexRoute
+  '/supply-requests': typeof AuthenticatedSupplyRequestsIndexRoute
   '/portal/contracts': typeof PortalContractsIndexRoute
   '/portal/invoices': typeof PortalInvoicesIndexRoute
   '/api/public/files/$': typeof ApiPublicFilesSplatRoute
@@ -559,6 +595,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
+  '/offline': typeof OfflineRoute
   '/portal': typeof PortalRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/rent': typeof RentRoute
@@ -590,7 +627,6 @@ export interface FileRoutesById {
   '/_authenticated/property-form': typeof AuthenticatedPropertyFormRoute
   '/_authenticated/reminders': typeof AuthenticatedRemindersRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
-  '/_authenticated/requests': typeof AuthenticatedRequestsRoute
   '/_authenticated/reservations': typeof AuthenticatedReservationsRoute
   '/_authenticated/reserve': typeof AuthenticatedReserveRoute
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
@@ -600,19 +636,23 @@ export interface FileRoutesById {
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/team-chat': typeof AuthenticatedTeamChatRoute
   '/_authenticated/whatsapp-link': typeof AuthenticatedWhatsappLinkRoute
+  '/portal/owner': typeof PortalOwnerRoute
   '/properties/$code': typeof PropertiesCodeRoute
   '/portal/': typeof PortalIndexRoute
   '/_authenticated/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
+  '/_authenticated/listing-requests/$id': typeof AuthenticatedListingRequestsIdRoute
   '/_authenticated/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
   '/_authenticated/payment-reminder/$paymentId': typeof AuthenticatedPaymentReminderPaymentIdRoute
+  '/_authenticated/supply-requests/$id': typeof AuthenticatedSupplyRequestsIdRoute
   '/api/public/n8n': typeof ApiPublicN8nRoute
-  '/api/public/twilio-whatsapp': typeof ApiPublicTwilioWhatsappRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
   '/_authenticated/contracts/': typeof AuthenticatedContractsIndexRoute
   '/_authenticated/invoices/': typeof AuthenticatedInvoicesIndexRoute
+  '/_authenticated/listing-requests/': typeof AuthenticatedListingRequestsIndexRoute
   '/_authenticated/owners/': typeof AuthenticatedOwnersIndexRoute
+  '/_authenticated/supply-requests/': typeof AuthenticatedSupplyRequestsIndexRoute
   '/portal/contracts/': typeof PortalContractsIndexRoute
   '/portal/invoices/': typeof PortalInvoicesIndexRoute
   '/api/public/files/$': typeof ApiPublicFilesSplatRoute
@@ -627,6 +667,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/favorites'
     | '/list-property'
+    | '/offline'
     | '/portal'
     | '/privacy'
     | '/rent'
@@ -658,7 +699,6 @@ export interface FileRouteTypes {
     | '/property-form'
     | '/reminders'
     | '/reports'
-    | '/requests'
     | '/reservations'
     | '/reserve'
     | '/roles'
@@ -668,19 +708,23 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/team-chat'
     | '/whatsapp-link'
+    | '/portal/owner'
     | '/properties/$code'
     | '/portal/'
     | '/contracts/$contractId'
     | '/invoices/$invoiceId'
+    | '/listing-requests/$id'
     | '/owners/$ownerId'
     | '/payment-reminder/$paymentId'
+    | '/supply-requests/$id'
     | '/api/public/n8n'
-    | '/api/public/twilio-whatsapp'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
     | '/contracts/'
     | '/invoices/'
+    | '/listing-requests/'
     | '/owners/'
+    | '/supply-requests/'
     | '/portal/contracts/'
     | '/portal/invoices/'
     | '/api/public/files/$'
@@ -693,6 +737,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/favorites'
     | '/list-property'
+    | '/offline'
     | '/privacy'
     | '/rent'
     | '/sale'
@@ -723,7 +768,6 @@ export interface FileRouteTypes {
     | '/property-form'
     | '/reminders'
     | '/reports'
-    | '/requests'
     | '/reservations'
     | '/reserve'
     | '/roles'
@@ -733,19 +777,23 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/team-chat'
     | '/whatsapp-link'
+    | '/portal/owner'
     | '/properties/$code'
     | '/portal'
     | '/contracts/$contractId'
     | '/invoices/$invoiceId'
+    | '/listing-requests/$id'
     | '/owners/$ownerId'
     | '/payment-reminder/$paymentId'
+    | '/supply-requests/$id'
     | '/api/public/n8n'
-    | '/api/public/twilio-whatsapp'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
     | '/contracts'
     | '/invoices'
+    | '/listing-requests'
     | '/owners'
+    | '/supply-requests'
     | '/portal/contracts'
     | '/portal/invoices'
     | '/api/public/files/$'
@@ -759,6 +807,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/favorites'
     | '/list-property'
+    | '/offline'
     | '/portal'
     | '/privacy'
     | '/rent'
@@ -790,7 +839,6 @@ export interface FileRouteTypes {
     | '/_authenticated/property-form'
     | '/_authenticated/reminders'
     | '/_authenticated/reports'
-    | '/_authenticated/requests'
     | '/_authenticated/reservations'
     | '/_authenticated/reserve'
     | '/_authenticated/roles'
@@ -800,19 +848,23 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks'
     | '/_authenticated/team-chat'
     | '/_authenticated/whatsapp-link'
+    | '/portal/owner'
     | '/properties/$code'
     | '/portal/'
     | '/_authenticated/contracts/$contractId'
     | '/_authenticated/invoices/$invoiceId'
+    | '/_authenticated/listing-requests/$id'
     | '/_authenticated/owners/$ownerId'
     | '/_authenticated/payment-reminder/$paymentId'
+    | '/_authenticated/supply-requests/$id'
     | '/api/public/n8n'
-    | '/api/public/twilio-whatsapp'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
     | '/_authenticated/contracts/'
     | '/_authenticated/invoices/'
+    | '/_authenticated/listing-requests/'
     | '/_authenticated/owners/'
+    | '/_authenticated/supply-requests/'
     | '/portal/contracts/'
     | '/portal/invoices/'
     | '/api/public/files/$'
@@ -827,6 +879,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   FavoritesRoute: typeof FavoritesRoute
   ListPropertyRoute: typeof ListPropertyRoute
+  OfflineRoute: typeof OfflineRoute
   PortalRoute: typeof PortalRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   RentRoute: typeof RentRoute
@@ -837,7 +890,6 @@ export interface RootRouteChildren {
   ThankYouRoute: typeof ThankYouRoute
   PropertiesCodeRoute: typeof PropertiesCodeRoute
   ApiPublicN8nRoute: typeof ApiPublicN8nRoute
-  ApiPublicTwilioWhatsappRoute: typeof ApiPublicTwilioWhatsappRoute
   ApiPublicFilesSplatRoute: typeof ApiPublicFilesSplatRoute
 }
 
@@ -897,6 +949,13 @@ declare module '@tanstack/react-router' {
       path: '/list-property'
       fullPath: '/list-property'
       preLoaderRoute: typeof ListPropertyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offline': {
+      id: '/offline'
+      path: '/offline'
+      fullPath: '/offline'
+      preLoaderRoute: typeof OfflineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal': {
@@ -1116,13 +1175,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/requests': {
-      id: '/_authenticated/requests'
-      path: '/requests'
-      fullPath: '/requests'
-      preLoaderRoute: typeof AuthenticatedRequestsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/reservations': {
       id: '/_authenticated/reservations'
       path: '/reservations'
@@ -1193,6 +1245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalIndexRouteImport
       parentRoute: typeof PortalRoute
     }
+    '/portal/owner': {
+      id: '/portal/owner'
+      path: '/owner'
+      fullPath: '/portal/owner'
+      preLoaderRoute: typeof PortalOwnerRouteImport
+      parentRoute: typeof PortalRoute
+    }
     '/properties/$code': {
       id: '/properties/$code'
       path: '/properties/$code'
@@ -1228,6 +1287,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInvoicesInvoiceIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/listing-requests/': {
+      id: '/_authenticated/listing-requests/'
+      path: '/listing-requests'
+      fullPath: '/listing-requests/'
+      preLoaderRoute: typeof AuthenticatedListingRequestsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/listing-requests/$id': {
+      id: '/_authenticated/listing-requests/$id'
+      path: '/listing-requests/$id'
+      fullPath: '/listing-requests/$id'
+      preLoaderRoute: typeof AuthenticatedListingRequestsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/owners/': {
       id: '/_authenticated/owners/'
       path: '/owners'
@@ -1249,18 +1322,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPaymentReminderPaymentIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/supply-requests/': {
+      id: '/_authenticated/supply-requests/'
+      path: '/supply-requests'
+      fullPath: '/supply-requests/'
+      preLoaderRoute: typeof AuthenticatedSupplyRequestsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/supply-requests/$id': {
+      id: '/_authenticated/supply-requests/$id'
+      path: '/supply-requests/$id'
+      fullPath: '/supply-requests/$id'
+      preLoaderRoute: typeof AuthenticatedSupplyRequestsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/n8n': {
       id: '/api/public/n8n'
       path: '/api/public/n8n'
       fullPath: '/api/public/n8n'
       preLoaderRoute: typeof ApiPublicN8nRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/twilio-whatsapp': {
-      id: '/api/public/twilio-whatsapp'
-      path: '/api/public/twilio-whatsapp'
-      fullPath: '/api/public/twilio-whatsapp'
-      preLoaderRoute: typeof ApiPublicTwilioWhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal/contracts/': {
@@ -1325,7 +1405,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPropertyFormRoute: typeof AuthenticatedPropertyFormRoute
   AuthenticatedRemindersRoute: typeof AuthenticatedRemindersRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
-  AuthenticatedRequestsRoute: typeof AuthenticatedRequestsRoute
   AuthenticatedReservationsRoute: typeof AuthenticatedReservationsRoute
   AuthenticatedReserveRoute: typeof AuthenticatedReserveRoute
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
@@ -1337,11 +1416,15 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWhatsappLinkRoute: typeof AuthenticatedWhatsappLinkRoute
   AuthenticatedContractsContractIdRoute: typeof AuthenticatedContractsContractIdRoute
   AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
+  AuthenticatedListingRequestsIdRoute: typeof AuthenticatedListingRequestsIdRoute
   AuthenticatedOwnersOwnerIdRoute: typeof AuthenticatedOwnersOwnerIdRoute
   AuthenticatedPaymentReminderPaymentIdRoute: typeof AuthenticatedPaymentReminderPaymentIdRoute
+  AuthenticatedSupplyRequestsIdRoute: typeof AuthenticatedSupplyRequestsIdRoute
   AuthenticatedContractsIndexRoute: typeof AuthenticatedContractsIndexRoute
   AuthenticatedInvoicesIndexRoute: typeof AuthenticatedInvoicesIndexRoute
+  AuthenticatedListingRequestsIndexRoute: typeof AuthenticatedListingRequestsIndexRoute
   AuthenticatedOwnersIndexRoute: typeof AuthenticatedOwnersIndexRoute
+  AuthenticatedSupplyRequestsIndexRoute: typeof AuthenticatedSupplyRequestsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1368,7 +1451,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPropertyFormRoute: AuthenticatedPropertyFormRoute,
   AuthenticatedRemindersRoute: AuthenticatedRemindersRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
-  AuthenticatedRequestsRoute: AuthenticatedRequestsRoute,
   AuthenticatedReservationsRoute: AuthenticatedReservationsRoute,
   AuthenticatedReserveRoute: AuthenticatedReserveRoute,
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
@@ -1380,18 +1462,24 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWhatsappLinkRoute: AuthenticatedWhatsappLinkRoute,
   AuthenticatedContractsContractIdRoute: AuthenticatedContractsContractIdRoute,
   AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
+  AuthenticatedListingRequestsIdRoute: AuthenticatedListingRequestsIdRoute,
   AuthenticatedOwnersOwnerIdRoute: AuthenticatedOwnersOwnerIdRoute,
   AuthenticatedPaymentReminderPaymentIdRoute:
     AuthenticatedPaymentReminderPaymentIdRoute,
+  AuthenticatedSupplyRequestsIdRoute: AuthenticatedSupplyRequestsIdRoute,
   AuthenticatedContractsIndexRoute: AuthenticatedContractsIndexRoute,
   AuthenticatedInvoicesIndexRoute: AuthenticatedInvoicesIndexRoute,
+  AuthenticatedListingRequestsIndexRoute:
+    AuthenticatedListingRequestsIndexRoute,
   AuthenticatedOwnersIndexRoute: AuthenticatedOwnersIndexRoute,
+  AuthenticatedSupplyRequestsIndexRoute: AuthenticatedSupplyRequestsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface PortalRouteChildren {
+  PortalOwnerRoute: typeof PortalOwnerRoute
   PortalIndexRoute: typeof PortalIndexRoute
   PortalContractsContractIdRoute: typeof PortalContractsContractIdRoute
   PortalInvoicesInvoiceIdRoute: typeof PortalInvoicesInvoiceIdRoute
@@ -1400,6 +1488,7 @@ interface PortalRouteChildren {
 }
 
 const PortalRouteChildren: PortalRouteChildren = {
+  PortalOwnerRoute: PortalOwnerRoute,
   PortalIndexRoute: PortalIndexRoute,
   PortalContractsContractIdRoute: PortalContractsContractIdRoute,
   PortalInvoicesInvoiceIdRoute: PortalInvoicesInvoiceIdRoute,
@@ -1419,6 +1508,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   FavoritesRoute: FavoritesRoute,
   ListPropertyRoute: ListPropertyRoute,
+  OfflineRoute: OfflineRoute,
   PortalRoute: PortalRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   RentRoute: RentRoute,
@@ -1429,7 +1519,6 @@ const rootRouteChildren: RootRouteChildren = {
   ThankYouRoute: ThankYouRoute,
   PropertiesCodeRoute: PropertiesCodeRoute,
   ApiPublicN8nRoute: ApiPublicN8nRoute,
-  ApiPublicTwilioWhatsappRoute: ApiPublicTwilioWhatsappRoute,
   ApiPublicFilesSplatRoute: ApiPublicFilesSplatRoute,
 }
 export const routeTree = rootRouteImport

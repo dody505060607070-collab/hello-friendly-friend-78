@@ -1,6 +1,14 @@
-# Roadmap
+# تنفيذ برومبت تعديلات النظام
 
-- [x] Complete bilingual translation across public site and staff dashboard
-- [x] Add admin-managed bilingual city showcase data and secure migration
-- [x] Build Luxury Bento Grid area showcase across property pages
-- [x] Verify AI, WhatsApp automation paths, browser behavior, and responsive layouts
+- [x] Migration 0010: rent_period، بيانات المالك اليدوية، بوابة الملاك، جلسات الموظفين، إيقاف الطوابير القديمة
+- [ ] حقول العقار + مشابهة بنفس الغرض + أرقام التواصل من الإعدادات (subagent)
+- [ ] واتساب يدوي فقط + حذف Twilio + زر "تم الدفع" (subagent)
+- [ ] سلسلة مزودي AI + روابط العقارات (subagent)
+- [ ] PWA + SEO (subagent)
+- [ ] استيراد العقود SHA-256 + الفواتير (subagent)
+- [ ] بوابة المالك (subagent)
+- [ ] 20 مؤشر + تتبع الجلسات (subagent)
+- [ ] فصل طلبات التوفير عن طلبات العرض + مسار الاعتماد والنشر
+- [ ] إدارة الصور (ترتيب، غلاف، قص) + قوائم الأنواع والأحياء + خريطة اختيار الموقع
+- [ ] النسخ الاحتياطي الشامل
+- [ ] تحقق نهائي

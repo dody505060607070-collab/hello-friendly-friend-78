@@ -336,3 +336,266 @@ export const getPortalInvoice = createServerFn({ method: "POST" })
       .order("sort_order", { ascending: true });
     return { invoice: invoice.data, items: items.data ?? [] };
   });
+
+/* ============================================================ */
+/* بوابة المالك — بيانات مالك العقارات (وحدات مملوكة له) */
+/* ============================================================ */
+
+async function ownerUnitIds(db: Awaited<ReturnType<typeof admin>>, contactId: string) {
+  const units = await db
+    .from("units")
+    .select("id")
+    .eq("owner_id", contactId);
+  return (units.data ?? []).map((u) => u.id as string);
+}
+
+/** يتحقق هل المستخدم الحالي مرتبط بجهة اتصال تملك وحدات — لعرض رابط بوابة المالك أو إخفائه. */
+export const getOwnerPortalStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    try {
+      const { db, contactId } = await currentClient(context.userId);
+      const ids = await ownerUnitIds(db, contactId);
+      return { isOwner: ids.length > 0 };
+    } catch {
+      return { isOwner: false };
+    }
+  });
+
+async function currentOwner(userId: string) {
+  const { db, contactId } = await currentClient(userId);
+  const unitIds = await ownerUnitIds(db, contactId);
+  if (unitIds.length === 0) throw new Error("لا توجد وحدات مملوكة مرتبطة بهذا الحساب.");
+  return { db, contactId, unitIds };
+}
+
+export const getOwnerOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { db, contactId, unitIds } = await currentOwner(context.userId);
+
+    const [contact, units, properties] = await Promise.all([
+      db.from("contacts").select("id, full_name, national_id, phone, email").eq("id", contactId).single(),
+      db
+        .from("units")
+        .select(
+          "id, unit_number, unit_type, area, rooms, floor, status, building_id, building:building_id(id, name, city, district)",
+        )
+        .eq("owner_id", contactId)
+        .order("unit_number", { ascending: true }),
+      db.from("properties").select("id, building_id").eq("owner_id", contactId),
+    ]);
+
+    const contracts = await db
+      .from("contracts")
+      .select(
+        "id, contract_number, contract_type, start_date, end_date, annual_rent, total_value, status, unit_id, tenant:tenant_id(id, full_name, phone)",
+      )
+      .in("unit_id", unitIds)
+      .order("start_date", { ascending: false });
+
+    const contractIds = (contracts.data ?? []).map((c) => c.id);
+
+    const [payments, requests, expenses, documents, delegates] = await Promise.all([
+      contractIds.length
+        ? db
+            .from("contract_payments")
+            .select("id, contract_id, payment_number, due_date, amount_due, amount_paid, status")
+            .in("contract_id", contractIds)
+            .order("due_date", { ascending: true })
+        : Promise.resolve({ data: [] as never[] }),
+      db
+        .from("owner_requests")
+        .select("id, request_type, details, status, admin_notes, unit_id, contract_id, created_at")
+        .eq("owner_user_id", context.userId)
+        .order("created_at", { ascending: false }),
+      db
+        .from("unit_expenses")
+        .select("id, unit_id, property_id, title, amount, spent_on, notes, created_at")
+        .eq("owner_user_id", context.userId)
+        .order("spent_on", { ascending: false }),
+      db
+        .from("owner_documents")
+        .select("id, unit_id, title, file_path, created_at")
+        .eq("owner_user_id", context.userId)
+        .order("created_at", { ascending: false }),
+      db
+        .from("owner_delegates")
+        .select("id, delegate_name, delegate_phone, access_level, created_at")
+        .eq("owner_user_id", context.userId)
+        .order("created_at", { ascending: false }),
+    ]);
+
+    return {
+      contact: contact.data,
+      units: units.data ?? [],
+      properties: properties.data ?? [],
+      contracts: contracts.data ?? [],
+      payments: (payments.data ?? []) as {
+        id: string;
+        contract_id: string;
+        payment_number: number;
+        due_date: string;
+        amount_due: number;
+        amount_paid: number;
+        status: string;
+      }[],
+      requests: requests.data ?? [],
+      expenses: expenses.data ?? [],
+      documents: documents.data ?? [],
+      delegates: delegates.data ?? [],
+    };
+  });
+
+/** طلب جديد من المالك (تجديد / صيانة / تسويق وحدة شاغرة...) */
+export const createOwnerRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { unitId?: string | null; contractId?: string | null; requestType: string; details?: string }) => input,
+  )
+  .handler(async ({ data, context }) => {
+    const { db, contactId, unitIds } = await currentOwner(context.userId);
+    if (data.unitId && !unitIds.includes(data.unitId)) throw new Error("هذه الوحدة ليست ضمن ممتلكاتك.");
+    const { error } = await db.from("owner_requests").insert({
+      owner_user_id: context.userId,
+      owner_contact_id: contactId,
+      unit_id: data.unitId ?? null,
+      contract_id: data.contractId ?? null,
+      request_type: data.requestType,
+      details: data.details ?? null,
+      status: "new",
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** إضافة مصروف على وحدة مملوكة للمالك. */
+export const addUnitExpense = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { unitId: string; title: string; amount: number; spentOn?: string; notes?: string }) => input,
+  )
+  .handler(async ({ data, context }) => {
+    const { db, unitIds } = await currentOwner(context.userId);
+    if (!unitIds.includes(data.unitId)) throw new Error("هذه الوحدة ليست ضمن ممتلكاتك.");
+
+    const unit = await db.from("units").select("building_id").eq("id", data.unitId).maybeSingle();
+    let propertyId: string | null = null;
+    if (unit.data?.building_id) {
+      const prop = await db
+        .from("properties")
+        .select("id")
+        .eq("building_id", unit.data.building_id)
+        .limit(1)
+        .maybeSingle();
+      propertyId = prop.data?.id ?? null;
+    }
+
+    const { error } = await db.from("unit_expenses").insert({
+      owner_user_id: context.userId,
+      unit_id: data.unitId,
+      property_id: propertyId,
+      title: data.title,
+      amount: data.amount,
+      spent_on: data.spentOn ?? new Date().toISOString().slice(0, 10),
+      notes: data.notes ?? null,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** تسجيل مستند ملكية بعد رفعه عبر uploadMedia على الواجهة. */
+export const recordOwnerDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { unitId?: string | null; title: string; filePath: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { db, unitIds } = await currentOwner(context.userId);
+    if (data.unitId && !unitIds.includes(data.unitId)) throw new Error("هذه الوحدة ليست ضمن ممتلكاتك.");
+    const { error } = await db.from("owner_documents").insert({
+      owner_user_id: context.userId,
+      unit_id: data.unitId ?? null,
+      title: data.title,
+      file_path: data.filePath,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const addOwnerDelegate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { delegateName: string; delegatePhone?: string; accessLevel: "view" | "record_payment" }) => input,
+  )
+  .handler(async ({ data, context }) => {
+    const { db } = await currentOwner(context.userId);
+    const { error } = await db.from("owner_delegates").insert({
+      owner_user_id: context.userId,
+      delegate_name: data.delegateName,
+      delegate_phone: data.delegatePhone ?? null,
+      access_level: data.accessLevel,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const removeOwnerDelegate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { db } = await currentOwner(context.userId);
+    const { error } = await db
+      .from("owner_delegates")
+      .delete()
+      .eq("id", data.id)
+      .eq("owner_user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/**
+ * تسجيل سداد دفعة — يسمح به فقط بعد التحقق من أن العقد/الوحدة يعودان لهذا المالك
+ * (تحقق من طرف الخادم وليس اعتمادًا على RLS وحدها).
+ */
+export const recordOwnerPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { paymentId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { db, unitIds } = await currentOwner(context.userId);
+
+    const payment = await db
+      .from("contract_payments")
+      .select("id, contract_id, amount_due, amount_paid, status")
+      .eq("id", data.paymentId)
+      .single();
+    if (payment.error || !payment.data) throw new Error("الدفعة غير موجودة.");
+
+    const contract = await db
+      .from("contracts")
+      .select("id, unit_id")
+      .eq("id", payment.data.contract_id)
+      .single();
+    if (contract.error || !contract.data?.unit_id || !unitIds.includes(contract.data.unit_id)) {
+      throw new Error("غير مصرّح لك بتسجيل سداد لهذه الدفعة — الوحدة ليست ضمن ممتلكاتك.");
+    }
+
+    const amount = Math.max(Number(payment.data.amount_due) - Number(payment.data.amount_paid), 0);
+    if (amount <= 0) throw new Error("لا يوجد مبلغ متبقٍ على هذه الدفعة.");
+
+    const insertTx = await db.from("payment_transactions").insert({
+      payment_id: payment.data.id,
+      amount,
+      paid_at: new Date().toISOString().slice(0, 10),
+      method: "owner_portal",
+      recorded_by: context.userId,
+    });
+    if (insertTx.error) throw new Error(insertTx.error.message);
+
+    const newPaid = Number(payment.data.amount_paid) + amount;
+    const upd = await db
+      .from("contract_payments")
+      .update({ amount_paid: newPaid, status: "paid" })
+      .eq("id", payment.data.id);
+    if (upd.error) throw new Error(upd.error.message);
+
+    return { ok: true };
+  });

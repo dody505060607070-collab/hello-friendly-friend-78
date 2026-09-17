@@ -97,3 +97,76 @@ export async function verifyAutomationToken(token: string | null): Promise<boole
   for (let i = 0; i < a.length; i += 1) diff |= (a[i] ?? 0) ^ (b[i] ?? 0);
   return diff === 0;
 }
+
+/* ------------------------------------------------------------------ */
+/* تذكيرات الدفعات اليدوية — فحص الأهلية قبل كل إرسال                    */
+/* ------------------------------------------------------------------ */
+
+const SETTLED_PAYMENT_STATUSES = new Set(["paid", "cancelled", "closed"]);
+const CLOSED_CONTRACT_STATUSES = new Set(["cancelled", "ended", "closed", "terminated"]);
+
+export type ReminderEligibility = { skip: boolean; reason?: string };
+
+/**
+ * يتحقق قبل كل إرسال أن الدفعة والعقد ما زالا يستحقان تذكيرًا.
+ * يُوقف التذكير (بدون إرسال) إذا: الدفعة مدفوعة/ملغاة/مغلقة، أو المبلغ المسدد ≥ المستحق،
+ * أو حالة العقد منتهية/ملغاة/مغلقة، أو كل دفعات العقد مُسوّاة.
+ */
+export function evaluateReminderEligibility(input: {
+  payment: { status: string; amount_due: number; amount_paid: number } | null;
+  contract: { status: string } | null;
+  allContractPayments: { status: string; amount_due: number; amount_paid: number }[];
+}): ReminderEligibility {
+  const { payment, contract, allContractPayments } = input;
+
+  if (!payment) return { skip: true, reason: "لا توجد دفعة مرتبطة" };
+  if (SETTLED_PAYMENT_STATUSES.has(payment.status)) {
+    return { skip: true, reason: `حالة الدفعة: ${payment.status}` };
+  }
+  if (Number(payment.amount_paid) >= Number(payment.amount_due)) {
+    return { skip: true, reason: "تم سداد كامل المبلغ" };
+  }
+  if (contract && CLOSED_CONTRACT_STATUSES.has(contract.status)) {
+    return { skip: true, reason: `حالة العقد: ${contract.status}` };
+  }
+  if (
+    allContractPayments.length > 0 &&
+    allContractPayments.every(
+      (p) => SETTLED_PAYMENT_STATUSES.has(p.status) || Number(p.amount_paid) >= Number(p.amount_due),
+    )
+  ) {
+    return { skip: true, reason: "كل دفعات العقد مُسوّاة" };
+  }
+  return { skip: false };
+}
+
+/** يحسب موعد الإرسال القادم متجاوزًا أي دورات فائتة، ليكون أول موعد مستقبلي فعلًا (بلا تراكم). */
+export function calculateNextFutureSend(interval: string | null, from: Date = new Date()): string | null {
+  if (!interval || interval === "once") return null;
+  const hourMs = 60 * 60 * 1000;
+  const dayMs = 24 * hourMs;
+  const stepMs: Record<string, number> = {
+    "6h": 6 * hourMs,
+    "8h": 8 * hourMs,
+    "12h": 12 * hourMs,
+    "24h": dayMs,
+    daily: dayMs,
+    "3d": 3 * dayMs,
+    weekly: 7 * dayMs,
+    biweekly: 14 * dayMs,
+  };
+  const now = Date.now();
+  if (interval === "monthly") {
+    const d = new Date(from);
+    do {
+      d.setMonth(d.getMonth() + 1);
+    } while (d.getTime() <= now);
+    return d.toISOString();
+  }
+  const step = stepMs[interval];
+  if (!step) return null;
+  let next = from.getTime() + step;
+  while (next <= now) next += step;
+  return new Date(next).toISOString();
+}
+

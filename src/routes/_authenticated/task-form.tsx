@@ -12,6 +12,7 @@ import {
   UploadCloud,
   Users,
   MapPin,
+  Send,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -270,30 +271,35 @@ function TaskFormPage() {
           .in("user_id", toRemove);
         if (error) throw error;
       }
-      let notify: { sent: number; failed: number; skipped: number } | null = null;
-      if (toAdd.length && taskId) {
-        try {
-          const res = await notifyTaskAssignment({ data: { taskId, userIds: toAdd } });
-          notify = { sent: res.sent, failed: res.failed, skipped: res.skipped };
-        } catch {
-          notify = { sent: 0, failed: toAdd.length, skipped: 0 };
-        }
-      }
-      return { taskId, notify };
+      return { taskId };
     },
-    onSuccess: ({ taskId: newId, notify }) => {
+    onSuccess: ({ taskId: newId }) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
       queryClient.invalidateQueries({ queryKey: ["task-assignees", newId] });
       toast.success(id ? "تم تحديث المهمة" : "تم إنشاء المهمة وتكليف الفريق");
-      if (notify) {
-        if (notify.sent) toast.success(`تم إرسال المهمة على واتساب (${notify.sent})`);
-        if (notify.failed) toast.error(`تعذّر إرسال واتساب لـ ${notify.failed} موظف`);
-        if (notify.skipped) toast.warning(`${notify.skipped} موظف بدون رقم واتساب أو الإشعارات مقفولة`);
-      }
       if (!id && newId) navigate({ to: "/task-form", search: { id: newId } });
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
+  });
+
+  const sendWhatsApp = useMutation({
+    mutationFn: async () => {
+      if (!id) throw new Error("احفظ المهمة أولًا");
+      if (!assignees.length) throw new Error("لا يوجد موظفون مكلّفون بالمهمة");
+      return notifyTaskAssignment({ data: { taskId: id, userIds: assignees } });
+    },
+    onSuccess: (res) => {
+      if (res.sent) toast.success(`تم الإرسال بنجاح لـ ${res.sent} موظف`);
+      if (res.failed) toast.error(`فشل الإرسال لـ ${res.failed} موظف`);
+      if (res.skipped) toast.warning(`${res.skipped} موظف بدون رقم واتساب أو الإشعارات مقفولة`);
+      for (const r of res.results) {
+        if (r.skipped) continue;
+        if (r.ok) toast.success(`${r.name}: نجح الإرسال`);
+        else toast.error(`${r.name}: فشل الإرسال${r.error ? ` — ${r.error}` : ""}`);
+      }
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الإرسال"),
   });
 
   const upload = async (files: FileList | null) => {
@@ -372,6 +378,17 @@ function TaskFormPage() {
           {save.isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
           {id ? "حفظ التعديلات" : "حفظ المهمة"}
         </button>
+        {id && assignees.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => sendWhatsApp.mutate()}
+            disabled={sendWhatsApp.isPending}
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-primary/40 bg-accent/40 px-5 text-[13px] font-bold text-primary disabled:opacity-60"
+          >
+            {sendWhatsApp.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+            إرسال المهمة على واتساب
+          </button>
+        ) : null}
       </div>
 
       <SectionCard

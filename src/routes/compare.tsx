@@ -4,7 +4,7 @@ import { GitCompareArrows, Plus, X } from "lucide-react";
 import { useState } from "react";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { coverImage, publicPropertiesQuery, purposeLabels } from "@/lib/site-data";
+import { coverImage, publicPropertiesQuery, purposeLabels, rentPeriodLabels } from "@/lib/site-data";
 
 export const Route = createFileRoute("/compare")({
   head: () => ({
@@ -43,8 +43,11 @@ function ComparePage() {
     {
       label: "السعر",
       get: (p) =>
-        p.price_text ??
-        (p.price_value ? `${Number(p.price_value).toLocaleString("ar-EG")} ر.س` : "عند الطلب"),
+        (p.price_text ??
+          (p.price_value ? `${Number(p.price_value).toLocaleString("ar-EG")} ر.س` : "عند الطلب")) +
+        (p.purpose === "rent" && p.rent_period
+          ? ` / ${rentPeriodLabels[p.rent_period] ?? p.rent_period}`
+          : ""),
     },
     { label: "الوصف", get: (p) => p.description ?? "—" },
   ];
@@ -87,6 +90,11 @@ function ComparePage() {
                 ))}
             </select>
           </label>
+          {picked.length >= MAX ? (
+            <p className="mt-2 text-[12px] font-semibold text-destructive">
+              لا يمكن مقارنة أكثر من {MAX} عقارات في نفس الوقت. أزل عقارًا لإضافة آخر.
+            </p>
+          ) : null}
         </div>
 
         {selected.length === 0 ? (

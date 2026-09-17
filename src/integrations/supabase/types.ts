@@ -1098,6 +1098,36 @@ export type Database = {
           },
         ]
       }
+      employee_sessions: {
+        Row: {
+          ended_at: string | null
+          id: string
+          last_seen_at: string
+          platform: string | null
+          started_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          ended_at?: string | null
+          id?: string
+          last_seen_at?: string
+          platform?: string | null
+          started_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          ended_at?: string | null
+          id?: string
+          last_seen_at?: string
+          platform?: string | null
+          started_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       error_log: {
         Row: {
           context: Json
@@ -1745,6 +1775,135 @@ export type Database = {
           },
         ]
       }
+      owner_delegates: {
+        Row: {
+          access_level: string
+          created_at: string
+          delegate_name: string
+          delegate_phone: string | null
+          delegate_user_id: string | null
+          id: string
+          owner_user_id: string
+        }
+        Insert: {
+          access_level?: string
+          created_at?: string
+          delegate_name: string
+          delegate_phone?: string | null
+          delegate_user_id?: string | null
+          id?: string
+          owner_user_id: string
+        }
+        Update: {
+          access_level?: string
+          created_at?: string
+          delegate_name?: string
+          delegate_phone?: string | null
+          delegate_user_id?: string | null
+          id?: string
+          owner_user_id?: string
+        }
+        Relationships: []
+      }
+      owner_documents: {
+        Row: {
+          created_at: string
+          file_path: string
+          id: string
+          owner_user_id: string
+          title: string
+          unit_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          id?: string
+          owner_user_id: string
+          title: string
+          unit_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          id?: string
+          owner_user_id?: string
+          title?: string
+          unit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_documents_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_requests: {
+        Row: {
+          admin_notes: string | null
+          contract_id: string | null
+          created_at: string
+          details: string | null
+          id: string
+          owner_contact_id: string | null
+          owner_user_id: string
+          request_type: string
+          status: string
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          contract_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          owner_contact_id?: string | null
+          owner_user_id: string
+          request_type: string
+          status?: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          contract_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          owner_contact_id?: string | null
+          owner_user_id?: string
+          request_type?: string
+          status?: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_requests_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_requests_owner_contact_id_fkey"
+            columns: ["owner_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_requests_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partners: {
         Row: {
           created_at: string
@@ -1918,10 +2077,13 @@ export type Database = {
           name: string
           needs_review: boolean
           owner_id: string | null
+          owner_name: string | null
+          owner_phone: string | null
           price_text: string | null
           price_value: number | null
           property_type: string | null
           purpose: string
+          rent_period: string | null
           sort_order: number
           status: string
           unit_id: string | null
@@ -1953,10 +2115,13 @@ export type Database = {
           name: string
           needs_review?: boolean
           owner_id?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           price_text?: string | null
           price_value?: number | null
           property_type?: string | null
           purpose?: string
+          rent_period?: string | null
           sort_order?: number
           status?: string
           unit_id?: string | null
@@ -1988,10 +2153,13 @@ export type Database = {
           name?: string
           needs_review?: boolean
           owner_id?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           price_text?: string | null
           price_value?: number | null
           property_type?: string | null
           purpose?: string
+          rent_period?: string | null
           sort_order?: number
           status?: string
           unit_id?: string | null
@@ -2057,6 +2225,8 @@ export type Database = {
       property_images: {
         Row: {
           created_at: string
+          focal_x: number | null
+          focal_y: number | null
           id: string
           is_cover: boolean
           property_id: string
@@ -2065,6 +2235,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          focal_x?: number | null
+          focal_y?: number | null
           id?: string
           is_cover?: boolean
           property_id: string
@@ -2073,6 +2245,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          focal_x?: number | null
+          focal_y?: number | null
           id?: string
           is_cover?: boolean
           property_id?: string
@@ -2760,6 +2934,57 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unit_expenses: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          owner_user_id: string
+          property_id: string | null
+          spent_on: string
+          title: string
+          unit_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          owner_user_id: string
+          property_id?: string | null
+          spent_on?: string
+          title: string
+          unit_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          owner_user_id?: string
+          property_id?: string | null
+          spent_on?: string
+          title?: string
+          unit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_expenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_expenses_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
             referencedColumns: ["id"]
           },
         ]

@@ -27,8 +27,9 @@ import { Toggle } from "@/components/kit/Toggle";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/property-form")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { id: string; req?: string } => ({
     id: typeof search["id"] === "string" ? (search["id"] as string) : "",
+    ...(typeof search["req"] === "string" && search["req"] ? { req: search["req"] as string } : {}),
   }),
   head: () => ({
     meta: [
@@ -68,6 +69,7 @@ const emptyForm = {
   name: "",
   code: "",
   purpose: "rent",
+  rent_period: "yearly",
   property_type: "",
   city: "بريدة",
   district: "",
@@ -88,6 +90,8 @@ const emptyForm = {
   link_tour: "",
   sort_order: "0",
   internal_notes: "",
+  owner_name: "",
+  owner_phone: "",
   is_visible: true,
   is_featured: false,
   needs_review: false,
@@ -123,7 +127,7 @@ function SectionCard({
 }
 
 function PropertyFormPage() {
-  const { id } = Route.useSearch();
+  const { id, req: requestId } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -208,6 +212,7 @@ function PropertyFormPage() {
       name: row.name ?? "",
       code: row.code ?? "",
       purpose: row.purpose ?? "rent",
+      rent_period: row.rent_period ?? "yearly",
       property_type: row.property_type ?? "",
       city: row.city ?? "",
       district: row.district ?? "",
@@ -228,6 +233,8 @@ function PropertyFormPage() {
       link_tour: row.link_tour ?? "",
       sort_order: String(row.sort_order ?? 0),
       internal_notes: row.internal_notes ?? "",
+      owner_name: row.owner_name ?? "",
+      owner_phone: row.owner_phone ?? "",
       is_visible: Boolean(row.is_visible),
       is_featured: Boolean(row.is_featured),
       needs_review: Boolean(row.needs_review),
@@ -363,6 +370,7 @@ function PropertyFormPage() {
         name: form.name.trim(),
         code: form.code.trim() || `P-${Date.now().toString(36).toUpperCase()}`,
         purpose: form.purpose,
+        rent_period: form.purpose === "rent" ? form.rent_period : null,
         property_type: form.property_type.trim() || null,
         city: form.city.trim() || null,
         district: form.district.trim() || null,
@@ -380,6 +388,8 @@ function PropertyFormPage() {
         sort_order: Number(form.sort_order) || 0,
         internal_notes: form.internal_notes.trim() || null,
         owner_id: ownerId || null,
+        owner_name: form.owner_name.trim() || null,
+        owner_phone: form.owner_phone.trim() || null,
         is_visible: form.is_visible,
         is_featured: form.is_featured,
         needs_review: form.needs_review,
@@ -403,6 +413,36 @@ function PropertyFormPage() {
       if (!id) navigate({ to: "/property-form", search: { id: newId } });
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
+  });
+
+  const publish = useMutation({
+    mutationFn: async () => {
+      const savedId = await save.mutateAsync();
+      const { error } = await supabase
+        .from("properties")
+        .update({ is_visible: true, needs_review: false, status: "available" })
+        .eq("id", savedId);
+      if (error) throw error;
+      if (requestId) {
+        await supabase
+          .from("listing_requests")
+          .update({ status: "approved", property_id: savedId })
+          .eq("id", requestId);
+      }
+      return savedId;
+    },
+    onSuccess: (savedId) => {
+      set({ is_visible: true, needs_review: false });
+      invalidateAll();
+      queryClient.invalidateQueries({ queryKey: ["listing_requests"] });
+      toast.success("تم اعتماد العقار ونشره على الموقع");
+      if (!id)
+        navigate({
+          to: "/property-form",
+          search: requestId ? { id: savedId, req: requestId } : { id: savedId },
+        });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الاعتماد"),
   });
 
   const addImage = useMutation({
@@ -585,6 +625,19 @@ function PropertyFormPage() {
               <option value="investment">استثمار</option>
             </select>
           </Field>
+          {form.purpose === "rent" ? (
+            <Field label="دورية الإيجار">
+              <select
+                className={inputClass}
+                value={form.rent_period}
+                onChange={(e) => set({ rent_period: e.target.value })}
+              >
+                <option value="yearly">سنوي</option>
+                <option value="monthly">شهري</option>
+                <option value="daily">يومي</option>
+              </select>
+            </Field>
+          ) : null}
           <Field label="نوع العقار" hint="القائمة تُدار من إعدادات الموقع ← الأنواع والأحياء">
             <select
               className={inputClass}
@@ -663,6 +716,23 @@ function PropertyFormPage() {
                 </option>
               ))}
             </select>
+          </Field>
+          <Field label="اسم المالك" hint="يُستخدم عند عدم وجود مالك مسجل في السجلات">
+            <input
+              className={inputClass}
+              value={form.owner_name}
+              onChange={(e) => set({ owner_name: e.target.value })}
+              placeholder="اسم مالك العقار"
+            />
+          </Field>
+          <Field label="جوال المالك">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.owner_phone}
+              onChange={(e) => set({ owner_phone: e.target.value })}
+              placeholder="05xxxxxxxx"
+            />
           </Field>
         </div>
       </SectionCard>
@@ -1110,6 +1180,15 @@ function PropertyFormPage() {
         >
           {save.isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
           {id ? "حفظ التعديلات" : "حفظ العقار"}
+        </button>
+        <button
+          type="button"
+          onClick={() => publish.mutate()}
+          disabled={publish.isPending || save.isPending}
+          className="inline-flex items-center gap-2 rounded-lg bg-gold px-6 py-3 text-[13.5px] font-bold text-gold-foreground disabled:opacity-60"
+        >
+          {publish.isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+          اعتماد ونشر
         </button>
         <Link
           to="/properties"

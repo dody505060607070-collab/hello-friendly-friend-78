@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const BASE_URL = "https://friendly-fellow-kit.lovable.app";
+import { SITE_URL } from "@/lib/site-config";
+
+const BASE_URL = SITE_URL;
 
 /** الصفحات العامة القابلة للأرشفة فقط (لا لوحة تحكم ولا بوابة عميل). */
 const STATIC_PATHS = [

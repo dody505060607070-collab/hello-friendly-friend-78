@@ -71,6 +71,13 @@
       "when": 1789593239520,
       "tag": "0009_extend_cities_for_area_showcase",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789676276564,
+      "tag": "0010_system_upgrade_owner_portal_and_fields",
+      "breakpoints": true
     }
   ]
 }
