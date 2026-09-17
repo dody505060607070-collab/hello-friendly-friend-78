@@ -21,6 +21,7 @@ import type { LucideIcon } from "lucide-react";
 import { Chip } from "@/components/kit/Chip";
 import { formatCurrency, formatDate } from "@/components/kit/LiveTable";
 import { PageHero } from "@/components/kit/PageHero";
+import { DashboardAnalytics } from "@/components/dashboard/DashboardAnalytics";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -471,6 +472,8 @@ function DashboardPage() {
           )}
         </section>
       </div>
+
+      <DashboardAnalytics />
     </>
   );
 }

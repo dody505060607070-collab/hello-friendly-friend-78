@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-import { getPortalOverview } from "@/lib/portal.functions";
+import { getOwnerPortalStatus, getPortalOverview } from "@/lib/portal.functions";
 
 export const Route = createFileRoute("/portal/")({
   head: () => ({
@@ -37,6 +37,11 @@ function PortalHome() {
     queryFn: () => getPortalOverview(),
   });
 
+  const { data: ownerStatus } = useQuery({
+    queryKey: ["owner-portal-status"],
+    queryFn: () => getOwnerPortalStatus(),
+  });
+
   if (isLoading) return <p className="text-sm text-muted-foreground">جاري التحميل…</p>;
   if (error) return <p className="text-sm text-destructive">{(error as Error).message}</p>;
   if (!data) return null;
@@ -64,6 +69,16 @@ function PortalHome() {
 
   return (
     <div className="space-y-5">
+      {ownerStatus?.isOwner ? (
+        <Link
+          to="/portal/owner"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4 text-sm font-bold text-primary transition hover:bg-primary/10"
+        >
+          <span className="flex items-center gap-2">🏢 لديك بوابة مالك — إدارة عقاراتك المؤجّرة والمصروفات والسداد</span>
+          <span>الدخول إلى بوابة المالك ←</span>
+        </Link>
+      ) : null}
+
       {/* بطاقة العميل */}
       <section className="overflow-hidden rounded-2xl bg-gradient-to-l from-[hsl(var(--primary))] to-[hsl(var(--primary)/0.7)] p-5 text-white shadow">
         <div className="flex flex-wrap items-center justify-between gap-4">

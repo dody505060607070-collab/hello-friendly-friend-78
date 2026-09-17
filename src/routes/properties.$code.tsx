@@ -21,6 +21,8 @@ import {
   publicPropertiesQuery,
   publicPropertyQuery,
   purposeLabels,
+  rentPeriodLabels,
+  siteSettingsQuery,
   whatsappLink,
 } from "@/lib/site-data";
 
@@ -64,7 +66,8 @@ export const Route = createFileRoute("/properties/$code")({
 function PropertyPage() {
   const { code } = Route.useParams();
   const { data: property, isLoading, error } = useQuery(publicPropertyQuery(code));
-  const related = useQuery(publicPropertiesQuery(undefined, 12));
+  const { data: settings } = useQuery(siteSettingsQuery);
+  const related = useQuery(publicPropertiesQuery(property?.purpose as "rent" | "sale" | undefined, 12));
   const [active, setActive] = useState(0);
   const [zoom, setZoom] = useState(false);
   const guarantees = useQuery({
@@ -130,7 +133,11 @@ function PropertyPage() {
     }
   };
 
-  const others = (related.data ?? []).filter((p) => p.code !== property.code).slice(0, 3);
+  const others = (related.data ?? [])
+    .filter((p) => p.code !== property.code && p.purpose === property.purpose)
+    .slice(0, 3);
+  const companyPhone = settings?.phone || COMPANY_PHONE;
+  const whatsappNumber = property.whatsapp_number || settings?.whatsapp_number;
   const mapHref =
     property.map_url ||
     (property.latitude && property.longitude
@@ -258,7 +265,14 @@ function PropertyPage() {
                 <MapPin className="size-4 text-primary/70" />
                 {[property.district, property.city].filter(Boolean).join(" — ") || "بريدة"}
               </p>
-              <p className="mt-4 text-[19px] font-extrabold text-primary">{price}</p>
+              <p className="mt-4 text-[19px] font-extrabold text-primary">
+                {price}
+                {property.purpose === "rent" && property.rent_period ? (
+                  <span className="mr-1 text-[13px] font-medium text-muted-foreground">
+                    / {rentPeriodLabels[property.rent_period] ?? property.rent_period}
+                  </span>
+                ) : null}
+              </p>
 
               {property.property_type ? (
                 <dl className="mt-5 grid grid-cols-2 gap-3 text-[13px]">
@@ -277,7 +291,7 @@ function PropertyPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <a
                     href={whatsappLink(
-                      property.whatsapp_number,
+                      whatsappNumber,
                       `استفسار عن العقار ${property.code} — ${property.name}`,
                     )}
                     target="_blank"
@@ -288,7 +302,7 @@ function PropertyPage() {
                     تواصل عبر واتساب
                   </a>
                 <a
-                  href={`tel:${COMPANY_PHONE}`}
+                  href={`tel:${companyPhone}`}
                     className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-[14px] font-bold text-primary-foreground"
                 >
                     <Phone className="size-5" />

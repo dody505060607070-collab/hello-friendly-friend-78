@@ -1,6 +1,16 @@
-# Roadmap
+# تنفيذ برومبت تعديلات النظام — مكتمل
 
-- [x] Complete bilingual translation across public site and staff dashboard
-- [x] Add admin-managed bilingual city showcase data and secure migration
-- [x] Build Luxury Bento Grid area showcase across property pages
-- [x] Verify AI, WhatsApp automation paths, browser behavior, and responsive layouts
+- [x] Migration 0010: rent_period، بيانات المالك، بوابة الملاك، جلسات الموظفين، إيقاف الطوابير القديمة
+- [x] حقول العقار + أرقام التواصل من الإعدادات
+- [x] واتساب يدوي فقط + حذف Twilio + زر "تم الدفع"
+- [x] سلسلة مزودي AI + روابط العقارات
+- [x] PWA + SEO
+- [x] استيراد العقود SHA-256 + الفواتير
+- [x] فصل طلبات التوفير عن طلبات العرض + مسار الاعتماد والنشر
+- [x] رسالة تأكيد لمقدّم الطلب فقط
+- [x] منح/سحب مدير عام + تعطيل/حذف حساب
+- [x] الخريطة التفاعلية + استخراج الإحداثيات + محرر الصور
+- [x] بوابة المالك
+- [x] المؤشرات التحليلية + سجل الجلسات
+- [x] النسخ الاحتياطي الشامل + RESTORE.md
+- [x] فحص نهائي: tsgo نظيف + كل الصفحات 200 بدون أخطاء كونسول

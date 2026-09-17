@@ -1,14 +1,24 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Building2, MapPin } from "lucide-react";
 
 import { FavoriteButton } from "@/components/site/FavoriteButton";
-import { coverImage, purposeLabels, whatsappLink, type PublicProperty } from "@/lib/site-data";
+import {
+  coverImage,
+  purposeLabels,
+  rentPeriodLabels,
+  siteSettingsQuery,
+  whatsappLink,
+  type PublicProperty,
+} from "@/lib/site-data";
 
 export function PropertyCard({ property }: { property: PublicProperty }) {
+  const { data: settings } = useQuery(siteSettingsQuery);
   const cover = coverImage(property);
   const price =
     property.price_text ??
     (property.price_value ? `${property.price_value.toLocaleString("ar-SA")} ريال` : "السعر عند الطلب");
+  const whatsappNumber = property.whatsapp_number || settings?.whatsapp_number;
 
   return (
     <article className="lift group overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-shadow hover:shadow-float">
@@ -45,7 +55,14 @@ export function PropertyCard({ property }: { property: PublicProperty }) {
         {property.property_type ? (
           <p className="text-[13px] text-muted-foreground">{property.property_type}</p>
         ) : null}
-        <p className="text-[15px] font-bold text-primary">{price}</p>
+        <p className="text-[15px] font-bold text-primary">
+          {price}
+          {property.purpose === "rent" && property.rent_period ? (
+            <span className="mr-1 text-[12px] font-medium text-muted-foreground">
+              / {rentPeriodLabels[property.rent_period] ?? property.rent_period}
+            </span>
+          ) : null}
+        </p>
 
         <div className="flex gap-2 pt-1">
           <Link
@@ -57,7 +74,7 @@ export function PropertyCard({ property }: { property: PublicProperty }) {
           </Link>
           <a
             href={whatsappLink(
-              property.whatsapp_number,
+              whatsappNumber,
               `استفسار عن العقار ${property.code} — ${property.name}`,
             )}
             target="_blank"

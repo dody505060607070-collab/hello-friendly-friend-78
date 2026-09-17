@@ -19,7 +19,8 @@ import { PageHero } from "@/components/kit/PageHero";
 import { Pills } from "@/components/kit/Pills";
 import { supabase } from "@/integrations/supabase/client";
 import { analyzeContractPdf } from "@/lib/ai.functions";
-import { finalizeContractImport } from "@/lib/contracts.functions";
+import { checkDuplicateContractFile, finalizeContractImport } from "@/lib/contracts.functions";
+import { deleteContractWithOwner } from "@/lib/delete-helpers";
 import { ensureClientAccount } from "@/lib/portal.functions";
 import { contractStatusLabels, importStatusLabels } from "@/lib/labels";
 import { ToneLegend } from "@/components/kit/ToneLegend";
@@ -234,12 +235,10 @@ function ContractsPage() {
   });
 
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("contracts").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: async (id: string) => deleteContractWithOwner(id, null, false),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["contract_imports"] });
       toast.success("تم حذف العقد");
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحذف"),
@@ -646,7 +645,9 @@ export function ImportDialog({
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [importId, setImportId] = useState<string | null>(null);
   const [filePath, setFilePath] = useState<string | null>(null);
+  const [fileHash, setFileHash] = useState<string | null>(null);
   const [report, setReport] = useState<{ created: string[]; warnings: string[] } | null>(null);
+  const [migrated, setMigrated] = useState(false);
   const [analysisStage, setAnalysisStage] = useState("");
   const queryClient = useQueryClient();
 
@@ -658,17 +659,18 @@ export function ImportDialog({
           extraction: result,
           filePath: filePath ?? undefined,
           importId: importId ?? undefined,
+          fileHash: fileHash ?? undefined,
         },
       });
     },
     onSuccess: (res) => {
       setReport({ created: res.created, warnings: res.warnings });
+      setMigrated(true);
       queryClient.invalidateQueries({ queryKey: ["contracts"] });
       queryClient.invalidateQueries({ queryKey: ["contract_imports"] });
-      queryClient.invalidateQueries({ queryKey: ["invoices"] });
       queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
-      toast.success("تم ترحيل العقد وتوزيع بياناته تلقائيًا");
+      toast.success("تم ترحيل العقد وإنشاء جدول الدفعات");
       if (res.account) {
         toast.success(
           `بوابة العميل: المستخدم ${res.account.username} — كلمة المرور ${res.account.password}`,
@@ -676,11 +678,28 @@ export function ImportDialog({
         );
       }
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الترحيل"),
+    onError: (err) => {
+      setMigrated(false);
+      toast.error(err instanceof Error ? err.message : "تعذّر الترحيل — لم يتم حفظ أي عقد");
+    },
   });
 
   const analyze = useMutation({
     mutationFn: async (f: File) => {
+      setAnalysisStage("جاري التحقق من عدم رفع الملف مسبقًا…");
+      const hashBuffer = await crypto.subtle.digest("SHA-256", await f.arrayBuffer());
+      const fileHash = Array.from(new Uint8Array(hashBuffer))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+      const dup = await checkDuplicateContractFile({ data: { fileHash } });
+      if (dup.duplicate) {
+        throw new Error(
+          dup.contractNumber
+            ? `هذا الملف تم رفعه من قبل وهو مرتبط بالعقد رقم ${dup.contractNumber}.`
+            : "هذا الملف تم رفعه من قبل.",
+        );
+      }
+
       setAnalysisStage("جاري قراءة نص العقد…");
       let extractedText = "";
       try {
@@ -733,6 +752,7 @@ export function ImportDialog({
           file_path: path,
           file_name: f.name,
           file_size: f.size,
+          file_hash: fileHash,
           status: "needs_review",
           extraction: extraction as never,
           warnings: (Array.isArray(extraction["warnings"]) ? extraction["warnings"] : []) as never,
@@ -740,13 +760,14 @@ export function ImportDialog({
         .select("id")
         .single();
 
-      return { extraction, path, importId: saved.data?.id ?? null };
+      return { extraction, path, importId: saved.data?.id ?? null, fileHash };
     },
-    onSuccess: ({ extraction, path, importId: id }) => {
+    onSuccess: ({ extraction, path, importId: id, fileHash }) => {
       setAnalysisStage("");
       setResult(extraction);
       setFilePath(path);
       setImportId(id);
+      setFileHash(fileHash);
       setReport(null);
       queryClient.invalidateQueries({ queryKey: ["contract_imports"] });
       queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
@@ -769,6 +790,9 @@ export function ImportDialog({
       onClose={() => {
         setFile(null);
         setResult(null);
+        setFileHash(null);
+        setMigrated(false);
+        setReport(null);
         onClose();
       }}
       wide
@@ -777,38 +801,45 @@ export function ImportDialog({
       footer={
         result ? (
           <>
-            <PrimaryButton onClick={() => finalize.mutate()} disabled={finalize.isPending || !!report}>
-              {finalize.isPending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-              ترحيل تلقائي كامل
-            </PrimaryButton>
-            <GhostButton
-              onClick={() =>
-                onExtracted({
-                  contract_number: str("contract_number"),
-                  contract_type: str("contract_type") === "sale" ? "sale" : "rent",
-                  start_date: str("start_date"),
-                  end_date: str("end_date"),
-                  annual_rent: str("annual_rent"),
-                  total_value: str("total_value"),
-                  deposit: str("deposit"),
-                  payments_count: str("payments_count") || "1",
-                  notes: [str("property_name"), str("district"), str("special_terms")]
-                    .filter(Boolean)
-                    .join(" — "),
-                })
-              }
-            >
-              متابعة إلى نموذج العقد
-            </GhostButton>
-            <GhostButton
-              onClick={() => {
-                setResult(null);
-                setFile(null);
-                setReport(null);
-              }}
-            >
-              ملف آخر
-            </GhostButton>
+            {!migrated ? (
+              <PrimaryButton onClick={() => finalize.mutate()} disabled={finalize.isPending}>
+                {finalize.isPending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                ترحيل تلقائي كامل
+              </PrimaryButton>
+            ) : (
+              <>
+                <GhostButton
+                  onClick={() =>
+                    onExtracted({
+                      contract_number: str("contract_number"),
+                      contract_type: str("contract_type") === "sale" ? "sale" : "rent",
+                      start_date: str("start_date"),
+                      end_date: str("end_date"),
+                      annual_rent: str("annual_rent"),
+                      total_value: str("total_value"),
+                      deposit: str("deposit"),
+                      payments_count: str("payments_count") || "1",
+                      notes: [str("property_name"), str("district"), str("special_terms")]
+                        .filter(Boolean)
+                        .join(" — "),
+                    })
+                  }
+                >
+                  متابعة إلى نموذج العقد
+                </GhostButton>
+                <GhostButton
+                  onClick={() => {
+                    setResult(null);
+                    setFile(null);
+                    setReport(null);
+                    setFileHash(null);
+                    setMigrated(false);
+                  }}
+                >
+                  ملف آخر
+                </GhostButton>
+              </>
+            )}
           </>
         ) : (
           <PrimaryButton onClick={() => file && analyze.mutate(file)} disabled={!file || analyze.isPending}>
@@ -876,8 +907,8 @@ export function ImportDialog({
             </div>
           ) : (
             <p className="rounded-lg border border-border bg-accent/40 px-4 py-3 text-[12.5px] text-muted-foreground">
-              «ترحيل تلقائي كامل» ينشئ المالك والمستأجر والعقار والعقد وجدول الدفعات والفواتير
-              وحساب بوابة العميل وتذكير السداد دفعة واحدة.
+              «ترحيل تلقائي كامل» ينشئ المالك والمستأجر والعقار والعقد وجدول الدفعات
+              وحساب بوابة العميل وتذكير السداد دفعة واحدة — دون إنشاء فواتير تلقائيًا.
             </p>
           )}
         </div>

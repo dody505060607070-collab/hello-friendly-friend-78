@@ -7,6 +7,7 @@ export type PublicProperty = {
   code: string;
   name: string;
   purpose: string;
+  rent_period: string | null;
   property_type: string | null;
   city: string | null;
   district: string | null;
@@ -42,7 +43,7 @@ export type PublicArea = {
 };
 
 const PROPERTY_FIELDS =
-  "id, code, name, purpose, property_type, city, district, price_text, price_value, description, is_featured, map_url, latitude, longitude, whatsapp_number, link_youtube, link_tiktok, link_instagram, link_snapchat, link_x, link_facebook, link_tour, created_at, property_images(url, is_cover, sort_order)";
+  "id, code, name, purpose, rent_period, property_type, city, district, price_text, price_value, description, is_featured, map_url, latitude, longitude, whatsapp_number, link_youtube, link_tiktok, link_instagram, link_snapchat, link_x, link_facebook, link_tour, created_at, property_images(url, is_cover, sort_order)";
 
 export const DEFAULT_WHATSAPP = "966550818020";
 export const COMPANY_PHONE = "0550818020";
@@ -170,3 +171,27 @@ export const purposeLabels: Record<string, string> = {
   sale: "بيع",
   investment: "استثمار",
 };
+
+export const rentPeriodLabels: Record<string, string> = {
+  yearly: "سنويًا",
+  monthly: "شهريًا",
+  daily: "يوميًا",
+};
+
+export type SiteSettings = {
+  phone: string | null;
+  whatsapp_number: string | null;
+};
+
+export const siteSettingsQuery = queryOptions({
+  queryKey: ["site-settings"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("app_settings")
+      .select("phone, whatsapp_number")
+      .maybeSingle();
+    if (error) throw error;
+    return (data as SiteSettings | null) ?? null;
+  },
+  staleTime: 300_000,
+});

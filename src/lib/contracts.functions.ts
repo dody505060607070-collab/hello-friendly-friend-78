@@ -4,6 +4,36 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type Extraction = Record<string, unknown>;
 
+/**
+ * يتحقق قبل التحليل من وجود نفس الملف (بصمة SHA-256) مسبقًا.
+ * يُرفض فقط إذا كان العقد المرتبط بالبصمة ما زال موجودًا؛ البصمات اليتيمة (لعقد محذوف) لا تمنع إعادة الرفع.
+ */
+export const checkDuplicateContractFile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { fileHash: string }) => input)
+  .handler(async ({ data, context }) => {
+    const db = context.supabase;
+    const hash = (data.fileHash ?? "").trim();
+    if (!hash) return { duplicate: false as const, contractNumber: null };
+    const rows = await db
+      .from("contract_imports")
+      .select("id, contract_id, contract:contract_id(contract_number)")
+      .eq("file_hash", hash)
+      .order("created_at", { ascending: false });
+    if (rows.error) return { duplicate: false as const, contractNumber: null };
+    for (const row of rows.data ?? []) {
+      const linkedContractId = (row as { contract_id: string | null }).contract_id;
+      if (!linkedContractId) continue;
+      // العقد لا يزال موجودًا؟
+      const contract = await db.from("contracts").select("id, contract_number").eq("id", linkedContractId).maybeSingle();
+      if (contract.data) {
+        return { duplicate: true as const, contractNumber: contract.data.contract_number ?? null };
+      }
+      // بصمة يتيمة (العقد محذوف) — لا تمنع الرفع، تابع الفحص لبقية الصفوف احتياطًا.
+    }
+    return { duplicate: false as const, contractNumber: null };
+  });
+
 const str = (v: unknown) => (v == null ? "" : String(v).trim());
 const num = (v: unknown) => {
   const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
@@ -27,8 +57,12 @@ function addCycle(base: Date, cycle: string, i: number) {
 export const finalizeContractImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { extraction: Extraction; filePath?: string | undefined; importId?: string | undefined }) =>
-      input,
+    (input: {
+      extraction: Extraction;
+      filePath?: string | undefined;
+      importId?: string | undefined;
+      fileHash?: string | undefined;
+    }) => input,
   )
   .handler(async ({ data, context }) => {
     const { requireUnlocked } = await import("./kill-switch.server");
@@ -270,25 +304,17 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
       );
     }
 
-    // منع تكرار رقم العقد لنفس النوع
+    // منع تكرار رقم العقد لنفس النوع — رفض قاطع دون إنشاء نسخة بديلة
     const contractType = isSale ? "sale" : "rent";
-    let contractNumber = str(e["contract_number"]) || `C-${Date.now().toString(36).toUpperCase()}`;
-    const baseNumber = contractNumber;
-    for (let attempt = 0; attempt < 25; attempt += 1) {
-      const dup = await db
-        .from("contracts")
-        .select("id")
-        .eq("contract_number", contractNumber)
-        .eq("contract_type", contractType)
-        .limit(1);
-      if (!dup.data?.length) break;
-      const suffix = `-${(attempt + 2).toString()}-${Math.random().toString(36).toUpperCase().slice(2, 6)}`;
-      contractNumber = `${baseNumber}${suffix}`;
-    }
-    if (contractNumber !== baseNumber) {
-      warnings.push(
-        `رقم العقد ${baseNumber} مسجَّل مسبقًا — تم حفظ نسخة جديدة برقم ${contractNumber} (عقد مستقل لنفس الشخص).`,
-      );
+    const contractNumber = str(e["contract_number"]) || `C-${Date.now().toString(36).toUpperCase()}`;
+    const dup = await db
+      .from("contracts")
+      .select("id")
+      .eq("contract_number", contractNumber)
+      .eq("contract_type", contractType)
+      .limit(1);
+    if (dup.data?.length) {
+      throw new Error(`رقم العقد ${contractNumber} مسجَّل مسبقًا لنفس نوع العقد — لا يمكن إنشاء عقد مكرر.`);
     }
 
     const contractIns = await db
@@ -344,42 +370,7 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
     if (payIns.error) warnings.push(`تعذّر إنشاء جدول الدفعات: ${payIns.error.message}`);
     else created.push(`${payIns.data.length} دفعة مجدولة`);
 
-    // الفواتير لكل دفعة
-    let invoicesCreated = 0;
-    for (const p of payIns.data ?? []) {
-      const invoiceNumber = `INV-${contractIns.data.contract_number}-${p.payment_number}`;
-      const inv = await db
-        .from("invoices")
-        .insert({
-          invoice_number: invoiceNumber,
-          contact_id: tenantId,
-          contract_id: contractId,
-          issue_date: p.due_date,
-          due_date: p.due_date,
-          status: "unpaid",
-          subtotal: p.amount_due,
-          vat_amount: 0,
-          total: p.amount_due,
-          notes: "أُنشئت تلقائيًا من استيراد العقد",
-          created_by: context.userId,
-        })
-        .select("id")
-        .single();
-      if (inv.error) {
-        warnings.push(`تعذّر إنشاء الفاتورة ${invoiceNumber}: ${inv.error.message}`);
-        continue;
-      }
-      invoicesCreated += 1;
-      await db.from("invoice_items").insert({
-        invoice_id: inv.data.id,
-        description: `دفعة رقم ${p.payment_number} — عقد ${contractIns.data.contract_number}`,
-        quantity: 1,
-        unit_price: p.amount_due,
-        total: p.amount_due,
-        sort_order: 1,
-      });
-    }
-    if (invoicesCreated) created.push(`${invoicesCreated} فاتورة`);
+    // الترحيل يقتصر على إنشاء العقد وجدول الدفعات فقط — لا فواتير تلقائية.
 
     // تذكير أول دفعة
     const firstPayment = (payIns.data ?? []).sort((a, b) => a.payment_number - b.payment_number)[0];
@@ -467,6 +458,7 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
           status: warnings.length ? "needs_review" : "approved",
           contract_id: contractId,
           warnings: warnings as never,
+          ...(data.fileHash ? { file_hash: data.fileHash } : {}),
           approved_by: context.userId,
           approved_at: new Date().toISOString(),
         })
@@ -480,6 +472,7 @@ export const finalizeContractImport = createServerFn({ method: "POST" })
         extraction: e as never,
         warnings: warnings as never,
         contract_id: contractId,
+        file_hash: data.fileHash ?? null,
         uploaded_by: context.userId,
         approved_by: context.userId,
         approved_at: new Date().toISOString(),

@@ -1,12 +1,48 @@
+import { Link } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { Loader2, Send, Sparkles, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 
 import markAsset from "@/assets/mithra-mark.png.asset.json";
 import { askPublicAi } from "@/lib/ai.functions";
 import { cn } from "@/lib/utils";
 
 type Message = { role: "user" | "assistant"; content: string };
+
+/** يحوّل نص الرسالة إلى أجزاء نصية وروابط قابلة للنقر (رابط عقار داخلي أو رابط http). */
+const LINK_PATTERN = /(https?:\/\/[^\s)]+|\/properties\/[A-Za-z0-9-]+)/g;
+const LINK_TEST = /^(https?:\/\/[^\s)]+|\/properties\/[A-Za-z0-9-]+)$/;
+
+function renderMessageContent(content: string) {
+  const parts = content.split(LINK_PATTERN);
+  return parts.map((part, index) => {
+    if (!LINK_TEST.test(part)) {
+      return <Fragment key={index}>{part}</Fragment>;
+    }
+    if (part.startsWith("/properties/")) {
+      return (
+        <Link
+          key={index}
+          to={part}
+          className="font-bold text-primary underline underline-offset-2"
+        >
+          {part}
+        </Link>
+      );
+    }
+    return (
+      <a
+        key={index}
+        href={part}
+        target="_blank"
+        rel="noreferrer"
+        className="font-bold text-primary underline underline-offset-2"
+      >
+        {part}
+      </a>
+    );
+  });
+}
 
 const starters = [
   "كيف أعرض عقاري للإيجار عندكم؟",
@@ -141,7 +177,7 @@ export function AiWidget() {
                     : "bg-muted text-foreground",
                 )}
               >
-                {message.content}
+                {renderMessageContent(message.content)}
               </p>
             ))}
             {ask.isPending ? (

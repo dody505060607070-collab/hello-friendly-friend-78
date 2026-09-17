@@ -1,12 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Pencil, Plus, UserCog } from "lucide-react";
+import { Pencil, Plus, ShieldCheck, Trash2, UserCog } from "lucide-react";
+import { toast } from "sonner";
 
 import { Chip } from "@/components/kit/Chip";
 import { DataTable } from "@/components/kit/DataTable";
 import { EmptyState, formatDate } from "@/components/kit/LiveTable";
 import { PageHero } from "@/components/kit/PageHero";
 import { supabase } from "@/integrations/supabase/client";
+import { deleteStaffAccount, setStaffActive, setSuperAdmin } from "@/lib/staff.functions";
 
 type Row = {
   id: string;
@@ -35,6 +37,52 @@ export const Route = createFileRoute("/_authenticated/employees")({
 });
 
 function EmployeesPage() {
+  const queryClient = useQueryClient();
+
+  const admins = useQuery({
+    queryKey: ["super-admins"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "super_admin");
+      if (error) throw error;
+      return (data ?? []).map((r) => r.user_id as string);
+    },
+  });
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["employees-list"] });
+    queryClient.invalidateQueries({ queryKey: ["super-admins"] });
+  };
+
+  const toggleAdmin = useMutation({
+    mutationFn: (input: { userId: string; enabled: boolean }) => setSuperAdmin({ data: input }),
+    onSuccess: (res) => {
+      refresh();
+      toast.success(res.isSuperAdmin ? "تم منح صلاحية المدير العام" : "تم سحب صلاحية المدير العام");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التعديل"),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: (input: { userId: string; isActive: boolean }) => setStaffActive({ data: input }),
+    onSuccess: () => {
+      refresh();
+      toast.success("تم تحديث حالة الحساب");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التعديل"),
+  });
+
+  const removeAccount = useMutation({
+    mutationFn: (userId: string) => deleteStaffAccount({ data: { userId } }),
+    onSuccess: () => {
+      refresh();
+      toast.success("تم حذف الحساب نهائيًا");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحذف"),
+  });
+
   const list = useQuery({
     queryKey: ["employees-list"],
     queryFn: async () => {
@@ -103,11 +151,65 @@ function EmployeesPage() {
               ),
             },
             {
+              header: "مدير عام",
+              cell: (r) => {
+                const isAdmin = (admins.data ?? []).includes(r.id);
+                return (
+                  <button
+                    type="button"
+                    disabled={toggleAdmin.isPending}
+                    onClick={() => {
+                      const msg = isAdmin
+                        ? "سحب صلاحية المدير العام من هذا الحساب؟"
+                        : "منح هذا الحساب صلاحية المدير العام الكاملة؟";
+                      if (window.confirm(msg)) {
+                        toggleAdmin.mutate({ userId: r.id, enabled: !isAdmin });
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold"
+                  >
+                    <ShieldCheck
+                      className={`size-4 ${isAdmin ? "text-gold" : "text-muted-foreground"}`}
+                    />
+                    {isAdmin ? "مدير عام" : "منح الصلاحية"}
+                  </button>
+                );
+              },
+            },
+            {
               header: "إجراءات",
               cell: (r) => (
-                <Link to="/employee-form" search={{ id: r.id }} aria-label="تعديل">
-                  <Pencil className="size-4 text-muted-foreground hover:text-primary" />
-                </Link>
+                <div className="flex items-center gap-3">
+                  <Link to="/employee-form" search={{ id: r.id }} aria-label="تعديل">
+                    <Pencil className="size-4 text-muted-foreground hover:text-primary" />
+                  </Link>
+                  <button
+                    type="button"
+                    disabled={toggleActive.isPending}
+                    onClick={() =>
+                      toggleActive.mutate({ userId: r.id, isActive: !r.is_active })
+                    }
+                    className="text-[12.5px] font-semibold text-primary"
+                  >
+                    {r.is_active ? "تعطيل" : "تفعيل"}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="حذف الحساب"
+                    disabled={removeAccount.isPending}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `حذف حساب «${r.full_name}» نهائيًا؟ لا يمكن التراجع عن هذه الخطوة.`,
+                        )
+                      ) {
+                        removeAccount.mutate(r.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="size-4 text-muted-foreground hover:text-destructive" />
+                  </button>
+                </div>
               ),
             },
           ]}

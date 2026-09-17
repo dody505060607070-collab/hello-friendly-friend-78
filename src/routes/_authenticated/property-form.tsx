@@ -1,4 +1,3 @@
-import { uploadMedia, mediaUrl } from "@/lib/media";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -14,7 +13,6 @@ import {
   ShieldCheck,
 
   Trash2,
-  UploadCloud,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -25,10 +23,15 @@ import { PageHero } from "@/components/kit/PageHero";
 import { Stepper } from "@/components/kit/Stepper";
 import { Toggle } from "@/components/kit/Toggle";
 import { supabase } from "@/integrations/supabase/client";
+import { EditableSelect } from "@/components/properties/EditableSelect";
+import { LocationPicker } from "@/components/properties/LocationPicker";
+import { ImageManager } from "@/components/properties/ImageManager";
+import { BackfillCoordinatesButton } from "@/components/properties/BackfillCoordinatesButton";
 
 export const Route = createFileRoute("/_authenticated/property-form")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { id: string; req?: string } => ({
     id: typeof search["id"] === "string" ? (search["id"] as string) : "",
+    ...(typeof search["req"] === "string" && search["req"] ? { req: search["req"] as string } : {}),
   }),
   head: () => ({
     meta: [
@@ -68,6 +71,7 @@ const emptyForm = {
   name: "",
   code: "",
   purpose: "rent",
+  rent_period: "yearly",
   property_type: "",
   city: "بريدة",
   district: "",
@@ -88,6 +92,8 @@ const emptyForm = {
   link_tour: "",
   sort_order: "0",
   internal_notes: "",
+  owner_name: "",
+  owner_phone: "",
   is_visible: true,
   is_featured: false,
   needs_review: false,
@@ -123,14 +129,12 @@ function SectionCard({
 }
 
 function PropertyFormPage() {
-  const { id } = Route.useSearch();
+  const { id, req: requestId } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [imageUrl, setImageUrl] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [videoTitle, setVideoTitle] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [guaranteeName, setGuaranteeName] = useState("");
   const [guaranteeYears, setGuaranteeYears] = useState("");
 
@@ -208,6 +212,7 @@ function PropertyFormPage() {
       name: row.name ?? "",
       code: row.code ?? "",
       purpose: row.purpose ?? "rent",
+      rent_period: row.rent_period ?? "yearly",
       property_type: row.property_type ?? "",
       city: row.city ?? "",
       district: row.district ?? "",
@@ -228,6 +233,8 @@ function PropertyFormPage() {
       link_tour: row.link_tour ?? "",
       sort_order: String(row.sort_order ?? 0),
       internal_notes: row.internal_notes ?? "",
+      owner_name: row.owner_name ?? "",
+      owner_phone: row.owner_phone ?? "",
       is_visible: Boolean(row.is_visible),
       is_featured: Boolean(row.is_featured),
       needs_review: Boolean(row.needs_review),
@@ -363,6 +370,7 @@ function PropertyFormPage() {
         name: form.name.trim(),
         code: form.code.trim() || `P-${Date.now().toString(36).toUpperCase()}`,
         purpose: form.purpose,
+        rent_period: form.purpose === "rent" ? form.rent_period : null,
         property_type: form.property_type.trim() || null,
         city: form.city.trim() || null,
         district: form.district.trim() || null,
@@ -380,6 +388,8 @@ function PropertyFormPage() {
         sort_order: Number(form.sort_order) || 0,
         internal_notes: form.internal_notes.trim() || null,
         owner_id: ownerId || null,
+        owner_name: form.owner_name.trim() || null,
+        owner_phone: form.owner_phone.trim() || null,
         is_visible: form.is_visible,
         is_featured: form.is_featured,
         needs_review: form.needs_review,
@@ -405,24 +415,34 @@ function PropertyFormPage() {
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
   });
 
-  const addImage = useMutation({
-    mutationFn: async (url: string) => {
-      if (!id) throw new Error("احفظ العقار أولًا ثم أضِف الصور");
-      const { error } = await supabase.from("property_images").insert({
-        property_id: id,
-        url,
-        sort_order: images.data?.length ?? 0,
-        is_cover: !images.data?.length,
-      });
+  const publish = useMutation({
+    mutationFn: async () => {
+      const savedId = await save.mutateAsync();
+      const { error } = await supabase
+        .from("properties")
+        .update({ is_visible: true, needs_review: false, status: "available" })
+        .eq("id", savedId);
       if (error) throw error;
+      if (requestId) {
+        await supabase
+          .from("listing_requests")
+          .update({ status: "approved", property_id: savedId })
+          .eq("id", requestId);
+      }
+      return savedId;
     },
-    onSuccess: () => {
-      setImageUrl("");
-      queryClient.invalidateQueries({ queryKey: ["property-images", id] });
-      queryClient.invalidateQueries({ queryKey: ["public-properties"] });
-      toast.success("تمت إضافة الصورة");
+    onSuccess: (savedId) => {
+      set({ is_visible: true, needs_review: false });
+      invalidateAll();
+      queryClient.invalidateQueries({ queryKey: ["listing_requests"] });
+      toast.success("تم اعتماد العقار ونشره على الموقع");
+      if (!id)
+        navigate({
+          to: "/property-form",
+          search: requestId ? { id: savedId, req: requestId } : { id: savedId },
+        });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّرت إضافة الصورة"),
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الاعتماد"),
   });
 
   const removeMedia = useMutation({
@@ -439,28 +459,6 @@ function PropertyFormPage() {
       toast.success("تم الحذف");
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحذف"),
-  });
-
-  const setCover = useMutation({
-    mutationFn: async (rowId: string) => {
-      if (!id) return;
-      const clear = await supabase
-        .from("property_images")
-        .update({ is_cover: false })
-        .eq("property_id", id);
-      if (clear.error) throw clear.error;
-      const { error } = await supabase
-        .from("property_images")
-        .update({ is_cover: true })
-        .eq("id", rowId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["property-images", id] });
-      queryClient.invalidateQueries({ queryKey: ["public-properties"] });
-      toast.success("تم تعيين الصورة الرئيسية");
-    },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التحديث"),
   });
 
   const addVideo = useMutation({
@@ -483,27 +481,6 @@ function PropertyFormPage() {
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّرت الإضافة"),
   });
-
-  const uploadFiles = async (files: FileList | null) => {
-    if (!files?.length) return;
-    if (!id) {
-      toast.error("احفظ العقار أولًا ثم ارفع الصور");
-      return;
-    }
-    setUploading(true);
-    try {
-      for (const file of Array.from(files)) {
-        const path = `${id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
-        const { url } = await uploadMedia("property-media", path, file);
-        await addImage.mutateAsync(url);
-      }
-      toast.success("تم رفع الصور");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "تعذّر رفع الملفات");
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const cityDistricts = (districts.data ?? []).filter((d) => {
     const city = cities.data?.find((c) => c.name === form.city);
@@ -585,23 +562,27 @@ function PropertyFormPage() {
               <option value="investment">استثمار</option>
             </select>
           </Field>
+          {form.purpose === "rent" ? (
+            <Field label="دورية الإيجار">
+              <select
+                className={inputClass}
+                value={form.rent_period}
+                onChange={(e) => set({ rent_period: e.target.value })}
+              >
+                <option value="yearly">سنوي</option>
+                <option value="monthly">شهري</option>
+                <option value="daily">يومي</option>
+              </select>
+            </Field>
+          ) : null}
           <Field label="نوع العقار" hint="القائمة تُدار من إعدادات الموقع ← الأنواع والأحياء">
-            <select
-              className={inputClass}
+            <EditableSelect
+              table="property_types"
+              options={types.data ?? []}
               value={form.property_type}
-              onChange={(e) => set({ property_type: e.target.value })}
-            >
-              <option value="">— اختر —</option>
-              {(types.data ?? []).map((t) => (
-                <option key={t.id} value={t.name}>
-                  {t.name}
-                </option>
-              ))}
-              {form.property_type &&
-              !(types.data ?? []).some((t) => t.name === form.property_type) ? (
-                <option value={form.property_type}>{form.property_type}</option>
-              ) : null}
-            </select>
+              onChange={(name) => set({ property_type: name })}
+              onAdded={() => queryClient.invalidateQueries({ queryKey: ["property-types", "active"] })}
+            />
           </Field>
           <Field label="الحالة">
             <select
@@ -617,38 +598,23 @@ function PropertyFormPage() {
             </select>
           </Field>
           <Field label="المدينة">
-            <select
-              className={inputClass}
+            <EditableSelect
+              table="cities"
+              options={cities.data ?? []}
               value={form.city}
-              onChange={(e) => set({ city: e.target.value, district: "" })}
-            >
-              <option value="">— اختر —</option>
-              {(cities.data ?? []).map((c) => (
-                <option key={c.id} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-              {form.city && !(cities.data ?? []).some((c) => c.name === form.city) ? (
-                <option value={form.city}>{form.city}</option>
-              ) : null}
-            </select>
+              onChange={(name) => set({ city: name, district: "" })}
+              onAdded={() => queryClient.invalidateQueries({ queryKey: ["cities", "active"] })}
+            />
           </Field>
           <Field label="الحي">
-            <select
-              className={inputClass}
+            <EditableSelect
+              table="districts"
+              options={cityDistricts}
               value={form.district}
-              onChange={(e) => set({ district: e.target.value })}
-            >
-              <option value="">— اختر —</option>
-              {cityDistricts.map((d) => (
-                <option key={d.id} value={d.name}>
-                  {d.name}
-                </option>
-              ))}
-              {form.district && !cityDistricts.some((d) => d.name === form.district) ? (
-                <option value={form.district}>{form.district}</option>
-              ) : null}
-            </select>
+              onChange={(name) => set({ district: name })}
+              extraInsert={{ city_id: cities.data?.find((c) => c.name === form.city)?.id ?? null }}
+              onAdded={() => queryClient.invalidateQueries({ queryKey: ["districts", "active"] })}
+            />
           </Field>
           <Field label="المالك" hint="يُربط العقار بسجل المالك في قسم الملاك">
             <select
@@ -663,6 +629,23 @@ function PropertyFormPage() {
                 </option>
               ))}
             </select>
+          </Field>
+          <Field label="اسم المالك" hint="يُستخدم عند عدم وجود مالك مسجل في السجلات">
+            <input
+              className={inputClass}
+              value={form.owner_name}
+              onChange={(e) => set({ owner_name: e.target.value })}
+              placeholder="اسم مالك العقار"
+            />
+          </Field>
+          <Field label="جوال المالك">
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={form.owner_phone}
+              onChange={(e) => set({ owner_phone: e.target.value })}
+              placeholder="05xxxxxxxx"
+            />
           </Field>
         </div>
       </SectionCard>
@@ -748,35 +731,18 @@ function PropertyFormPage() {
         subtitle="أدخل رابط خرائط جوجل أو الإحداثيات ليظهر العقار على خريطة الموقع."
         icon={MapPin}
       >
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="رابط خرائط جوجل" className="sm:col-span-3">
-            <input
-              className={inputClass}
-              dir="ltr"
-              value={form.map_url}
-              onChange={(e) => set({ map_url: e.target.value })}
-              placeholder="https://maps.google.com/..."
-            />
-          </Field>
-          <Field label="خط العرض (Latitude)">
-            <input
-              className={inputClass}
-              dir="ltr"
-              value={form.latitude}
-              onChange={(e) => set({ latitude: e.target.value })}
-              placeholder="26.3260"
-            />
-          </Field>
-          <Field label="خط الطول (Longitude)">
-            <input
-              className={inputClass}
-              dir="ltr"
-              value={form.longitude}
-              onChange={(e) => set({ longitude: e.target.value })}
-              placeholder="43.9750"
-            />
-          </Field>
-        </div>
+        <LocationPicker
+          mapUrl={form.map_url}
+          latitude={form.latitude}
+          longitude={form.longitude}
+          onMapUrlChange={(url) => set({ map_url: url })}
+          onCoordsChange={(lat, lng) => set({ latitude: lat, longitude: lng })}
+        />
+        {!id ? (
+          <div className="mt-4 border-t border-border pt-4">
+            <BackfillCoordinatesButton />
+          </div>
+        ) : null}
       </SectionCard>
 
       <SectionCard
@@ -945,7 +911,7 @@ function PropertyFormPage() {
 
       <SectionCard
         title="صور العقار"
-        subtitle="ارفع الصور من جهازك أو أضِف روابط جاهزة، وحدّد الصورة الرئيسية."
+        subtitle="ارفع الصور من جهازك أو أضِف روابط جاهزة، وأعد ترتيبها واقصّها وحدّد الصورة الرئيسية."
         icon={ImageIcon}
       >
         {!id ? (
@@ -953,76 +919,7 @@ function PropertyFormPage() {
             احفظ بيانات العقار أولًا لتفعيل رفع الصور والفيديوهات.
           </p>
         ) : (
-          <div className="space-y-4">
-            <label className="grid cursor-pointer place-items-center gap-2 rounded-xl border border-dashed border-border bg-card px-6 py-10 text-center">
-              {uploading ? (
-                <Loader2 className="size-6 animate-spin text-primary" />
-              ) : (
-                <UploadCloud className="size-6 text-muted-foreground" />
-              )}
-              <span className="text-[13px] text-muted-foreground">
-                اسحب الصور هنا أو اضغط للاختيار
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(e) => uploadFiles(e.target.files)}
-              />
-            </label>
-
-            <div className="flex flex-wrap gap-2">
-              <input
-                className={inputClass + " max-w-md flex-1"}
-                dir="ltr"
-                placeholder="أو ألصق رابط صورة https://"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-              />
-              <button
-                type="button"
-                disabled={!imageUrl.trim() || addImage.isPending}
-                onClick={() => addImage.mutate(imageUrl.trim())}
-                className="inline-flex h-10 items-center gap-1 rounded-lg border border-border px-4 text-[12.5px] font-semibold text-primary disabled:opacity-50"
-              >
-                <Plus className="size-4" />
-                إضافة
-              </button>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {(images.data ?? []).map((img) => (
-                <figure
-                  key={img.id}
-                  className="overflow-hidden rounded-xl border border-border bg-card"
-                >
-                  <img src={img.url} alt="صورة العقار" className="h-32 w-full object-cover" />
-                  <figcaption className="flex items-center justify-between gap-2 px-3 py-2 text-[12px]">
-                    <button
-                      type="button"
-                      onClick={() => setCover.mutate(img.id)}
-                      className={
-                        img.is_cover ? "font-bold text-primary" : "font-semibold text-muted-foreground"
-                      }
-                    >
-                      {img.is_cover ? "الصورة الرئيسية" : "تعيين كرئيسية"}
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="حذف الصورة"
-                      onClick={() =>
-                        removeMedia.mutate({ table: "property_images", rowId: img.id })
-                      }
-                      className="text-destructive"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-          </div>
+          <ImageManager propertyId={id} />
         )}
       </SectionCard>
 
@@ -1110,6 +1007,15 @@ function PropertyFormPage() {
         >
           {save.isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
           {id ? "حفظ التعديلات" : "حفظ العقار"}
+        </button>
+        <button
+          type="button"
+          onClick={() => publish.mutate()}
+          disabled={publish.isPending || save.isPending}
+          className="inline-flex items-center gap-2 rounded-lg bg-gold px-6 py-3 text-[13.5px] font-bold text-gold-foreground disabled:opacity-60"
+        >
+          {publish.isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+          اعتماد ونشر
         </button>
         <Link
           to="/properties"

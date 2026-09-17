@@ -4,9 +4,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
- * إرسال واتساب مباشرة عبر Twilio (بدون فتح wa.me).
- * السرّيات: TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_WHATSAPP_FROM
- * واختياريًا TWILIO_CONTENT_SID للقالب المعتمد خارج نافذة الـ 24 ساعة.
+ * إرسال واتساب عبر مزوّد سحابي واحد فقط (Wassenger / Evolution / جسر ذاتي).
+ * لا يوجد أي مزوّد Twilio أو أي بث جماعي — الإرسال يدوي دائمًا من واجهة النظام.
  */
 
 /** يحوّل رقمًا سعوديًا محليًا (05xxxxxxxx) إلى صيغة +966xxxxxxxx. */
@@ -27,9 +26,9 @@ export function toE164(raw: string): string {
   return `+${digits}`;
 }
 
-type TwilioResult =
+type SendResult =
   | { ok: true; sid: string }
-  | { ok: false; error: string; needsTemplate?: boolean };
+  | { ok: false; error: string };
 
 function normalizeBridgeConfig() {
   const rawUrl = process.env["WHATSAPP_BRIDGE_URL"] ?? "";
@@ -82,7 +81,7 @@ async function wassengerFetch(path: string, init?: { method?: string; body?: unk
 }
 
 /** إرسال رسالة عبر Wassenger. */
-async function wassengerSend(to: string, body: string): Promise<TwilioResult | null> {
+async function wassengerSend(to: string, body: string): Promise<SendResult | null> {
   const cfg = wassengerConfig();
   if (!cfg.ready) return null;
   const phone = toE164(to);
@@ -221,7 +220,7 @@ async function cloudJson(
 }
 
 /** إرسال رسالة عبر المزوّد السحابي. */
-async function cloudSend(to: string, body: string): Promise<TwilioResult | null> {
+async function cloudSend(to: string, body: string): Promise<SendResult | null> {
   const cfg = cloudConfig();
   if (!cfg.ready) return null;
   const number = toE164(to).replace(/[^\d]/g, "");
@@ -349,7 +348,7 @@ async function cloudStatus(): Promise<LinkStatus | null> {
 }
 
 /** إرسال عبر جسر واتساب المجاني على الـVPS (رقمك الشخصي/رقم الشركة). */
-async function bridgeSend(to: string, body: string): Promise<TwilioResult | null> {
+async function bridgeSend(to: string, body: string): Promise<SendResult | null> {
   const { url, token } = normalizeBridgeConfig();
   if (!url || !token) return null;
   try {
@@ -366,76 +365,19 @@ async function bridgeSend(to: string, body: string): Promise<TwilioResult | null
   }
 }
 
-export async function twilioSend(input: {
+export async function sendWhatsApp(input: {
   to: string;
   body: string;
-  contentSid?: string;
-  contentVariables?: Record<string, string>;
-}): Promise<TwilioResult> {
-  // الأولوية لـWassenger (الرقم المرتبط بالـQR)، وإن لم يكن مُعدًا نجرّب البدائل ثم Twilio.
-  if (!input.contentSid) {
-    const viaWassenger = await wassengerSend(input.to, input.body);
-    if (viaWassenger) return viaWassenger;
-    const viaCloud = await cloudSend(input.to, input.body);
-    if (viaCloud?.ok) return viaCloud;
-    const viaBridge = await bridgeSend(input.to, input.body);
-    if (viaBridge?.ok) return viaBridge;
-  }
+}): Promise<SendResult> {
+  // الأولوية لـWassenger (الرقم المرتبط بالـQR)، ثم المزوّد السحابي، ثم الجسر الذاتي.
+  const viaWassenger = await wassengerSend(input.to, input.body);
+  if (viaWassenger) return viaWassenger;
+  const viaCloud = await cloudSend(input.to, input.body);
+  if (viaCloud) return viaCloud;
+  const viaBridge = await bridgeSend(input.to, input.body);
+  if (viaBridge) return viaBridge;
 
-  const sid = process.env["TWILIO_ACCOUNT_SID"];
-  const token = process.env["TWILIO_AUTH_TOKEN"];
-  const from = process.env["TWILIO_WHATSAPP_FROM"] ?? "whatsapp:+17372212163";
-  if (!sid || !token) return { ok: false, error: "بيانات Twilio غير مكتملة في النظام" };
-
-  const to = toE164(input.to);
-  if (!to.startsWith("+") || to.length < 8) {
-    return { ok: false, error: `رقم الجوال غير صالح: ${input.to}` };
-  }
-
-  const form = new URLSearchParams({ To: `whatsapp:${to}`, From: from });
-  if (input.contentSid) {
-    form.set("ContentSid", input.contentSid);
-    if (input.contentVariables) form.set("ContentVariables", JSON.stringify(input.contentVariables));
-  } else {
-    form.set("Body", input.body);
-  }
-
-  let res: Response;
-  try {
-    res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${btoa(`${sid}:${token}`)}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: form,
-    });
-  } catch (e) {
-    return { ok: false, error: `تعذر الاتصال بـ Twilio: ${(e as Error).message}` };
-  }
-
-  if (res.ok) {
-    const data = (await res.json()) as { sid?: string };
-    return { ok: true, sid: data.sid ?? "" };
-  }
-
-  const text = await res.text();
-  let message = `Twilio ${res.status}`;
-  try {
-    const parsed = JSON.parse(text) as { message?: string; code?: number };
-    if (parsed.message) message = `Twilio ${parsed.code ?? res.status}: ${parsed.message}`;
-    // 63016 = خارج نافذة الـ 24 ساعة → يجب استخدام قالب معتمد
-    if (parsed.code === 63016) {
-      return {
-        ok: false,
-        needsTemplate: true,
-        error: "العميل خارج نافذة الـ24 ساعة — يلزم قالب واتساب معتمد لهذه الرسالة",
-      };
-    }
-  } catch {
-    message = `Twilio ${res.status}: ${text.slice(0, 200)}`;
-  }
-  return { ok: false, error: message };
+  return { ok: false, error: "لا يوجد مزوّد واتساب مُعد في النظام (اربط الرقم أولًا)" };
 }
 
 export const sendWhatsAppMessage = createServerFn({ method: "POST" })
@@ -449,10 +391,10 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
         })
         .parse(input),
   )
-  .handler(async ({ data }): Promise<TwilioResult> => {
+  .handler(async ({ data }): Promise<SendResult> => {
     const { requireUnlocked } = await import("@/lib/kill-switch.server");
     await requireUnlocked();
-    const result = await twilioSend({ to: data.to, body: data.body });
+    const result = await sendWhatsApp({ to: data.to, body: data.body });
     const { dispatchAutomation } = await import("@/lib/automation.server");
     await dispatchAutomation("whatsapp.sent", {
       to: data.to,
@@ -464,14 +406,6 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     return result;
   });
 
-export const checkTwilioConfig = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    return {
-      configured: Boolean(process.env["TWILIO_ACCOUNT_SID"] && process.env["TWILIO_AUTH_TOKEN"]),
-      from: process.env["TWILIO_WHATSAPP_FROM"] ?? null,
-    };
-  });
 
 /** حالة ربط واتساب المجاني + رمز QR للمسح. */
 export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })

@@ -25,7 +25,9 @@ type FollowupRow = {
   last_sent_at: string | null;
   next_send_at: string | null;
   status: string;
+  payment_id: string | null;
   contract: { contract_number: string | null } | null;
+  payment: { id: string; amount_due: number; amount_paid: number; status: string } | null;
 };
 
 type LogRow = {
@@ -74,163 +76,16 @@ const moduleOptions = [
   { key: "general", label: "عام" },
 ];
 
-type TaskRow = {
-  id: string;
-  title: string;
-  task_type: string | null;
-  due_date: string | null;
-  status: string;
-  task_assignees: { user_id: string; profiles: { full_name: string; whatsapp: string | null; phone: string | null } | null }[];
-};
-
-/** متابعة تلقائية: أي مهمة متأخرة ولم تُنجز يُفتح لها تذكير واتساب متكرر للموظف حتى ينهيها. */
-function AutoTaskFollowups() {
-  const queryClient = useQueryClient();
-  const [module, setModule] = useState("all");
-  const [repeat, setRepeat] = useState("daily");
-
-  const overdue = useQuery({
-    queryKey: ["auto-followup-tasks", module],
-    queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
-      let q = supabase
-        .from("tasks")
-        .select(
-          "id, title, task_type, due_date, status, task_assignees(user_id, profiles:user_id(full_name, whatsapp, phone))",
-        )
-        .not("status", "in", "(done,approved,cancelled)")
-        .lt("due_date", today)
-        .order("due_date", { ascending: true })
-        .limit(100);
-      if (module !== "all") q = q.eq("task_type", module);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []) as unknown as TaskRow[];
-    },
-  });
-
-  const tasks = overdue.data ?? [];
-
-  const run = useMutation({
-    mutationFn: async () => {
-      if (tasks.length === 0) throw new Error("لا توجد مهام متأخرة في هذه الوحدة");
-      const { data: existing } = await supabase
-        .from("reminder_followups")
-        .select("recipient_phone, message_body")
-        .eq("status", "pending");
-      const seen = new Set((existing ?? []).map((r) => `${r.recipient_phone}|${r.message_body}`));
-
-      const rows: {
-        recipient_name: string;
-        recipient_phone: string;
-        message_body: string;
-        repeat_interval: string;
-        status: string;
-        next_send_at: string;
-      }[] = [];
-
-      for (const task of tasks) {
-        for (const a of task.task_assignees ?? []) {
-          const phone = a.profiles?.whatsapp ?? a.profiles?.phone ?? "";
-          if (!phone) continue;
-          const body = `تذكير تلقائي: لسه ما خلّصتش المهمة «${task.title}»${
-            task.due_date ? ` — موعد التسليم كان ${task.due_date}` : ""
-          }. برجاء إنهاؤها وتحديث حالتها في النظام.`;
-          const key = `${phone}|${body}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          rows.push({
-            recipient_name: a.profiles?.full_name ?? "موظف",
-            recipient_phone: phone,
-            message_body: body,
-            repeat_interval: repeat,
-            status: "pending",
-            next_send_at: new Date().toISOString(),
-          });
-        }
-      }
-
-      if (rows.length === 0) throw new Error("كل المهام المتأخرة لها تذكير تلقائي بالفعل");
-      const { error } = await supabase.from("reminder_followups").insert(rows);
-      if (error) throw error;
-      return rows.length;
-    },
-    onSuccess: (count) => {
-      queryClient.invalidateQueries({ queryKey: ["reminder_followups"] });
-      toast.success(`تم تفعيل ${count} تذكير تلقائي متكرر حتى إنهاء المهام`);
-    },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التشغيل"),
-  });
-
-  const withoutPhone = tasks.filter((t) =>
-    (t.task_assignees ?? []).every((a) => !(a.profiles?.whatsapp ?? a.profiles?.phone)),
-  ).length;
-
-  return (
-    <section className="surface-card overflow-hidden">
-      <div className="flex items-center gap-2 border-b border-border px-5 py-4">
-        <RefreshCw className="size-4 text-primary" />
-        <div>
-          <h2 className="text-[14px] font-bold text-foreground">متابعة تلقائية للمهام غير المنجزة</h2>
-          <p className="text-[12px] text-muted-foreground">
-            كل مهمة متأخرة ولم تُنجز يُفتح لها تذكير واتساب متكرر للموظف، ويتوقف تلقائيًا عند إنهاء المهمة.
-          </p>
-        </div>
-      </div>
-      <div className="grid gap-4 px-5 py-5 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="الوحدة (Module)">
-          <select className={inputClass} value={module} onChange={(e) => setModule(e.target.value)}>
-            {moduleOptions.map((m) => (
-              <option key={m.key} value={m.key}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="تكرار التذكير">
-          <select className={inputClass} value={repeat} onChange={(e) => setRepeat(e.target.value)}>
-            {repeatOptions
-              .filter((o) => o.key !== "once")
-              .map((o) => (
-                <option key={o.key} value={o.key}>
-                  {o.label}
-                </option>
-              ))}
-          </select>
-        </Field>
-        <div className="flex items-end">
-          <div className={`w-full rounded-xl px-4 py-3 ${rowToneClass.overdue}`}>
-            <div className="text-[18px] font-bold">{tasks.length}</div>
-            <div className="text-[12px]">مهمة متأخرة غير منجزة</div>
-          </div>
-        </div>
-        <div className="flex items-end">
-          <PrimaryButton onClick={() => run.mutate()} disabled={run.isPending || overdue.isLoading}>
-            {run.isPending ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
-            تشغيل المتابعة التلقائية
-          </PrimaryButton>
-        </div>
-        {withoutPhone > 0 ? (
-          <p className="text-[12px] text-destructive sm:col-span-2 lg:col-span-4">
-            {withoutPhone} مهمة لا يوجد لمسؤولها رقم واتساب محفوظ — أضف الرقم في ملف الموظف ليصله التذكير.
-          </p>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
 function RemindersPage() {
   const queryClient = useQueryClient();
-  const [contactId, setContactId] = useState("");
-  const [contractId, setContractId] = useState("");
+  const [contactId] = useState("");
   const [body, setBody] = useState("");
   const [repeat, setRepeat] = useState("once");
 
   const followups = useTableRows<FollowupRow>({
     table: "reminder_followups",
     select:
-      "id, recipient_name, recipient_phone, message_body, repeat_interval, sent_count, last_sent_at, next_send_at, status, contract:contract_id(contract_number)",
+      "id, recipient_name, recipient_phone, message_body, repeat_interval, sent_count, last_sent_at, next_send_at, status, payment_id, contract:contract_id(contract_number), payment:payment_id(id, amount_due, amount_paid, status)",
     orderBy: { column: "next_send_at", ascending: true },
     queryKey: ["reminder_followups"],
   });
@@ -256,30 +111,36 @@ function RemindersPage() {
     },
   });
 
-  const contracts = useQuery({
-    queryKey: ["contracts", "reminders"],
+  const payments = useQuery({
+    queryKey: ["contract-payments", "reminders"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("contracts")
-        .select("id, contract_number")
-        .order("created_at", { ascending: false })
+        .from("contract_payments")
+        .select(
+          "id, contract_id, due_date, amount_due, amount_paid, status, payment_number, contract:contract_id(id, contract_number, tenant_id, tenant:tenant_id(id, full_name, phone, whatsapp))",
+        )
+        .in("status", ["pending", "partial", "overdue"])
+        .order("due_date", { ascending: true })
         .limit(300);
       if (error) throw error;
       return data ?? [];
     },
   });
 
-  const selectedContact = (contacts.data ?? []).find((c) => c.id === contactId);
-  const phone = selectedContact?.whatsapp ?? selectedContact?.phone ?? "";
-  const selectedContract = (contracts.data ?? []).find((c) => c.id === contractId);
+  const [paymentId, setPaymentId] = useState("");
+  const selectedPayment = (payments.data ?? []).find((p) => p.id === paymentId);
+  const tenant = selectedPayment?.contract?.tenant ?? null;
+  const selectedContact = (contacts.data ?? []).find((c) => c.id === contactId) ?? tenant;
+  const phone = tenant?.whatsapp ?? tenant?.phone ?? selectedContact?.whatsapp ?? selectedContact?.phone ?? "";
+  const contractId = selectedPayment?.contract_id ?? "";
 
   const schedule = useMutation({
     mutationFn: async () => {
-      if (!selectedContact) throw new Error("اختر المستلم أولًا");
-      if (!phone) throw new Error("لا يوجد رقم جوال محفوظ لهذا المستلم");
+      if (!selectedPayment) throw new Error("اختر الدفعة أولًا — كل تذكير يجب أن يرتبط بدفعة");
+      if (!phone) throw new Error("لا يوجد رقم جوال محفوظ للمستأجر");
       if (!body.trim()) throw new Error("نص الرسالة مطلوب");
 
-      // إرسال فوري عبر Wassenger (الرقم المرتبط بالـQR)
+      // إرسال يدوي فوري عبر مزوّد واتساب المرتبط بالـQR — بلا أي بث
       const { sendWhatsAppMessage } = await import("@/lib/whatsapp.functions");
       const result = await sendWhatsAppMessage({ data: { to: phone, body: body.trim() } });
       if (!result.ok) throw new Error(result.error);
@@ -290,25 +151,27 @@ function RemindersPage() {
       if (repeat === "biweekly") next.setDate(next.getDate() + 14);
       if (repeat === "monthly") next.setMonth(next.getMonth() + 1);
 
+      const recipientName = tenant?.full_name ?? "مستأجر";
       const { error } = await supabase.from("reminder_followups").insert({
-        recipient_contact_id: selectedContact.id,
-        recipient_name: selectedContact.full_name,
+        recipient_contact_id: tenant?.id ?? null,
+        recipient_name: recipientName,
         recipient_phone: phone,
         contract_id: contractId || null,
+        payment_id: selectedPayment.id,
         message_body: body.trim(),
         repeat_interval: repeat,
-        status: "pending",
-        next_send_at: repeat === "once" ? new Date().toISOString() : next.toISOString(),
+        status: repeat === "once" ? "done" : "pending",
+        next_send_at: repeat === "once" ? null : next.toISOString(),
       });
       if (error) throw error;
 
       const { error: logError } = await supabase.from("message_log").insert({
-        recipient_name: selectedContact.full_name,
+        recipient_name: recipientName,
         recipient_phone: phone,
         contract_id: contractId || null,
         body: body.trim(),
         channel: "whatsapp",
-        result: "queued",
+        result: "sent",
         sent_by_system: false,
       });
       if (logError) throw logError;
@@ -317,11 +180,34 @@ function RemindersPage() {
       queryClient.invalidateQueries({ queryKey: ["reminder_followups"] });
       queryClient.invalidateQueries({ queryKey: ["message_log"] });
       queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
-      toast.success("تم جدولة التذكير وتسجيله في سجل التواصل");
-      if (phone) window.open(whatsappLink(phone, body.trim()), "_blank", "noopener");
+      toast.success("تم إرسال التذكير وتسجيله في سجل التواصل");
       setBody("");
+      setPaymentId("");
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
+  });
+
+  const markPaid = useMutation({
+    mutationFn: async (row: FollowupRow) => {
+      if (!row.payment_id || !row.payment) throw new Error("لا توجد دفعة مرتبطة بهذا التذكير");
+      const { error: payErr } = await supabase
+        .from("contract_payments")
+        .update({ status: "paid", amount_paid: row.payment.amount_due })
+        .eq("id", row.payment_id);
+      if (payErr) throw payErr;
+      const { error: remErr } = await supabase
+        .from("reminder_followups")
+        .update({ status: "stopped", next_send_at: null })
+        .eq("id", row.id);
+      if (remErr) throw remErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reminder_followups"] });
+      queryClient.invalidateQueries({ queryKey: ["contract-payments", "reminders"] });
+      queryClient.invalidateQueries({ queryKey: ["contract_payments"] });
+      toast.success("تم تسجيل الدفعة كمدفوعة وإيقاف التذكير");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر التحديث"),
   });
 
   const stop = useMutation({
@@ -374,8 +260,6 @@ function RemindersPage() {
         }}
       />
 
-      <AutoTaskFollowups />
-
       <section className="surface-card overflow-hidden">
         <div className="flex items-center gap-2 border-b border-border px-5 py-4">
           <Send className="size-4 text-primary" />
@@ -388,35 +272,25 @@ function RemindersPage() {
         </div>
 
         <div className="grid gap-4 px-5 py-5 sm:grid-cols-2 lg:grid-cols-4">
-          <Field label="المستلم">
-            <select
-              className={inputClass}
-              value={contactId}
-              onChange={(e) => setContactId(e.target.value)}
-            >
-              <option value="">اختر المستلم أولًا</option>
-              {(contacts.data ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.full_name}
-                </option>
-              ))}
-            </select>
+          <Field label="المستأجر (تلقائي من الدفعة)">
+            <input className={inputClass} value={tenant?.full_name ?? ""} disabled placeholder="اختر الدفعة أولًا" />
           </Field>
           <Field label="الإرسال عن طريق">
             <select className={inputClass} defaultValue="whatsapp">
               <option value="whatsapp">واتساب</option>
             </select>
           </Field>
-          <Field label="العقد / الدفعة">
+          <Field label="الدفعة المستحقة (إلزامي)">
             <select
               className={inputClass}
-              value={contractId}
-              onChange={(e) => setContractId(e.target.value)}
+              value={paymentId}
+              onChange={(e) => setPaymentId(e.target.value)}
             >
-              <option value="">— بدون —</option>
-              {(contracts.data ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.contract_number ?? c.id.slice(0, 8)}
+              <option value="">اختر الدفعة أولًا</option>
+              {(payments.data ?? []).map((p) => (
+                <option key={p.id} value={p.id}>
+                  {(p.contract?.contract_number ?? p.contract_id.slice(0, 8))} — دفعة {p.payment_number} —{" "}
+                  {p.due_date} — متبقي {Math.max(0, Number(p.amount_due) - Number(p.amount_paid))}
                 </option>
               ))}
             </select>
@@ -551,6 +425,17 @@ function RemindersPage() {
                     >
                       <StopCircle className="size-4" />
                       إيقاف
+                    </button>
+                  ) : null}
+                  {r.payment_id && r.status !== "stopped" ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm("تأكيد استلام السداد وإيقاف التذكير؟")) markPaid.mutate(r);
+                      }}
+                      className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-emerald-600"
+                    >
+                      تم الدفع
                     </button>
                   ) : null}
                 </span>
