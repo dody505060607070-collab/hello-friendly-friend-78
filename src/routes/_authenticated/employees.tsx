@@ -1,12 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Pencil, Plus, UserCog } from "lucide-react";
+import { Pencil, Plus, ShieldCheck, Trash2, UserCog } from "lucide-react";
+import { toast } from "sonner";
 
 import { Chip } from "@/components/kit/Chip";
 import { DataTable } from "@/components/kit/DataTable";
 import { EmptyState, formatDate } from "@/components/kit/LiveTable";
 import { PageHero } from "@/components/kit/PageHero";
 import { supabase } from "@/integrations/supabase/client";
+import { deleteStaffAccount, setStaffActive, setSuperAdmin } from "@/lib/staff.functions";
 
 type Row = {
   id: string;
