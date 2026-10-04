@@ -249,26 +249,38 @@ export type Database = {
       }
       backup_runs: {
         Row: {
+          completed_at: string | null
           created_at: string
           details: Json
+          error_message: string | null
           id: string
+          requested_by: string | null
           rows_count: number
+          size_bytes: number | null
           status: string
           tables_count: number
         }
         Insert: {
+          completed_at?: string | null
           created_at?: string
           details?: Json
+          error_message?: string | null
           id?: string
+          requested_by?: string | null
           rows_count?: number
+          size_bytes?: number | null
           status?: string
           tables_count?: number
         }
         Update: {
+          completed_at?: string | null
           created_at?: string
           details?: Json
+          error_message?: string | null
           id?: string
+          requested_by?: string | null
           rows_count?: number
+          size_bytes?: number | null
           status?: string
           tables_count?: number
         }
@@ -670,8 +682,10 @@ export type Database = {
       contract_signatures: {
         Row: {
           contract_id: string
+          created_at: string
           created_by: string | null
           id: string
+          image_data: string | null
           signature_data: string
           signed_at: string
           signer_name: string
@@ -679,17 +693,21 @@ export type Database = {
         }
         Insert: {
           contract_id: string
+          created_at?: string
           created_by?: string | null
           id?: string
-          signature_data: string
+          image_data?: string | null
+          signature_data?: string
           signed_at?: string
           signer_name: string
           signer_role?: string
         }
         Update: {
           contract_id?: string
+          created_at?: string
           created_by?: string | null
           id?: string
+          image_data?: string | null
           signature_data?: string
           signed_at?: string
           signer_name?: string
