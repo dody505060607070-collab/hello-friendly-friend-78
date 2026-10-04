@@ -22,7 +22,7 @@ const organizationSchema = {
   "@type": ["RealEstateAgent", "LocalBusiness"],
   "@id": `${SITE_URL}/#organization`,
   name: SITE_NAME,
-  alternateName: ["الرشيدي للعقارات", "Alrashudi Real Estate"],
+  alternateName: ["مثراء العقارية", "Mithra Real Estate"],
   url: SITE_URL,
   logo: absoluteSiteUrl("/favicon.png"),
   image: SOCIAL_IMAGE,

@@ -22,7 +22,7 @@ export const reportPublicRequest = createServerFn({ method: "POST" })
     await dispatchAutomation("request.created", data);
     const { whatsappSend } = await import("@/lib/whatsapp.functions");
     const body = data.request_kind === "supply"
-      ? `مرحبًا ${data.full_name}، وصل طلبك للرشودي للعقارات، وسنتواصل معك في أقرب وقت لتوفير العقار المناسب بالمواصفات التي طلبتها.`
+      ? `مرحبًا ${data.full_name}، وصل طلبك لمثراء العقارية، وسنتواصل معك في أقرب وقت لتوفير العقار المناسب بالمواصفات التي طلبتها.`
       : `مرحبًا ${data.full_name}، وصلنا طلب عرض عقارك لدى مثراء العقارية، وسيراجعه فريقنا ويتواصل معك في أقرب وقت.`;
     const whatsapp = await whatsappSend({ to: data.phone, body });
     return { ok: true as const, whatsapp };

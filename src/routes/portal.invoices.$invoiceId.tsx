@@ -161,7 +161,7 @@ function InvoiceView() {
             </div>
             <div>
               <p className="font-bold text-foreground">البريد الإلكتروني</p>
-              <p dir="ltr">info@al-rashudi.com</p>
+              <p dir="ltr">info@mithra.sa</p>
             </div>
             <div>
               <p className="font-bold text-foreground">العملة</p>
