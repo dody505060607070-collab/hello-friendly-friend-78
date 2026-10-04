@@ -275,34 +275,64 @@ export type Database = {
         Row: {
           address: string | null
           city: string | null
+          code: string
+          cover_url: string | null
           created_at: string
+          description: string | null
           district: string | null
+          floors_count: number | null
           id: string
+          is_visible: boolean
+          latitude: number | null
+          longitude: number | null
+          map_url: string | null
           name: string
           notes: string | null
           owner_id: string | null
+          purpose: string
+          sort_order: number
           updated_at: string
         }
         Insert: {
           address?: string | null
           city?: string | null
+          code: string
+          cover_url?: string | null
           created_at?: string
+          description?: string | null
           district?: string | null
+          floors_count?: number | null
           id?: string
+          is_visible?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          map_url?: string | null
           name: string
           notes?: string | null
           owner_id?: string | null
+          purpose?: string
+          sort_order?: number
           updated_at?: string
         }
         Update: {
           address?: string | null
           city?: string | null
+          code?: string
+          cover_url?: string | null
           created_at?: string
+          description?: string | null
           district?: string | null
+          floors_count?: number | null
           id?: string
+          is_visible?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          map_url?: string | null
           name?: string
           notes?: string | null
           owner_id?: string | null
+          purpose?: string
+          sort_order?: number
           updated_at?: string
         }
         Relationships: [
@@ -2173,6 +2203,7 @@ export type Database = {
           description: string | null
           district: string | null
           district_id: string | null
+          floor: string | null
           id: string
           internal_notes: string | null
           is_featured: boolean
@@ -2214,6 +2245,7 @@ export type Database = {
           description?: string | null
           district?: string | null
           district_id?: string | null
+          floor?: string | null
           id?: string
           internal_notes?: string | null
           is_featured?: boolean
@@ -2255,6 +2287,7 @@ export type Database = {
           description?: string | null
           district?: string | null
           district_id?: string | null
+          floor?: string | null
           id?: string
           internal_notes?: string | null
           is_featured?: boolean
@@ -2802,6 +2835,33 @@ export type Database = {
           locked?: boolean
           message?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      site_page_views: {
+        Row: {
+          id: string
+          path: string
+          referrer_host: string | null
+          user_id: string | null
+          visited_at: string
+          visitor_id: string
+        }
+        Insert: {
+          id?: string
+          path: string
+          referrer_host?: string | null
+          user_id?: string | null
+          visited_at?: string
+          visitor_id: string
+        }
+        Update: {
+          id?: string
+          path?: string
+          referrer_host?: string | null
+          user_id?: string | null
+          visited_at?: string
+          visitor_id?: string
         }
         Relationships: []
       }
@@ -3515,6 +3575,10 @@ export type Database = {
       finish_automation_lease: {
         Args: { _error?: string; _job_name: string }
         Returns: undefined
+      }
+      get_public_buildings: {
+        Args: { _code?: string; _limit?: number; _purpose?: string }
+        Returns: Json
       }
       get_public_properties: {
         Args: { _code?: string; _limit?: number; _purpose?: string }
