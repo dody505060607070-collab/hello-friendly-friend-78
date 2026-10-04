@@ -10,3 +10,5 @@
 <!-- LOVABLE:END -->
 - Sign-in is phone + WhatsApp one-time code only (`src/lib/phone-auth.functions.ts`, codes hashed in `login_otps`, session via admin magiclink token_hash); only numbers already in profiles/contacts/service_partners can sign in. Why: the client wants no passwords.
 - Scheduled jobs piggyback on the hourly `/api/public/n8n` GET; biweekly jobs use a 13-day `acquire_automation_lease` as the "once per 14 days" guard.
+
+- Database schema mirrors the Rushudy system (drizzle migrations rushudy_sync_*); only branding/name/domain differ. Why: user requested an exact clone.
