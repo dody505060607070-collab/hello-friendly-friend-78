@@ -77,7 +77,7 @@ function SiteHeader() {
             alt="مثراء العقارية"
             width={360}
             height={112}
-            className="h-[54px] w-auto max-w-[245px] object-contain object-right transition-transform duration-300 hover:scale-105 sm:h-[60px] lg:h-14"
+            className="brightness-0 invert h-[54px] w-auto max-w-[245px] object-contain object-right transition-transform duration-300 hover:scale-105 sm:h-[60px] lg:h-14"
           />
         </Link>
 

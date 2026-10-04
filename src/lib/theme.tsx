@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { cn } from "@/lib/utils";
 
 type Theme = "light" | "dark";
-const STORAGE_KEY = "rashudi-theme";
+const STORAGE_KEY = "mithraa-theme";
 
 const ThemeContext = createContext<{ theme: Theme; setTheme: (t: Theme) => void; toggle: () => void }>(
   { theme: "light", setTheme: () => {}, toggle: () => {} },

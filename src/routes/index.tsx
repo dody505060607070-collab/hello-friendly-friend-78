@@ -4,7 +4,7 @@ import { Building2, Handshake, Home, KeyRound, ShieldCheck } from "lucide-react"
 import { useMemo, useState } from "react";
 
 import ctaImage from "@/assets/cta-deal.jpg";
-import socialCard from "@/assets/rushdy-social-card.jpg.asset.json";
+import socialCard from "@/assets/mithra-social-card.jpg.asset.json";
 import { HeroVideo } from "@/components/site/HeroVideo";
 import { BuildingCard } from "@/components/site/BuildingCard";
 import { PropertyCard, PropertyGrid } from "@/components/site/PropertyCard";
@@ -22,7 +22,7 @@ const organizationSchema = {
   "@type": ["RealEstateAgent", "LocalBusiness"],
   "@id": `${SITE_URL}/#organization`,
   name: SITE_NAME,
-  alternateName: ["الرشيدي للعقارات", "Alrashudi Real Estate"],
+  alternateName: ["مثراء العقارية", "Mithra Real Estate"],
   url: SITE_URL,
   logo: absoluteSiteUrl("/favicon.png"),
   image: SOCIAL_IMAGE,

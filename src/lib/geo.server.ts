@@ -72,7 +72,7 @@ async function geocode(query: string): Promise<Coords | null> {
     query,
   )}`;
   const response = await fetch(endpoint, {
-    headers: { "user-agent": "RashoudiRealEstate/1.0 (contact: info@al-rashudi.com)" },
+    headers: { "user-agent": "MithraRealEstate/1.0 (contact: info@mithra.sa)" },
   });
   if (!response.ok) return null;
   const rows = (await response.json()) as { lat?: string; lon?: string }[];
