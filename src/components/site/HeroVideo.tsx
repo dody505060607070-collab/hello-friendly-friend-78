@@ -1,10 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { FileText, MapPinned, Search } from "lucide-react";
 
-import desktopHero from "@/assets/home-hero-desktop.jpg";
+import desktopHero from "@/assets/site-hero.jpg";
 import desktopHeroVideo from "@/assets/hero-desktop.mp4.asset.json";
 
-import mobileHero from "@/assets/home-hero-mobile.jpg";
+import mobileHero from "@/assets/site-hero.jpg";
 import mobileHeroVideo from "@/assets/hero-mobile.mp4.asset.json";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
