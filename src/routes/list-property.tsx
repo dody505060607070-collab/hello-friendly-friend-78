@@ -1,664 +1,144 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Home, ImageIcon, MapPin, Search, UserRound, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Home, ImagePlus, KeyRound, MapPin, Search, UserRound, X } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
+import heroImage from "@/assets/hero-list-property.jpg";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { uploadMedia } from "@/lib/media";
+import { getStoredReferral } from "@/lib/marketing";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/list-property")({
   head: () => ({
     meta: [
       { title: "اعرض أو اطلب عقارك | مثراء العقارية" },
-      {
-        name: "description",
-        content:
-          "أرسل بيانات عقارك لعرضه للإيجار أو البيع في بريدة، أو اطلب عقاراً بمواصفات محددة وسيتواصل معك فريقنا.",
-      },
+      { name: "description", content: "أرسل بيانات عقارك لعرضه أو اطلب عقاراً بمواصفاتك وسيتواصل معك فريق مثراء." },
       { property: "og:title", content: "اعرض أو اطلب عقارك | مثراء العقارية" },
-      {
-        property: "og:description",
-        content: "نموذج عرض العقار أو طلب عقار في بريدة مع متابعة مباشرة من فريق مثراء.",
-      },
+      { property: "og:description", content: "نموذج واضح لعرض العقار أو طلب عقار في بريدة." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
-    links: [{ rel: "canonical", href: "https://friendly-fellow-kit.lovable.app/list-property" }],
+    links: [{ rel: "canonical", href: "https://www.mithra.work/list-property" }],
   }),
   component: ListPropertyPage,
 });
 
-type Mode = "request" | "offer";
+type Mode = "offer" | "request";
+const propertyTypes = ["شقة", "فيلا", "أرض", "عمارة", "دور", "محل", "مكتب", "استراحة"];
+const cities = ["بريدة", "عنيزة", "الرس", "البكيرية", "البدائع", "رياض الخبراء"];
 
-/* ------------------------------ عناصر الشكل ------------------------------ */
-
-function Req() {
-  return <span className="text-destructive"> *</span>;
+function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
+  return <Label htmlFor={htmlFor} className="text-xs font-bold">{children}<span className="me-1 text-destructive">*</span></Label>;
 }
 
-function Field({
-  label,
-  required,
-  hint,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="text-right text-[12.5px] font-bold text-foreground">
-        {label}
-        {required ? <Req /> : null}
-      </div>
-      {hint ? <p className="text-right text-[11px] text-muted-foreground">{hint}</p> : null}
-      {children}
-    </div>
-  );
+function PurposeChoice({ value, selected, icon: Icon, label, onClick }: { value: string; selected: boolean; icon: typeof Home; label: string; onClick: (value: string) => void }) {
+  return <Button type="button" variant="outline" onClick={() => onClick(value)} className={cn("h-24 flex-1 flex-col gap-2 text-sm", selected && "border-primary bg-accent text-primary ring-1 ring-primary")}><Icon className="size-6" />{label}</Button>;
 }
-
-const inputClass =
-  "h-11 w-full rounded-lg border border-input bg-background px-3 text-right text-[13px] outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary focus:ring-2 focus:ring-primary/15";
-
-function SelectBox({
-  value,
-  onChange,
-  placeholder,
-  options,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  options: string[];
-}) {
-  return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`${inputClass} appearance-none pl-9`}
-      >
-        <option value="">{placeholder}</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
-    </div>
-  );
-}
-
-function ChoiceCard({
-  active,
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  icon: typeof Home;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`pressable flex h-[76px] flex-col items-center justify-center gap-1.5 rounded-xl border text-[13px] font-bold transition-all ${
-        active
-          ? "border-primary bg-primary/10 text-primary shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_12%,transparent)]"
-          : "border-border bg-background text-foreground hover:border-primary/40 hover:bg-accent"
-      }`}
-    >
-      <Icon className={`size-5 ${active ? "text-primary" : "text-muted-foreground"}`} />
-      {label}
-    </button>
-  );
-}
-
-/* --------------------------------- الصفحة -------------------------------- */
 
 function ListPropertyPage() {
-  const [mode, setMode] = useState<Mode>("request");
-  const navigate = useNavigate();
+  const [mode, setMode] = useState<Mode>("offer");
   const [busy, setBusy] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const [isBroker, setIsBroker] = useState(false);
+  const [additionalNotes, setAdditionalNotes] = useState("");
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ full_name: "", phone: "", purpose: "sale", property_type: "", city: "بريدة", district: "", asking_price: "", description: "", budget_min: "", budget_max: "", map_url: "", broker_name: "", broker_phone: "" });
+  const set = (key: keyof typeof form, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
-  const lists = useQuery({
-    queryKey: ["public-form-lists"],
-    queryFn: async () => {
-      const [districts, types] = await Promise.all([
-        supabase.from("districts").select("name").eq("is_active", true).order("sort_order"),
-        supabase.from("property_types").select("name").eq("is_active", true).order("sort_order"),
-      ]);
-      return {
-        districts: (districts.data ?? []).map((d) => d.name),
-        types: (types.data ?? []).map((t) => t.name),
-      };
-    },
-  });
-
-  const districts = lists.data?.districts?.length
-    ? lists.data.districts
-    : ["الرحاب", "النهضة", "الصفراء", "الخليج", "الإسكان", "الوسط"];
-  const propertyTypes = lists.data?.types?.length
-    ? lists.data.types
-    : ["شقة", "فيلا", "دور", "أرض", "معرض", "مكتب", "استراحة"];
-
-  // نموذج «اطلب عقارك»
-  const [req, setReq] = useState({
-    full_name: "",
-    phone: "",
-    city: "",
-    district: "",
-    request_type: "buy",
-    budget_min: "",
-    budget_max: "",
-    is_broker: false,
-    broker_name: "",
-    broker_phone: "",
-    notes: "",
-  });
-
-  // نموذج «اعرض عقارك»
-  const [offer, setOffer] = useState({
-    full_name: "",
-    phone: "",
-    purpose: "sale",
-    property_type: "",
-    district: "",
-    description: "",
-    asking_price: "",
-    map_url: "",
-  });
-  const [files, setFiles] = useState<File[]>([]);
-
-  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/avif"];
-
-  const addFiles = (list: FileList | null) => {
-    if (!list) return;
-    const next = [...files, ...Array.from(list)].slice(0, 3);
-    const badType = next.find((f) => !ALLOWED_IMAGE_TYPES.includes(f.type));
-    if (badType) {
-      toast.error("يُسمح بالصور فقط (JPG / PNG / WEBP)");
-      return;
-    }
-    const tooBig = next.find((f) => f.size > 5 * 1024 * 1024);
-    if (tooBig) {
-      toast.error("حد أقصى 5 ميجا للصورة الواحدة");
-      return;
-    }
-    setFiles(next);
-  };
-
-  const submitRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!req.full_name.trim() || !req.phone.trim() || !req.city.trim() || !req.district) {
-      toast.error("رجاءً أكمل الحقول المطلوبة");
-      return;
-    }
+  const switchMode = (next: Mode) => { setMode(next); setForm((prev) => ({ ...prev, purpose: next === "offer" ? "sale" : "rent" })); };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!form.full_name.trim() || !form.phone.trim()) { toast.error("الاسم ورقم الجوال مطلوبان"); return; }
+    if (mode === "offer" && (!form.property_type || !form.description || !form.asking_price || !form.map_url)) { toast.error("أكمل بيانات العقار المطلوبة"); return; }
     setBusy(true);
     try {
-      const { error } = await supabase.from("supply_requests").insert({
-        full_name: req.full_name,
-        phone: req.phone,
-        request_type: req.request_type === "buy" ? "sale" : "rent",
-        city: req.city,
-        districts: req.district,
-        budget_min: req.budget_min ? Number(req.budget_min) : null,
-        budget_max: req.budget_max ? Number(req.budget_max) : null,
-        requester_type: req.is_broker ? "broker" : "client",
-        broker_name: req.is_broker ? req.broker_name || null : null,
-        broker_phone: req.is_broker ? req.broker_phone || null : null,
-        requester_notes: req.notes || null,
-      });
-      if (error) throw error;
-      await notifyAutomation(req.full_name, req.phone, req.request_type, req.city, null);
-      await sendSelfConfirmation(req.phone, req.request_type === "buy" ? "طلب شراء عقار" : "طلب استئجار عقار");
-      toast.success("تم إرسال طلبك بنجاح، سيتواصل معك فريقنا قريباً.");
-      void navigate({ to: "/thank-you" });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "تعذّر إرسال الطلب، حاول مرة أخرى");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const submitOffer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (
-      !offer.full_name.trim() ||
-      !offer.phone.trim() ||
-      !offer.property_type ||
-      !offer.district ||
-      !offer.description.trim() ||
-      !offer.asking_price.trim() ||
-      !offer.map_url.trim()
-    ) {
-      toast.error("رجاءً أكمل الحقول المطلوبة");
-      return;
-    }
-    if (files.length === 0) {
-      toast.error("أضف صورة واحدة على الأقل للعقار");
-      return;
-    }
-    setBusy(true);
-    try {
-      const attachments: { path: string; name: string }[] = [];
-      for (const file of files) {
-        const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
-        const path = `public/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext || "jpg"}`;
-        await uploadMedia("listing-uploads", path, file);
-        attachments.push({ path: `listing-uploads/${path}`, name: file.name });
+      const referral = getStoredReferral();
+      if (mode === "offer") {
+        const attachments: { path: string; name: string; size: number; type: string }[] = [];
+        let failedUploads = 0;
+        for (const file of images) {
+          const extension = file.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "jpg";
+          const path = `public/${crypto.randomUUID()}.${extension}`;
+          const upload = await supabase.storage.from("listing-request-media").upload(path, file, { contentType: file.type });
+          if (upload.error) { failedUploads += 1; continue; }
+          attachments.push({ path, name: file.name, size: file.size, type: file.type });
+        }
+        if (failedUploads > 0) toast.warning(`تعذّر رفع ${failedUploads} صورة، وسيتم إرسال الطلب بدونها`);
+        const notes = [form.description, additionalNotes, isBroker && form.broker_phone ? `جوال الوسيط: ${form.broker_phone}` : ""].filter(Boolean).join("\n\n");
+        const result = await supabase.from("listing_requests").insert({ full_name: form.full_name, phone: form.phone, purpose: form.purpose, property_type: form.property_type, city: form.city || null, district: form.district || null, asking_price: form.asking_price, description: notes, map_url: form.map_url, attachments, referral_code: referral?.code ?? null });
+        if (result.error) throw result.error;
+      } else {
+        const result = await supabase.from("supply_requests").insert({ full_name: form.full_name, phone: form.phone, request_type: form.purpose, city: form.city || null, districts: form.district || null, property_type: form.property_type || null, requester_type: isBroker ? "broker" : "client", broker_name: null, broker_phone: isBroker ? form.broker_phone || null : null, budget_min: form.budget_min ? Number(form.budget_min) : null, budget_max: form.budget_max ? Number(form.budget_max) : null, requester_notes: form.description || null, referral_code: referral?.code ?? null });
+        if (result.error) throw result.error;
       }
-      const { error } = await supabase.from("listing_requests").insert({
-        full_name: offer.full_name,
-        phone: offer.phone,
-        purpose: offer.purpose,
-        property_type: offer.property_type,
-        city: "بريدة",
-        district: offer.district,
-        description: offer.description,
-        asking_price: offer.asking_price,
-        map_url: offer.map_url,
-        attachments,
-      });
-      if (error) throw error;
-      await notifyAutomation(
-        offer.full_name,
-        offer.phone,
-        offer.purpose,
-        "بريدة",
-        offer.property_type,
-      );
-      await sendSelfConfirmation(offer.phone, offer.purpose === "sale" ? "عرض عقار للبيع" : "عرض عقار للإيجار");
-      toast.success("تم إرسال بيانات عقارك بنجاح، سيتواصل معك فريقنا قريباً.");
+      try { const { reportPublicRequest } = await import("@/lib/automation.functions"); await reportPublicRequest({ data: { full_name: form.full_name, phone: form.phone, purpose: form.purpose, city: form.city || undefined, property_type: form.property_type || undefined, request_kind: mode === "offer" ? "listing" : "supply" } }); } catch { /* الطلب محفوظ حتى عند تعذر رسالة التأكيد */ }
+      toast.success("تم إرسال طلبك بنجاح");
       void navigate({ to: "/thank-you" });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "تعذّر إرسال الطلب، حاول مرة أخرى");
-    } finally {
-      setBusy(false);
-    }
+    } catch (error) { toast.error(error instanceof Error ? error.message : "تعذّر إرسال الطلب"); }
+    finally { setBusy(false); }
   };
 
-  return (
-    <SiteLayout>
-      <section className="mx-auto max-w-2xl px-4 py-10">
-        {/* التبويبات */}
-        <div className="mb-6 grid grid-cols-2 gap-0 overflow-hidden rounded-xl border border-border bg-card shadow-card">
-          {(
-            [
-              { id: "offer", label: "اعرض عقارك", icon: Home },
-              { id: "request", label: "اطلب عقارك", icon: Search },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setMode(tab.id)}
-              className={`pressable flex items-center justify-center gap-2 py-3.5 text-[13.5px] font-bold transition-colors ${
-                mode === tab.id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              <tab.icon className="size-4" />
-              {tab.label}
-            </button>
-          ))}
+  return <SiteLayout>
+    <section className="relative isolate flex min-h-[380px] items-center justify-center overflow-hidden md:min-h-[440px]" dir="rtl">
+      <img src={heroImage} alt="اعرض أو اطلب عقارك" width={1920} height={1080} className="absolute inset-0 -z-20 size-full object-cover" />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-primary/70 mix-blend-multiply" />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-foreground/45 via-transparent to-foreground/35" />
+      <div className="px-4 py-20 text-center text-white">
+        <p className="animate-pop-in text-sm font-extrabold drop-shadow md:text-base">خدمة اعرض عقارك</p>
+        <h1 className="animate-pop-in mt-1 font-display text-[42px] font-black leading-[1.15] drop-shadow-lg sm:text-6xl md:text-7xl">
+          اعرض أو اطلب عقارك
+        </h1>
+        <p className="animate-pop-in mx-auto mt-4 max-w-2xl text-sm font-semibold leading-8 text-white/90 drop-shadow md:text-base" style={{ animationDelay: "180ms" }}>
+          أوصل عقارك للمهتمين، أو شاركنا مواصفات طلبك وسنساعدك في الوصول للخيار المناسب.
+        </p>
+        <nav aria-label="مسار الصفحة" className="animate-pop-in mt-5 text-xs font-semibold text-white/75 md:text-sm" style={{ animationDelay: "300ms" }}>
+          <Link to="/" className="hover:text-white">الرئيسية</Link>
+          <span className="mx-2">/</span>
+          <span>اعرض أو اطلب</span>
+        </nav>
+      </div>
+    </section>
+    <main className="bg-secondary/40 px-4 py-8 sm:py-12" dir="rtl">
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg border border-border bg-card p-1 shadow-card">
+        <Button type="button" variant={mode === "offer" ? "default" : "ghost"} onClick={() => switchMode("offer")} className="h-11"><Home />اعرض عقارك</Button>
+        <Button type="button" variant={mode === "request" ? "default" : "ghost"} onClick={() => switchMode("request")} className="h-11"><Search />اطلب عقارك</Button>
+      </div>
+
+      <form onSubmit={submit} className="overflow-hidden rounded-xl border border-border bg-card shadow-float">
+        <header className="border-b border-border bg-accent px-5 py-4 sm:px-7">
+          <h2 className="text-lg font-extrabold text-primary">{mode === "offer" ? "بيانات العقار" : "بيانات طلب العقار"}</h2>
+          <p className="mt-1 text-xs text-muted-foreground">{mode === "offer" ? "يرجى تعبئة جميع الحقول المطلوبة بدقة" : "أخبرنا بما تبحث عنه وسنتواصل معك بأسرع وقت"}</p>
+        </header>
+
+        <div className="space-y-5 p-5 sm:p-7">
+          <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><RequiredLabel htmlFor="name">الاسم</RequiredLabel><Input id="name" value={form.full_name} onChange={(e) => set("full_name", e.target.value)} placeholder="الاسم الكامل" /></div><div className="space-y-2"><RequiredLabel htmlFor="phone">رقم الجوال</RequiredLabel><Input id="phone" dir="ltr" inputMode="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="05xxxxxxxx" /></div></div>
+          <div className="space-y-2"><RequiredLabel htmlFor="purpose">{mode === "offer" ? "النوع" : "نوع الطلب"}</RequiredLabel><div className="flex gap-3"><PurposeChoice value={mode === "offer" ? "sale" : "buy"} selected={form.purpose === "sale" || form.purpose === "buy"} icon={Home} label={mode === "offer" ? "للبيع" : "أبي أشتري"} onClick={(v) => set("purpose", v)} /><PurposeChoice value="rent" selected={form.purpose === "rent"} icon={KeyRound} label={mode === "offer" ? "للإيجار" : "أبي أستأجر"} onClick={(v) => set("purpose", v)} /></div></div>
+
+          {mode === "offer" ? <>
+            <div className="space-y-2"><RequiredLabel htmlFor="property_type">نوع العقار</RequiredLabel><select id="property_type" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.property_type} onChange={(e) => set("property_type", e.target.value)}><option value="">اختر نوع العقار</option>{propertyTypes.map((item) => <option key={item}>{item}</option>)}</select></div>
+            <div className="space-y-2"><RequiredLabel htmlFor="district">الحي</RequiredLabel><select id="district" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.district} onChange={(e) => set("district", e.target.value)}><option value="">اختر الحي</option><option>شمال بريدة</option><option>وسط بريدة</option><option>شرق بريدة</option><option>غرب بريدة</option><option>جنوب بريدة</option></select></div>
+            <div className="space-y-2"><RequiredLabel htmlFor="description">وصف العقار</RequiredLabel><Textarea id="description" rows={5} value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="اكتب وصفاً تفصيلياً للعقار (المساحة، عدد الغرف، المميزات...)" /></div>
+            <div className="space-y-2"><RequiredLabel htmlFor="asking_price">السعر المطلوب</RequiredLabel><Input id="asking_price" value={form.asking_price} onChange={(e) => set("asking_price", e.target.value)} placeholder="مثال: 150,000 ريال أو قابل للتفاوض" /></div>
+            <div className="space-y-2"><RequiredLabel htmlFor="map_url">موقع العقار على خرائط جوجل</RequiredLabel><div className="relative"><MapPin className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="map_url" dir="ltr" className="pe-10" value={form.map_url} onChange={(e) => set("map_url", e.target.value)} placeholder="https://maps.app.goo.gl/..." /></div><p className="text-[11px] text-muted-foreground">افتح خرائط جوجل، انسخ موقع العقار ثم الصق الرابط هنا.</p></div>
+            <div className="space-y-2"><RequiredLabel htmlFor="images">صور العقار (بحد أقصى 3 صور)</RequiredLabel><label htmlFor="images" className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-input bg-secondary/40 p-5 text-center transition hover:border-primary"><ImagePlus className="size-7 text-muted-foreground" /><span className="text-xs font-semibold">اسحب الصور هنا أو اضغط للاختيار</span><span className="text-[10px] text-muted-foreground">JPG، PNG، WEBP — بحد أقصى 8 ميجابايت للصورة</span><input id="images" type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={(event) => { const selected = Array.from(event.target.files ?? []).filter((file) => file.size <= 8 * 1024 * 1024); setImages((current) => [...current, ...selected].slice(0, 3)); event.target.value = ""; }} /></label>{images.length ? <ul className="grid gap-2 sm:grid-cols-3">{images.map((file, index) => <li key={`${file.name}-${index}`} className="flex items-center justify-between gap-2 rounded-md border border-border p-2 text-xs"><span className="truncate">{file.name}</span><Button type="button" variant="ghost" size="icon-sm" aria-label="حذف الصورة" onClick={() => setImages((current) => current.filter((_, i) => i !== index))}><X className="text-destructive" /></Button></li>)}</ul> : null}</div>
+          </> : <>
+            <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><RequiredLabel htmlFor="city">المدينة</RequiredLabel><select id="city" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.city} onChange={(e) => set("city", e.target.value)}>{cities.map((item) => <option key={item}>{item}</option>)}</select></div><div className="space-y-2"><Label htmlFor="district" className="text-xs font-bold">الحي</Label><Input id="district" value={form.district} onChange={(e) => set("district", e.target.value)} placeholder="مثال: حي بريدة" /></div></div>
+            <div className="space-y-2"><Label htmlFor="property_type" className="text-xs font-bold">نوع العقار</Label><select id="property_type" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.property_type} onChange={(e) => set("property_type", e.target.value)}><option value="">اختر نوع العقار</option>{propertyTypes.map((item) => <option key={item}>{item}</option>)}</select></div>
+            <div className="space-y-2"><Label htmlFor="budget_min" className="text-xs font-bold">الميزانية بالريال</Label><p className="text-[11px] text-muted-foreground">حدد نطاق الميزانية التقريبي</p><div className="grid gap-3 sm:grid-cols-2"><Input id="budget_min" type="number" value={form.budget_min} onChange={(e) => set("budget_min", e.target.value)} placeholder="من — مثال: 15000" /><Input type="number" value={form.budget_max} onChange={(e) => set("budget_max", e.target.value)} placeholder="إلى — مثال: 23000" /></div></div>
+          </>}
+
+          <section className="rounded-lg border border-border bg-secondary/25"><div className="flex items-center justify-between gap-3 border-b border-border p-3"><div className="flex items-center gap-2"><span className="grid size-9 place-items-center rounded-md bg-primary text-primary-foreground"><UserRound className="size-4" /></span><div><p className="text-xs font-bold">أنا وسيط عقاري</p><p className="text-[10px] text-muted-foreground">لن يظهر اسم الوسيط في الموقع</p></div></div><Switch checked={isBroker} onCheckedChange={setIsBroker} aria-label="أنا وسيط عقاري" /></div>{isBroker ? <div className="p-3"><div className="space-y-2"><RequiredLabel htmlFor="broker_phone">جوال الوسيط</RequiredLabel><Input id="broker_phone" dir="ltr" value={form.broker_phone} onChange={(e) => set("broker_phone", e.target.value)} placeholder="05xxxxxxxx" /></div></div> : null}</section>
+          <div className="space-y-2"><Label htmlFor="notes" className="text-xs font-bold">{mode === "offer" ? "ملاحظات إضافية" : "مواصفات العقار المطلوبة"}</Label><Textarea id="notes" rows={4} value={mode === "offer" ? additionalNotes : form.description} onChange={(e) => mode === "offer" ? setAdditionalNotes(e.target.value) : set("description", e.target.value)} placeholder={mode === "offer" ? "أي تفاصيل إضافية تساعدنا في إيجاد المشتري المناسب لك..." : "اكتب وصفاً تفصيلياً للعقار المطلوب..."} /></div>
+          <Button type="submit" className="h-11 w-full" disabled={busy}>{busy ? "جارٍ الإرسال..." : "إرسال الطلب"}</Button>
         </div>
-
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
-          {/* ترويسة البطاقة */}
-          <header className="bg-primary/10 px-6 py-5 text-right">
-            <h1 className="text-[17px] font-extrabold text-primary">
-              {mode === "request" ? "بيانات طلب العقار" : "بيانات العقار"}
-            </h1>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-              {mode === "request"
-                ? "أخبرنا بما تبحث عنه وسنتواصل معك بأسرع وقت"
-                : "يرجى تعبئة جميع الحقول المطلوبة بدقة"}
-            </p>
-          </header>
-
-          {mode === "request" ? (
-            <form onSubmit={submitRequest} className="space-y-5 p-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="الاسم" required>
-                  <input
-                    className={inputClass}
-                    placeholder="الاسم الكامل"
-                    value={req.full_name}
-                    onChange={(e) => setReq({ ...req, full_name: e.target.value })}
-                  />
-                </Field>
-                <Field label="رقم الجوال" required>
-                  <input
-                    className={inputClass}
-                    dir="ltr"
-                    placeholder="05xxxxxxxx"
-                    value={req.phone}
-                    onChange={(e) => setReq({ ...req, phone: e.target.value })}
-                  />
-                </Field>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="المدينة" required>
-                  <input
-                    className={inputClass}
-                    placeholder="مثال: بريدة"
-                    value={req.city}
-                    onChange={(e) => setReq({ ...req, city: e.target.value })}
-                  />
-                </Field>
-                <Field label="الحي" required>
-                  <SelectBox
-                    value={req.district}
-                    onChange={(v) => setReq({ ...req, district: v })}
-                    placeholder="اختر الحي"
-                    options={districts}
-                  />
-                </Field>
-              </div>
-
-              <Field label="نوع الطلب" required>
-                <div className="grid grid-cols-2 gap-3">
-                  <ChoiceCard
-                    active={req.request_type === "buy"}
-                    icon={Home}
-                    label="أبي أشتري"
-                    onClick={() => setReq({ ...req, request_type: "buy" })}
-                  />
-                  <ChoiceCard
-                    active={req.request_type === "rent"}
-                    icon={Search}
-                    label="أبي أستأجر"
-                    onClick={() => setReq({ ...req, request_type: "rent" })}
-                  />
-                </div>
-              </Field>
-
-              <Field
-                label="الميزانية بالريال"
-                required
-                hint="ضع الرقم كاملاً بالريال، مثال: 15000 يعني 15 ألف ريال"
-              >
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    className={inputClass}
-                    dir="ltr"
-                    inputMode="numeric"
-                    placeholder="من: مثال 15000"
-                    value={req.budget_min}
-                    onChange={(e) => setReq({ ...req, budget_min: e.target.value })}
-                  />
-                  <input
-                    className={inputClass}
-                    dir="ltr"
-                    inputMode="numeric"
-                    placeholder="إلى: مثال 23000"
-                    value={req.budget_max}
-                    onChange={(e) => setReq({ ...req, budget_max: e.target.value })}
-                  />
-                </div>
-              </Field>
-
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3">
-                <Switch
-                  checked={req.is_broker}
-                  onCheckedChange={(v) => setReq({ ...req, is_broker: v })}
-                />
-                <div className="flex flex-1 items-center justify-end gap-3 text-right">
-                  <div>
-                    <p className="text-[13px] font-bold text-foreground">أنا وسيط عقاري</p>
-                    <p className="text-[11px] text-muted-foreground">أدخل بيانات الوسيط أدناه</p>
-                  </div>
-                  <span className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground">
-                    <UserRound className="size-4" />
-                  </span>
-                </div>
-              </div>
-
-              {req.is_broker ? (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="اسم الوسيط" required>
-                    <input
-                      className={inputClass}
-                      placeholder="اسم الوسيط"
-                      value={req.broker_name}
-                      onChange={(e) => setReq({ ...req, broker_name: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="جوال الوسيط" required>
-                    <input
-                      className={inputClass}
-                      dir="ltr"
-                      placeholder="05xxxxxxxx"
-                      value={req.broker_phone}
-                      onChange={(e) => setReq({ ...req, broker_phone: e.target.value })}
-                    />
-                  </Field>
-                </div>
-              ) : null}
-
-              <Field label="ملاحظات إضافية">
-                <textarea
-                  rows={4}
-                  className={`${inputClass} h-auto py-2.5`}
-                  placeholder="أي تفاصيل إضافية تساعدنا في إيجاد العقار المناسب لك..."
-                  value={req.notes}
-                  onChange={(e) => setReq({ ...req, notes: e.target.value })}
-                />
-              </Field>
-
-              <button
-                type="submit"
-                disabled={busy}
-                className="pressable h-11 w-full rounded-lg bg-primary text-[13.5px] font-bold text-primary-foreground disabled:opacity-60"
-              >
-                {busy ? "جارٍ الإرسال..." : "إرسال الطلب"}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={submitOffer} className="space-y-5 p-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="الاسم" required>
-                  <input
-                    className={inputClass}
-                    placeholder="الاسم الكامل"
-                    value={offer.full_name}
-                    onChange={(e) => setOffer({ ...offer, full_name: e.target.value })}
-                  />
-                </Field>
-                <Field label="رقم الجوال" required>
-                  <input
-                    className={inputClass}
-                    dir="ltr"
-                    placeholder="05xxxxxxxx"
-                    value={offer.phone}
-                    onChange={(e) => setOffer({ ...offer, phone: e.target.value })}
-                  />
-                </Field>
-              </div>
-
-              <Field label="النوع" required>
-                <div className="grid grid-cols-2 gap-3">
-                  <ChoiceCard
-                    active={offer.purpose === "sale"}
-                    icon={Home}
-                    label="للبيع"
-                    onClick={() => setOffer({ ...offer, purpose: "sale" })}
-                  />
-                  <ChoiceCard
-                    active={offer.purpose === "rent"}
-                    icon={Search}
-                    label="للإيجار"
-                    onClick={() => setOffer({ ...offer, purpose: "rent" })}
-                  />
-                </div>
-              </Field>
-
-              <Field label="نوع العقار" required>
-                <SelectBox
-                  value={offer.property_type}
-                  onChange={(v) => setOffer({ ...offer, property_type: v })}
-                  placeholder="اختر نوع العقار"
-                  options={propertyTypes}
-                />
-              </Field>
-
-              <Field label="الحي" required>
-                <SelectBox
-                  value={offer.district}
-                  onChange={(v) => setOffer({ ...offer, district: v })}
-                  placeholder="اختر الحي"
-                  options={districts}
-                />
-              </Field>
-
-              <Field label="وصف العقار" required>
-                <textarea
-                  rows={5}
-                  className={`${inputClass} h-auto py-2.5`}
-                  placeholder="اكتب وصفاً تفصيلياً للعقار (المساحة، عدد الغرف، المميزات...)"
-                  value={offer.description}
-                  onChange={(e) => setOffer({ ...offer, description: e.target.value })}
-                />
-              </Field>
-
-              <Field label="السعر المطلوب" required>
-                <input
-                  className={inputClass}
-                  placeholder="مثال: 150,000 ريال أو قابل للتفاوض"
-                  value={offer.asking_price}
-                  onChange={(e) => setOffer({ ...offer, asking_price: e.target.value })}
-                />
-              </Field>
-
-              <Field
-                label="موقع العقار على خرائط جوجل"
-                required
-                hint="افتح خرائط جوجل، اضغط على موقع العقار، ثم اضغط «مشاركة» وانسخ الرابط"
-              >
-                <div className="relative">
-                  <input
-                    className={`${inputClass} pl-10 text-left`}
-                    dir="ltr"
-                    placeholder="https://maps.app.goo.gl/..."
-                    value={offer.map_url}
-                    onChange={(e) => setOffer({ ...offer, map_url: e.target.value })}
-                  />
-                  <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
-                </div>
-              </Field>
-
-              <Field label="صور العقار (بحد أقصى 3 صور)" required>
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  className="grid w-full place-items-center gap-1.5 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-8 transition-colors hover:bg-primary/10"
-                >
-                  <ImageIcon className="size-7 text-primary/70" />
-                  <span className="text-[12.5px] font-bold text-primary">
-                    اسحب الصور هنا أو اضغط للاختيار
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    JPG, PNG, WEBP — حد أقصى 5 ميجا للصورة
-                  </span>
-                </button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  multiple
-                  hidden
-                  onChange={(e) => {
-                    addFiles(e.target.files);
-                    e.target.value = "";
-                  }}
-                />
-                {files.length ? (
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    {files.map((f, i) => (
-                      <div
-                        key={`${f.name}-${i}`}
-                        className="relative overflow-hidden rounded-lg border border-border"
-                      >
-                        <img
-                          src={URL.createObjectURL(f)}
-                          alt={`صورة العقار ${i + 1}`}
-                          className="h-24 w-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
-                          className="absolute left-1 top-1 grid size-6 place-items-center rounded-md bg-background/90 text-destructive"
-                          aria-label="حذف الصورة"
-                        >
-                          <X className="size-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </Field>
-
-              <button
-                type="submit"
-                disabled={busy}
-                className="pressable h-11 w-full rounded-lg bg-primary text-[13.5px] font-bold text-primary-foreground disabled:opacity-60"
-              >
-                {busy ? "جارٍ الإرسال..." : "إرسال الطلب"}
-              </button>
-            </form>
-          )}
-        </div>
-      </section>
-    </SiteLayout>
-  );
-}
-
-async function notifyAutomation(
-  full_name: string,
-  phone: string,
-  purpose: string,
-  city: string | null,
-  property_type: string | null,
-) {
-  try {
-    const { reportPublicRequest } = await import("@/lib/automation.functions");
-    await reportPublicRequest({
-      data: {
-        full_name,
-        phone,
-        purpose,
-        ...(city ? { city } : {}),
-        ...(property_type ? { property_type } : {}),
-      },
-    });
-  } catch {
-    /* الأتمتة اختيارية */
-  }
-}
-
-
-async function sendSelfConfirmation(phone: string, requestTypeLabel: string) {
-  try {
-    const { sendWhatsAppMessage } = await import("@/lib/whatsapp.functions");
-    await sendWhatsAppMessage({
-      data: {
-        to: phone,
-        body: `شكراً لتواصلك مع مثراء العقارية.\nتم استلام طلبك (${requestTypeLabel}) بنجاح، وسيتواصل معك فريقنا في أقرب وقت.`,
-      },
-    });
-  } catch {
-    /* لا نوقف أو نراجع الحفظ إن فشل إرسال التأكيد */
-  }
+      </form>
+    </div>
+  </main></SiteLayout>;
 }

@@ -1,118 +1,187 @@
 import { Link } from "@tanstack/react-router";
-import { KeyRound, Home, ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { FileText, MapPinned, Search } from "lucide-react";
 
-import desktopVideo from "@/assets/hero-desktop.mp4.asset.json";
-import mobileVideo from "@/assets/hero-mobile.mp4.asset.json";
+import desktopHero from "@/assets/home-hero-desktop.jpg";
+import desktopHeroVideo from "@/assets/hero-desktop.mp4.asset.json";
 
-export function HeroVideo() {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [ended, setEnded] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+import mobileHero from "@/assets/home-hero-mobile.jpg";
+import mobileHeroVideo from "@/assets/hero-mobile.mp4.asset.json";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const apply = () => setIsMobile(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
+type HeroVideoProps = {
+  types: string[];
+  districts: string[];
+  rentPeriods: string[];
+  type: string;
+  district: string;
+  rentPeriod: string;
+  onTypeChange: (value: string) => void;
+  onDistrictChange: (value: string) => void;
+  onRentPeriodChange: (value: string) => void;
+  onSearch: () => void;
+};
 
-  const src = isMobile ? mobileVideo.url : desktopVideo.url;
+const selectClass =
+  "h-14 w-full rounded-xl border border-input bg-card px-4 text-[14px] text-card-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20 md:h-16 md:text-[15px]";
+
+export function HeroVideo({
+  types,
+  districts,
+  rentPeriods,
+  type,
+  district,
+  rentPeriod,
+  onTypeChange,
+  onDistrictChange,
+  onRentPeriodChange,
+  onSearch,
+}: HeroVideoProps) {
 
   return (
-    <section className="relative isolate overflow-hidden bg-foreground">
+    <section className="relative isolate min-h-[760px] overflow-hidden bg-foreground md:min-h-[760px] lg:min-h-[calc(100svh-74px)]">
       <video
-        key={src}
-        ref={videoRef}
-        src={src}
+        aria-hidden
         autoPlay
         muted
+        loop
         playsInline
-        preload="auto"
-        onTimeUpdate={(e) => {
-          const el = e.currentTarget;
-          if (el.duration && el.currentTime >= el.duration - 0.35) setEnded(true);
-        }}
-        onEnded={() => {
-          setEnded(true);
-          videoRef.current?.pause();
-        }}
-        className="h-[68vh] min-h-[420px] w-full object-cover md:h-[80vh]"
-      />
-
-      {/* Cinematic scrim so the wordmark stays legible on any frame */}
+        preload="metadata"
+        className="absolute inset-0 -z-20 size-full object-cover object-center"
+      >
+        <source media="(max-width: 767px)" src={mobileHeroVideo.url} type="video/mp4" />
+        <source src={desktopHeroVideo.url} type="video/mp4" />
+      </video>
+      <picture aria-hidden className="pointer-events-none absolute inset-0 -z-30">
+        <source media="(max-width: 767px)" srcSet={mobileHero} />
+        <img
+          src={desktopHero}
+          alt=""
+          width={1920}
+          height={1080}
+          fetchPriority="high"
+          className="size-full object-cover object-center"
+        />
+      </picture>
       <span
         aria-hidden
-        className={`pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10 transition-opacity duration-1000 ${
-          ended ? "opacity-100" : "opacity-60"
-        }`}
+        className="absolute inset-0 -z-10 bg-gradient-to-b from-foreground/55 via-foreground/20 to-foreground/65"
       />
 
-      <div
-        className={`pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-5 px-6 text-center transition-opacity duration-1000 ${
-          ended ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        {ended ? (
-          <>
-            <h1 className="animate-pop-in font-display text-[13vw] font-extrabold leading-[0.95] tracking-tight text-white drop-shadow-[0_8px_40px_rgba(0,0,0,0.55)] sm:text-[9vw] md:text-[7.5vw] lg:text-[104px]">
+      <div className="mx-auto flex min-h-[760px] w-full max-w-7xl flex-col justify-between px-4 pb-7 pt-14 text-center md:min-h-[760px] md:px-8 md:pb-10 md:pt-20 lg:min-h-[calc(100svh-74px)]">
+        <div className="mx-auto flex max-w-5xl flex-1 flex-col items-center justify-center py-8 md:py-12">
+          <h1 className="animate-pop-in flex w-full flex-col items-center gap-2 font-hero font-bold leading-[1.25] md:gap-4">
+            <span className="text-[13px] tracking-wide text-primary-foreground/80 sm:text-[15px] md:text-[19px]">
+              خبرةٌ محلية.. وقرارٌ عقاري أوضح
+            </span>
+            <span className="hero-title-shadow mt-1 pb-2 text-[42px] leading-[1.2] text-primary-foreground sm:text-[64px] md:mt-2 md:pb-3 md:text-[92px] lg:text-[110px]">
               مثراء العقارية
-            </h1>
-            <p
-              className="animate-pop-in max-w-2xl text-[15px] font-semibold leading-8 text-white/85 md:text-[20px]"
-              style={{ animationDelay: "220ms" }}
+            </span>
+            <span className="hero-accent-text mt-1 text-[22px] leading-[1.5] sm:text-[30px] md:mt-2 md:text-[44px] lg:text-[52px]">
+              نعرف بريدة.. ونفهم العقار
+            </span>
+          </h1>
+          <p className="animate-pop-in mt-5 max-w-4xl text-[15px] font-medium leading-8 text-primary-foreground/85 sm:text-[17px] md:mt-7 md:text-[22px] md:leading-10">
+            نسمع احتياجك، ونرشح لك الأنسب للبيع أو الإيجار، ونمشي معك حتى اكتمال الصفقة بخبرة تمتد لأكثر من 8 سنوات.
+          </p>
+
+          <div className="animate-pop-in mt-7 grid w-full max-w-4xl grid-cols-2 gap-2.5 md:mt-9 md:grid-cols-4 md:gap-4">
+            <Link
+              to="/rent"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "h-14 rounded-full border-primary-foreground/35 bg-card/10 px-2 text-[13px] font-bold text-primary-foreground shadow-none backdrop-blur-sm hover:bg-primary-foreground/10 hover:text-primary-foreground md:h-16 md:text-[18px]",
+              )}
             >
-              نبني قرارك العقاري على معرفة حقيقية بسوق القصيم — عقار مدروس، عقد واضح، ومتابعة لا
-              تتوقف.
-            </p>
-            <div
-              className="animate-pop-in pointer-events-auto mt-2 flex flex-wrap items-center justify-center gap-3"
-              style={{ animationDelay: "420ms" }}
+              تصفح الإيجار
+            </Link>
+            <Link
+              to="/sale"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "h-14 rounded-full border-primary-foreground/35 bg-card/10 px-2 text-[13px] font-bold text-primary-foreground shadow-none backdrop-blur-sm hover:bg-primary-foreground/10 hover:text-primary-foreground md:h-16 md:text-[18px]",
+              )}
             >
-              <Link
-                to="/rent"
-                className="shine halo group inline-flex items-center gap-2 rounded-2xl bg-white/95 px-8 py-4 text-[14.5px] font-bold text-foreground shadow-[0_18px_40px_-18px_rgba(0,0,0,0.7)]"
+              تصفح البيع
+            </Link>
+            <a
+              href="#property-map"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "h-14 rounded-full border-primary-foreground/35 bg-card/10 px-2 text-[13px] font-bold text-primary-foreground shadow-none backdrop-blur-sm hover:bg-primary-foreground/10 hover:text-primary-foreground md:h-16 md:text-[18px]",
+              )}
+            >
+              <MapPinned className="hidden size-5 sm:block" />
+              الخريطة
+            </a>
+            <Link
+              to="/company-profile"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "h-14 rounded-full border-primary-foreground/35 bg-card/10 px-2 text-[13px] font-bold text-primary-foreground shadow-none backdrop-blur-sm hover:bg-primary-foreground/10 hover:text-primary-foreground md:h-16 md:text-[17px]",
+              )}
+            >
+              <FileText className="hidden size-5 sm:block" />
+              ملف هوية مثراء
+            </Link>
+          </div>
+        </div>
+
+        <div className="mx-auto w-full max-w-6xl rounded-[28px] bg-card p-4 text-right shadow-float md:rounded-[34px] md:p-6">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+            <label className="min-w-0">
+              <span className="mb-2 block text-[13px] font-bold text-card-foreground md:text-[15px]">نوع العقار</span>
+              <select
+                value={type}
+                onChange={(event) => onTypeChange(event.target.value)}
+                className={selectClass}
               >
-                <KeyRound className="size-4 transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
-                عقارات الإيجار
-              </Link>
-              <Link
-                to="/sale"
-                className="shine glass-dark group inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-[14.5px] font-bold text-white"
+                <option value="">كل الأنواع</option>
+                {types.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+            <label className="min-w-0">
+              <span className="mb-2 block text-[13px] font-bold text-card-foreground md:text-[15px]">الحي</span>
+              <select
+                value={district}
+                onChange={(event) => onDistrictChange(event.target.value)}
+                className={selectClass}
               >
-                <Home className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110" />
-                عقارات البيع
-              </Link>
+                <option value="">كل الأحياء</option>
+                {districts.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+            <label className="min-w-0">
+              <span className="mb-2 block text-[13px] font-bold text-card-foreground md:text-[15px]">مدة الإيجار</span>
+              <select
+                value={rentPeriod}
+                onChange={(event) => onRentPeriodChange(event.target.value)}
+                className={selectClass}
+              >
+                <option value="">كل المدد</option>
+                {rentPeriods.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+            <div className="flex min-w-0 flex-col justify-end">
+              <span aria-hidden className="mb-2 hidden text-[15px] font-bold md:block">&nbsp;</span>
+              <Button
+                type="button"
+                onClick={onSearch}
+                className="h-14 w-full rounded-xl text-[15px] font-bold md:h-16 md:text-[17px]"
+              >
+                <Search className="size-5" />
+                بحث
+              </Button>
             </div>
-          </>
-        ) : null}
+          </div>
+        </div>
       </div>
-
-      {/* Scroll cue */}
-      <button
-        type="button"
-        aria-label="انزل للأسفل"
-        onClick={() =>
-          window.scrollTo({ top: window.innerHeight * 0.72, behavior: "smooth" })
-        }
-        className="group absolute bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-white/80 transition-colors duration-300 hover:text-white"
-      >
-        <span className="text-[11px] font-semibold tracking-[0.25em] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          اكتشف
-        </span>
-        <span
-          aria-hidden
-          className="relative h-11 w-7 rounded-full border border-white/50 backdrop-blur-sm transition-all duration-300 group-hover:border-white group-hover:shadow-[0_0_18px_rgba(255,255,255,0.35)]"
-        >
-          <span className="absolute left-1/2 top-2.5 size-1.5 animate-scroll-wheel rounded-full bg-white" />
-        </span>
-        <span aria-hidden className="flex flex-col items-center -space-y-1.5">
-          <ChevronDown className="size-4 animate-chevron" />
-          <ChevronDown className="size-4 animate-chevron [animation-delay:220ms]" />
-        </span>
-      </button>
-
     </section>
   );
 }

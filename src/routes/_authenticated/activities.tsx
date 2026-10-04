@@ -65,7 +65,7 @@ type Activity = {
 const SELECT =
   "id, employee_id, created_by, activity_type, subject, details, notes, related_contact_id, status, outcome, closed_at, created_at, employee:employee_id(full_name, job_title), contact:related_contact_id(full_name)";
 
-function ActivitiesPage() {
+export function ActivitiesPage() {
   const qc = useQueryClient();
   const { userId, isSuperAdmin } = useCurrentUser();
   const [open, setOpen] = useState(false);
@@ -194,9 +194,11 @@ function ActivitiesPage() {
             </button>
           ))}
         </div>
-        <PrimaryButton onClick={() => setOpen(true)}>
-          <Plus className="size-4" /> تسجيل نشاط
-        </PrimaryButton>
+        {isSuperAdmin ? (
+          <PrimaryButton onClick={() => setOpen(true)}>
+            <Plus className="size-4" /> تسجيل نشاط
+          </PrimaryButton>
+        ) : null}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[380px_minmax(0,1fr)]">
@@ -236,7 +238,7 @@ function ActivitiesPage() {
           {active ? (
             <ActivityPanel
               activity={active}
-              canClose={isSuperAdmin || active.employee_id === userId || active.created_by === userId}
+              canClose={isSuperAdmin}
               onClose={(outcome) => close.mutate({ id: active.id, outcome })}
               closing={close.isPending}
             />

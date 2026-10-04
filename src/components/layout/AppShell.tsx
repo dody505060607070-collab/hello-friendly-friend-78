@@ -1,14 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Bell, ChevronDown, LogOut, Menu, X } from "lucide-react";
+import { ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
-import logoDark from "@/assets/mithra-logo-dark.png";
-import logoWhite from "@/assets/mithra-logo-white.png";
+import logoAsset from "@/assets/mithra-logo-transparent.png.asset.json";
 import { navGroups } from "@/data/nav";
 import { signOut, useCurrentUser } from "@/hooks/useAuth";
 import { navCountsQuery } from "@/lib/counts";
 import { LanguageToggle, useI18n } from "@/lib/i18n";
+import { ThemeToggle } from "@/lib/theme";
+import { CommandPalette } from "@/components/kit/CommandPalette";
 import { cn } from "@/lib/utils";
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
@@ -23,8 +24,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label],
     );
 
-  const search = useRouterState({ select: (s) => s.location.search as Record<string, unknown> });
-
   return (
     <nav dir="rtl" className="flex flex-col gap-5 px-4 py-6 text-right">
       {navGroups.map((group, gi) => {
@@ -38,7 +37,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               <button
                 type="button"
                 onClick={() => group.label && toggle(group.label)}
-                className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-[15px] font-bold text-sidebar-foreground/80 transition-colors hover:text-sidebar-accent-foreground"
+                className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-[13px] font-semibold text-sidebar-foreground/80 transition-colors hover:text-sidebar-accent-foreground"
               >
                 <span className="flex min-w-0 items-center gap-2 text-right">
                   {Icon ? <Icon className="size-[18px] shrink-0 text-primary/70" /> : null}
@@ -56,19 +55,15 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             {isOpen ? (
               <ul className="space-y-0.5">
                 {items.map((item) => {
-                  const searchMatch = item.search
-                    ? Object.entries(item.search).every(([k, v]) => search?.[k] === v)
-                    : true;
-                  const active = pathname === item.to && searchMatch;
+                  const active = pathname === item.to;
                   const badge = item.countKey ? counts?.[item.countKey] : undefined;
                   return (
-                    <li key={item.to + (item.search?.["source"] ?? "")}>
+                    <li key={item.to}>
                       <Link
                         to={item.to}
-                        {...(item.search ? { search: item.search } : {})}
                         onClick={onNavigate}
                         className={cn(
-                          "group flex items-center justify-between rounded-lg py-2.5 pe-2 ps-3 text-[15.5px] transition-colors",
+                          "group flex items-center justify-between rounded-lg py-2 pe-2 ps-3 text-[13.5px] transition-colors",
                           active
                             ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
                             : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60",
@@ -108,9 +103,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-import { CommandPalette, CommandPaletteButton } from "@/components/kit/CommandPalette";
-import { ThemeToggle } from "@/lib/theme";
-
 import { AiDock } from "./AiDock";
 import { NotificationsBell } from "./NotificationsBell";
 import { PushToggle } from "./PushToggle";
@@ -127,12 +119,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-[15.5px] leading-relaxed">
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-3 md:h-24 md:px-6">
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-primary-foreground/15 bg-primary px-3 text-primary-foreground shadow-sm md:h-24 md:px-6">
         <div className="relative z-10 flex items-center gap-1 md:gap-2">
           <button
             type="button"
-            className="grid size-9 place-items-center rounded-full bg-primary text-[13px] font-bold text-primary-foreground"
+            className="grid size-9 place-items-center rounded-full bg-primary-foreground/15 text-[13px] font-bold text-primary-foreground"
             aria-label="الحساب"
             title={profile?.full_name ?? ""}
           >
@@ -141,17 +133,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={handleSignOut}
-            className="grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="grid size-9 place-items-center rounded-full text-primary-foreground/80 transition-colors hover:bg-primary-foreground/15 hover:text-primary-foreground"
             aria-label="تسجيل الخروج"
             title="تسجيل الخروج"
           >
             <LogOut className="size-[18px]" />
           </button>
-          <LanguageToggle />
-          <ThemeToggle />
+          <LanguageToggle className="border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20" />
+          <ThemeToggle showLabel className="hidden border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 sm:inline-flex" />
           <NotificationsBell />
           <PushToggle />
-          <CommandPaletteButton />
         </div>
 
         <Link
@@ -159,30 +150,27 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="pointer-events-none absolute left-1/2 -translate-x-1/2 md:pointer-events-auto"
         >
           <img
-            src={logoDark}
+            src={logoAsset.url}
             alt="مثراء العقارية"
-            className="h-14 w-auto dark:hidden md:h-20"
-          />
-          <img
-            src={logoWhite}
-            alt="مثراء العقارية"
-            className="hidden h-14 w-auto dark:block md:h-20"
+            width={360}
+            height={112}
+            className="h-10 w-auto max-w-[180px] object-contain md:h-16 md:max-w-[270px]"
           />
         </Link>
 
         <div className="relative z-10 flex items-center gap-3">
           <div className="hidden text-end md:block">
-            <p className="text-[14px] font-bold leading-tight text-foreground">
+            <p className="text-[14px] font-bold leading-tight text-primary-foreground">
               {profile?.full_name ?? "—"}
             </p>
-            <p className="text-[11.5px] text-muted-foreground">
+            <p className="text-[11.5px] text-primary-foreground/70">
               {isSuperAdmin ? "مدير عام" : (profile?.job_title ?? "موظف")}
             </p>
           </div>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="grid size-9 place-items-center rounded-lg border border-border text-muted-foreground lg:hidden"
+            className="grid size-9 place-items-center rounded-lg border border-primary-foreground/25 text-primary-foreground lg:hidden"
             aria-label="القائمة"
           >
             {open ? <X className="size-5" /> : <Menu className="size-5" />}

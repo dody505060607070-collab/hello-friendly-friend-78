@@ -1,33 +1,37 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Building2, MapPin } from "lucide-react";
+import { Building2, GitCompareArrows, MapPin } from "lucide-react";
 
 import { FavoriteButton } from "@/components/site/FavoriteButton";
+import { StatusRibbon } from "@/components/site/StatusRibbon";
+import { useCurrentUser } from "@/hooks/useAuth";
 import {
   coverImage,
+  propertyEnquiryText,
   purposeLabels,
-  rentPeriodLabels,
-  siteSettingsQuery,
   whatsappLink,
   type PublicProperty,
 } from "@/lib/site-data";
 
-export function PropertyCard({ property }: { property: PublicProperty }) {
-  const { data: settings } = useQuery(siteSettingsQuery);
+export function PropertyCard({ property, comparing = false, onCompare }: { property: PublicProperty; comparing?: boolean; onCompare?: (property: PublicProperty) => void }) {
   const cover = coverImage(property);
+  const { roles, isSuperAdmin } = useCurrentUser();
+  const isStaff = isSuperAdmin || roles.includes("employee");
+  const canReserve = isStaff && property.status === "available";
   const price =
     property.price_text ??
     (property.price_value ? `${property.price_value.toLocaleString("ar-SA")} ريال` : "السعر عند الطلب");
-  const whatsappNumber = property.whatsapp_number || settings?.whatsapp_number;
 
   return (
     <article className="lift group overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-shadow hover:shadow-float">
-      <div className="relative h-48 bg-muted">
+      <div className="relative h-60 bg-muted sm:h-64">
+        <StatusRibbon status={property.status} />
         {cover ? (
           <img
             src={cover}
             alt={property.name}
             loading="lazy"
+            decoding="async"
+            fetchPriority="low"
             className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
@@ -39,6 +43,16 @@ export function PropertyCard({ property }: { property: PublicProperty }) {
           {purposeLabels[property.purpose] ?? property.purpose}
         </span>
         <FavoriteButton code={property.code} className="absolute bottom-3 end-3" />
+        {onCompare ? (
+          <button
+            type="button"
+            onClick={() => onCompare(property)}
+            aria-label={comparing ? "إزالة العقار من المقارنة" : "إضافة العقار للمقارنة"}
+            className={`absolute bottom-3 start-3 grid size-9 place-items-center rounded-full border shadow-card transition-colors ${comparing ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground"}`}
+          >
+            <GitCompareArrows className="size-4" />
+          </button>
+        ) : null}
         {property.is_featured ? (
           <span className="absolute start-3 top-3 rounded-lg bg-gold px-3 py-1 text-[12px] font-bold text-gold-foreground">
             مميز
@@ -55,14 +69,7 @@ export function PropertyCard({ property }: { property: PublicProperty }) {
         {property.property_type ? (
           <p className="text-[13px] text-muted-foreground">{property.property_type}</p>
         ) : null}
-        <p className="text-[15px] font-bold text-primary">
-          {price}
-          {property.purpose === "rent" && property.rent_period ? (
-            <span className="mr-1 text-[12px] font-medium text-muted-foreground">
-              / {rentPeriodLabels[property.rent_period] ?? property.rent_period}
-            </span>
-          ) : null}
-        </p>
+        <p className="text-[15px] font-bold text-primary">{price}</p>
 
         <div className="flex gap-2 pt-1">
           <Link
@@ -73,10 +80,7 @@ export function PropertyCard({ property }: { property: PublicProperty }) {
             عرض التفاصيل
           </Link>
           <a
-            href={whatsappLink(
-              whatsappNumber,
-              `استفسار عن العقار ${property.code} — ${property.name}`,
-            )}
+            href={whatsappLink(property.whatsapp_number, propertyEnquiryText(property))}
             target="_blank"
             rel="noreferrer"
             className="rounded-lg border border-border px-4 py-2 text-[13px] font-semibold text-foreground"
@@ -84,6 +88,15 @@ export function PropertyCard({ property }: { property: PublicProperty }) {
             واتساب
           </a>
         </div>
+        {canReserve ? (
+          <Link
+            to="/reservations"
+            search={{ newReservation: true, propertyId: property.id }}
+            className="block rounded-lg border border-primary py-2 text-center text-[13px] font-bold text-primary"
+          >
+            حجز هذا العقار
+          </Link>
+        ) : null}
       </div>
     </article>
   );
@@ -94,11 +107,15 @@ export function PropertyGrid({
   loading,
   error,
   emptyText = "لا توجد عقارات معروضة حالياً.",
+  compareIds,
+  onCompare,
 }: {
   properties: PublicProperty[] | undefined;
   loading?: boolean;
   error?: unknown;
   emptyText?: string;
+  compareIds?: string[];
+  onCompare?: (property: PublicProperty) => void;
 }) {
   if (loading) {
     return (
@@ -129,7 +146,12 @@ export function PropertyGrid({
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {properties.map((property) => (
-        <PropertyCard key={property.id} property={property} />
+        <PropertyCard
+          key={property.id}
+          property={property}
+          {...(compareIds ? { comparing: compareIds.includes(property.id) } : {})}
+          {...(onCompare ? { onCompare } : {})}
+        />
       ))}
     </div>
   );

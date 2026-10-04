@@ -13,13 +13,19 @@ export const reportPublicRequest = createServerFn({ method: "POST" })
         purpose: z.string().trim().max(30).optional(),
         city: z.string().trim().max(80).optional(),
         property_type: z.string().trim().max(80).optional(),
+        request_kind: z.enum(["supply", "listing"]),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
     const { dispatchAutomation } = await import("@/lib/automation.server");
     await dispatchAutomation("request.created", data);
-    return { ok: true as const };
+    const { whatsappSend } = await import("@/lib/whatsapp.functions");
+    const body = data.request_kind === "supply"
+      ? `مرحبًا ${data.full_name}، وصل طلبك للرشودي للعقارات، وسنتواصل معك في أقرب وقت لتوفير العقار المناسب بالمواصفات التي طلبتها.`
+      : `مرحبًا ${data.full_name}، وصلنا طلب عرض عقارك لدى مثراء العقارية، وسيراجعه فريقنا ويتواصل معك في أقرب وقت.`;
+    const whatsapp = await whatsappSend({ to: data.phone, body });
+    return { ok: true as const, whatsapp };
   });
 
 /** يُستدعى بعد إرسال تذكير دفعة عبر واتساب. */
@@ -41,62 +47,5 @@ export const reportReminderSent = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { dispatchAutomation } = await import("@/lib/automation.server");
     await dispatchAutomation("payment.reminder_sent", data);
-    return { ok: true as const };
-  });
-
-/** إعدادات ربط n8n — للمدير العام فقط. */
-export const getAutomationSettings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "super_admin",
-    });
-    if (!isAdmin) throw new Error("غير مصرح");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
-      .from("automation_config")
-      .select("enabled, webhook_url, events, shared_token")
-      .eq("id", true)
-      .maybeSingle();
-    return {
-      enabled: data?.enabled ?? false,
-      webhook_url: data?.webhook_url ?? process.env["N8N_WEBHOOK_URL"] ?? "",
-      events: (data?.events as string[] | null) ?? [],
-      shared_token: data?.shared_token ?? "",
-    };
-  });
-
-export const saveAutomationSettings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z
-      .object({
-        enabled: z.boolean(),
-        webhook_url: z.string().trim().max(500),
-        regenerate_token: z.boolean().optional(),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "super_admin",
-    });
-    if (!isAdmin) throw new Error("غير مصرح");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = {
-      id: true,
-      enabled: data.enabled,
-      webhook_url: data.webhook_url || null,
-    };
-    if (data.regenerate_token) {
-      const bytes = crypto.getRandomValues(new Uint8Array(24));
-      patch["shared_token"] = Array.from(bytes)
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-    }
-    const { error } = await supabaseAdmin.from("automation_config").upsert(patch as never);
-    if (error) throw new Error(error.message);
     return { ok: true as const };
   });

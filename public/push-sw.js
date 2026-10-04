@@ -41,3 +41,60 @@ self.addEventListener("notificationclick", (event) => {
     }),
   );
 });
+
+/* ---------- Offline support (app shell caching) ---------- */
+const CACHE = "rashoudi-v2";
+const OFFLINE_URL = "/offline.html";
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE).then((cache) => cache.addAll([OFFLINE_URL, "/favicon.png", "/apple-touch-icon.png"])).catch(() => undefined),
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((key) => key.startsWith("rashoudi-") && key !== CACHE).map((key) => caches.delete(key))),
+    ),
+  );
+});
+
+function isStaticAsset(url) {
+  return /\.(?:js|css|woff2?|png|jpg|jpeg|webp|svg|gif|ico)$/i.test(url.pathname) || url.pathname.startsWith("/_build/");
+}
+
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+  if (request.method !== "GET") return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/")) return;
+  if (request.destination === "video" || request.destination === "audio") return;
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(() => caches.match(OFFLINE_URL).then((r) => r || Response.error())),
+    );
+    return;
+  }
+
+  if (isStaticAsset(url)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const immutable = url.pathname.startsWith("/_build/") || url.pathname.startsWith("/__l5e/assets-v1/");
+        if (cached && immutable) return cached;
+        const network = fetch(request)
+          .then((response) => {
+            if (response && response.ok) {
+              const copy = response.clone();
+              caches.open(CACHE).then((cache) => cache.put(request, copy));
+            }
+            return response;
+          })
+          .catch(() => cached);
+        return cached || network;
+      }),
+    );
+  }
+});

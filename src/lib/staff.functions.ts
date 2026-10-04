@@ -28,7 +28,6 @@ export const createStaffAccount = createServerFn({ method: "POST" })
       jobTitle?: string;
       hireDate?: string;
       adminNotes?: string;
-      org?: string;
       isSuperAdmin?: boolean;
     }) => input,
   )
@@ -61,8 +60,8 @@ export const createStaffAccount = createServerFn({ method: "POST" })
         job_title: data.jobTitle?.trim() || null,
         hire_date: data.hireDate?.trim() || null,
         admin_notes: data.adminNotes?.trim() || null,
-        org: data.org?.trim() || "mithraa",
         is_active: true,
+        org: "rashoudi",
       })
       .select("id")
       .single();
@@ -98,12 +97,17 @@ export const resetStaffPassword = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** منح أو سحب صلاحية «مدير عام» بأمان — مع منع سحب آخر مدير عام أو سحب المستخدم لنفسه. */
-export const setSuperAdmin = createServerFn({ method: "POST" })
+/** منح أو سحب صلاحية المدير العام لموظف آخر. */
+export const setStaffSuperAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { userId: string; enabled: boolean }) => input)
   .handler(async ({ data, context }) => {
     await assertSuperAdmin(context.supabase, context.userId);
+    if (!data.userId) throw new Error("لم يتم تحديد الموظف.");
+    if (data.userId === context.userId && !data.enabled) {
+      throw new Error("لا يمكنك سحب صلاحية المدير العام من حسابك.");
+    }
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     if (data.enabled) {
@@ -111,74 +115,46 @@ export const setSuperAdmin = createServerFn({ method: "POST" })
         .from("user_roles")
         .upsert({ user_id: data.userId, role: "super_admin" }, { onConflict: "user_id,role" });
       if (res.error) throw new Error(res.error.message);
-      return { ok: true, isSuperAdmin: true };
+    } else {
+      const res = await supabaseAdmin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", data.userId)
+        .eq("role", "super_admin");
+      if (res.error) throw new Error(res.error.message);
+      const keep = await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: data.userId, role: "employee" }, { onConflict: "user_id,role" });
+      if (keep.error) throw new Error(keep.error.message);
     }
 
-    if (data.userId === context.userId) {
-      throw new Error("لا يمكنك سحب صلاحية المدير العام من حسابك.");
-    }
-    const admins = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "super_admin");
-    if (admins.error) throw new Error(admins.error.message);
-    if ((admins.data ?? []).length <= 1) {
-      throw new Error("يجب بقاء مدير عام واحد على الأقل في النظام.");
-    }
-    const res = await supabaseAdmin
-      .from("user_roles")
-      .delete()
-      .eq("user_id", data.userId)
-      .eq("role", "super_admin");
-    if (res.error) throw new Error(res.error.message);
-    return { ok: true, isSuperAdmin: false };
-  });
-
-/** تعطيل أو تفعيل حساب موظف (يمنع الدخول دون فقدان بياناته). */
-export const setStaffActive = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { userId: string; isActive: boolean }) => input)
-  .handler(async ({ data, context }) => {
-    await assertSuperAdmin(context.supabase, context.userId);
-    if (data.userId === context.userId && !data.isActive) {
-      throw new Error("لا يمكنك تعطيل حسابك الحالي.");
-    }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const profile = await supabaseAdmin
-      .from("profiles")
-      .update({ is_active: data.isActive })
-      .eq("id", data.userId);
-    if (profile.error) throw new Error(profile.error.message);
-
-    const ban = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
-      ban_duration: data.isActive ? "none" : "876000h",
-    });
-    if (ban.error) throw new Error(ban.error.message);
     return { ok: true };
   });
 
-/** حذف حساب موظف نهائيًا مع حذف دوره وملفه الشخصي. */
+/** حذف حساب موظف نهائيًا أو إيقافه فقط. */
 export const deleteStaffAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { userId: string }) => input)
+  .inputValidator((input: { userId: string; mode?: "disable" | "delete" }) => input)
   .handler(async ({ data, context }) => {
     await assertSuperAdmin(context.supabase, context.userId);
+    if (!data.userId) throw new Error("لم يتم تحديد الموظف.");
     if (data.userId === context.userId) throw new Error("لا يمكنك حذف حسابك الحالي.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const isAdmin = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "super_admin");
-    if (isAdmin.error) throw new Error(isAdmin.error.message);
-    const admins = isAdmin.data ?? [];
-    if (admins.some((a) => a.user_id === data.userId) && admins.length <= 1) {
-      throw new Error("يجب بقاء مدير عام واحد على الأقل في النظام.");
+
+    if (data.mode === "disable") {
+      const res = await supabaseAdmin
+        .from("profiles")
+        .update({ is_active: false })
+        .eq("id", data.userId);
+      if (res.error) throw new Error(res.error.message);
+      return { ok: true, mode: "disable" as const };
     }
 
+    await supabaseAdmin.from("user_permissions").delete().eq("user_id", data.userId);
     await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId);
     await supabaseAdmin.from("profiles").delete().eq("id", data.userId);
-    const res = await supabaseAdmin.auth.admin.deleteUser(data.userId);
-    if (res.error) throw new Error(res.error.message);
-    return { ok: true };
+    const del = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (del.error) throw new Error(del.error.message);
+    return { ok: true, mode: "delete" as const };
   });

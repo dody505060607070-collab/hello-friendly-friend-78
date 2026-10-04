@@ -1,6 +1,17 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Building2, ChevronLeft, Loader2, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  Building2,
+  ChevronLeft,
+  Loader2,
+  Megaphone,
+  Pencil,
+  Plus,
+  Send,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -19,6 +30,9 @@ import { PageHero } from "@/components/kit/PageHero";
 import { Pills } from "@/components/kit/Pills";
 import { Toggle } from "@/components/kit/Toggle";
 import { supabase } from "@/integrations/supabase/client";
+import { describeDbError } from "@/lib/db-errors";
+import { sendPropertyToMarketer } from "@/lib/marketing.functions";
+import { PropertyStatusDialog, type StatusTarget } from "@/components/properties/PropertyStatusDialog";
 
 type PropertyRow = {
   id: string;
@@ -39,6 +53,7 @@ type PropertyRow = {
   needs_review: boolean;
   sort_order: number | null;
   created_at: string;
+  building_id: string | null;
 };
 
 export const Route = createFileRoute("/_authenticated/properties")({
@@ -64,7 +79,7 @@ const statusLabels: Record<string, string> = {
 };
 
 const SELECT =
-  "id, code, name, purpose, property_type, status, price_value, price_text, city, district, description, map_url, whatsapp_number, is_visible, is_featured, needs_review, sort_order, created_at";
+  "id, code, name, purpose, property_type, status, price_value, price_text, city, district, description, map_url, whatsapp_number, is_visible, is_featured, needs_review, sort_order, created_at, building_id";
 
 type FormState = {
   name: string;
@@ -108,14 +123,31 @@ function PropertiesPage() {
   const [editing, setEditing] = useState<PropertyRow | null>(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [shareProperty, setShareProperty] = useState<PropertyRow | null>(null);
+  const [selectedMarketer, setSelectedMarketer] = useState("");
+  const [statusTarget, setStatusTarget] = useState<StatusTarget | null>(null);
   const queryClient = useQueryClient();
+  const sendToMarketer = useServerFn(sendPropertyToMarketer);
+  const marketers = useQuery({
+    queryKey: ["marketing-active-list"],
+    queryFn: async () => {
+      const { data: items, error: marketersError } = await supabase
+        .from("marketers")
+        .select("id, full_name, phone")
+        .eq("status", "active")
+        .order("full_name");
+      if (marketersError) throw marketersError;
+      return items ?? [];
+    },
+  });
   const { data, isLoading, error } = useTableRows<PropertyRow>({
     table: "properties",
     select: SELECT,
     orderBy: { column: "created_at" },
   });
 
-  const rows = data ?? [];
+  // وحدات العمارات تُدار من صفحة العمارات فقط حتى لا تختلط بقائمة العقارات المستقلة.
+  const rows = (data ?? []).filter((row) => !row.building_id);
   const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
 
   const openCreate = () => {
@@ -184,7 +216,7 @@ function PropertiesPage() {
       toast.success(editing ? "تم تحديث العقار" : "تم إضافة العقار وسيظهر على الموقع");
       setOpen(false);
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
+    onError: (err) => toast.error(describeDbError(err, "تعذّر الحفظ")),
   });
 
   const flags = useMutation({
@@ -217,6 +249,21 @@ function PropertiesPage() {
       toast.success("تم حذف العقار");
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحذف"),
+  });
+
+  const share = useMutation({
+    mutationFn: async () => {
+      if (!shareProperty || !selectedMarketer) throw new Error("اختر المسوق");
+      return sendToMarketer({
+        data: { marketerId: selectedMarketer, propertyId: shareProperty.id },
+      });
+    },
+    onSuccess: () => {
+      toast.success("تم إرسال العقار للمسوق برابطه الخاص");
+      setShareProperty(null);
+      setSelectedMarketer("");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "تعذّر الإرسال"),
   });
 
   const counts = useMemo(
@@ -300,6 +347,15 @@ function PropertiesPage() {
       ) : (
         <DataTable<PropertyRow>
           rows={filtered}
+          rowClassName={(r) =>
+            r.needs_review
+              ? "bg-warning/8"
+              : r.status === "available"
+                ? "bg-success/5"
+                : r.status === "reserved"
+                  ? "bg-primary/5"
+                  : ""
+          }
           onRowClick={(r) => navigate({ to: "/property-form", search: { id: r.id } })}
           selectable
           showColumnsButton
@@ -320,7 +376,12 @@ function PropertiesPage() {
               cell: (r) => r.name,
               className: "font-semibold",
             },
-            { header: "الكود", sortable: true, value: (r) => r.code ?? "", cell: (r) => r.code ?? "—" },
+            {
+              header: "الكود",
+              sortable: true,
+              value: (r) => r.code ?? "",
+              cell: (r) => r.code ?? "—",
+            },
             {
               header: "النوع",
               cell: (r) => (
@@ -339,11 +400,24 @@ function PropertiesPage() {
             },
             {
               header: "الحالة",
-              cell: (r) => (
-                <Chip tone={r.status === "available" ? "success" : "warning"}>
-                  {statusLabels[r.status] ?? r.status}
-                </Chip>
-              ),
+              cell: (r) => {
+                const next =
+                  r.status === "available" ? (r.purpose === "sale" ? "sold" : "rented") : "available";
+                return (
+                  <button
+                    type="button"
+                    title={`تحويل الحالة إلى «${statusLabels[next]}»`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setStatusTarget({ id: r.id, name: r.name, status: r.status, purpose: r.purpose });
+                    }}
+                  >
+                    <Chip tone={r.status === "available" ? "success" : "warning"}>
+                      {statusLabels[r.status] ?? r.status}
+                    </Chip>
+                  </button>
+                );
+              },
             },
             {
               header: "مرئي",
@@ -391,6 +465,18 @@ function PropertiesPage() {
                     <Pencil className="size-4" />
                     تعديل
                   </Link>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setShareProperty(r);
+                      setSelectedMarketer("");
+                    }}
+                    className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-primary"
+                  >
+                    <Megaphone className="size-4" />
+                    إرسال لمسوق
+                  </button>
                   <button
                     type="button"
                     onClick={() => openEdit(r)}
@@ -562,6 +648,49 @@ function PropertiesPage() {
             </span>
           </div>
         </div>
+      </Modal>
+      <PropertyStatusDialog target={statusTarget} onClose={() => setStatusTarget(null)} onSaved={() => { void queryClient.invalidateQueries({ queryKey: ["properties"] }); void queryClient.invalidateQueries({ queryKey: ["public-properties"] }); }} />
+      <Modal
+        open={Boolean(shareProperty)}
+        onClose={() => setShareProperty(null)}
+        title="إرسال العقار لمسوق"
+        subtitle={`سيُرسل «${shareProperty?.name ?? "العقار"}» عبر واتساب برابط إحالة خاص. لن يحدث أي إرسال قبل تأكيدك.`}
+        footer={
+          <>
+            <GhostButton onClick={() => setShareProperty(null)}>إلغاء</GhostButton>
+            <PrimaryButton
+              onClick={() => share.mutate()}
+              disabled={share.isPending || !selectedMarketer}
+            >
+              {share.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4" />
+              )}
+              إرسال الآن
+            </PrimaryButton>
+          </>
+        }
+      >
+        <Field label="المسوق المستلم" required>
+          <select
+            className={inputClass}
+            value={selectedMarketer}
+            onChange={(event) => setSelectedMarketer(event.target.value)}
+          >
+            <option value="">اختر مسوقًا واحدًا</option>
+            {(marketers.data ?? []).map((marketer) => (
+              <option key={marketer.id} value={marketer.id}>
+                {marketer.full_name} — {marketer.phone}
+              </option>
+            ))}
+          </select>
+        </Field>
+        {(marketers.data ?? []).length === 0 ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            أضف مسوقًا نشطًا من قسم التسويق العقاري أولًا.
+          </p>
+        ) : null}
       </Modal>
     </>
   );

@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { mithraa } from "@/integrations/mithraa/client";
 import { useCurrentUser } from "@/hooks/useAuth";
 
 let sharedCtx: AudioContext | null = null;
@@ -187,12 +188,14 @@ function systemNotify(title: string, body: string) {
 async function senderName(id: string | null | undefined) {
   if (!id) return "زميل";
   const { data } = await supabase.from("profiles").select("full_name").eq("id", id).maybeSingle();
-  return data?.full_name ?? "زميل";
+  if (data?.full_name) return data.full_name;
+  const { data: m } = await mithraa.from("profiles").select("full_name").eq("id", id).maybeSingle();
+  return (m?.full_name as string | undefined) ?? "زميل";
 }
 
 /** إشعار وصوت لأي رسالة جديدة في شات الموظفين أو محادثات الأنشطة. */
 export function useChatAlerts() {
-  const { userId } = useCurrentUser();
+  const { userId, isSuperAdmin } = useCurrentUser();
   const qc = useQueryClient();
   const meRef = useRef<string | undefined>(undefined);
   meRef.current = userId;
@@ -217,8 +220,13 @@ export function useChatAlerts() {
   }, []);
 
   useEffect(() => {
-    const notify = async (senderId: string | null, body: string | null, source: string) => {
+    let myOrg = "rashoudi";
+    void supabase.from("profiles").select("org").eq("id", meRef.current ?? "").maybeSingle().then(({ data }) => {
+      if (data?.org) myOrg = data.org;
+    });
+    const notify = async (senderId: string | null, body: string | null, source: string, messageChannel?: string) => {
       if (!senderId || senderId === meRef.current) return;
+      if (messageChannel && !isSuperAdmin && messageChannel !== "shared" && messageChannel !== myOrg) return;
       const name = await senderName(senderId);
       const text = (body ?? "مرفق جديد").slice(0, 120);
       playChime();
@@ -228,16 +236,22 @@ export function useChatAlerts() {
       qc.invalidateQueries({ queryKey: ["nav-counts"] });
     };
 
-    const channel = supabase
-      .channel("chat-alerts")
+    const groupChannel = mithraa
+      .channel("chat-alerts-group")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "group_messages" },
         (payload) => {
-          const row = payload.new as { sender_id: string; body: string | null };
-          void notify(row.sender_id, row.body, "شات الموظفين");
+          const row = payload.new as { sender_id: string; body: string | null; channel: string };
+          if (row.channel === "mithraa") return;
+          void notify(row.sender_id, row.body, row.channel === "shared" ? "الشات المشترك" : "شات الموظفين", row.channel);
         },
       )
+      .subscribe();
+
+    const channel = supabase
+      .channel("chat-alerts")
+
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "activity_messages" },
@@ -258,35 +272,7 @@ export function useChatAlerts() {
 
     return () => {
       void supabase.removeChannel(channel);
+      void mithraa.removeChannel(groupChannel);
     };
-  }, [qc]);
-
-  // أي إشعار جديد في الموقع (مهام، عقود، دفعات، طلبات…) — صوت قوي + إشعار نظام
-  useEffect(() => {
-    if (!userId) return;
-    const channel = supabase
-      .channel(`site-notifications-${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const row = payload.new as { title: string; body: string | null };
-          playChime();
-          systemNotify(row.title, row.body ?? "");
-          toast.message(row.title, { description: row.body ?? undefined });
-          qc.invalidateQueries({ queryKey: ["my-notifications", userId] });
-          qc.invalidateQueries({ queryKey: ["nav-counts"] });
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [qc, userId]);
+  }, [qc, isSuperAdmin]);
 }

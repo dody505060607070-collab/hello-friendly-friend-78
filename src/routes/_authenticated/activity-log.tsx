@@ -1,321 +1,85 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { History, Loader2, Radio, ShieldAlert, TriangleAlert } from "lucide-react";
+import { Activity, Clock3, History, Loader2, Monitor, ShieldAlert, UserRoundCheck } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { Chip } from "@/components/kit/Chip";
-import { LiveTable, formatDate } from "@/components/kit/LiveTable";
 import { PageHero } from "@/components/kit/PageHero";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-type Row = {
-  id: string;
-  action: string;
-  entity_type: string | null;
-  entity_id: string | null;
-  created_at: string;
-  actor: { full_name: string } | null;
-};
-
-/** كلمات مفتاحية تُصنَّف بموجبها العملية كـ"هامة" في سجل الأنشطة. */
-const IMPORTANT_KEYWORDS = [
-  "delete",
-  "remove",
-  "reject",
-  "cancel",
-  "approve",
-  "finaliz",
-  "import",
-  "staff",
-  "role",
-  "permission",
-  "password",
-  "backup",
-  "restore",
-];
-
-function isImportantAction(action: string) {
-  const lower = action.toLowerCase();
-  return IMPORTANT_KEYWORDS.some((k) => lower.includes(k));
-}
-
 export const Route = createFileRoute("/_authenticated/activity-log")({
-  head: () => ({
-    meta: [
-      { title: "سجل الأنشطة | مثراء العقارية" },
-      { name: "description", content: "سجل كل عملية تمت في النظام ومن نفّذها ومتى." },
-      { property: "og:title", content: "سجل الأنشطة | مثراء العقارية" },
-      { property: "og:description", content: "سجل كل عملية تمت في النظام ومن نفّذها ومتى." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () => ({ meta: [
+    { title: "متابعة الموظفين | مثراء العقارية" },
+    { name: "description", content: "متابعة جلسات الموظفين ومدة العمل والتغييرات والمهام المنجزة." },
+    { property: "og:title", content: "متابعة الموظفين | مثراء العقارية" },
+    { property: "og:description", content: "متابعة جلسات الموظفين ومدة العمل والتغييرات والمهام المنجزة." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: ActivityLogPage,
 });
 
+const actionLabels: Record<string, string> = { insert: "إضافة", update: "تعديل", delete: "حذف", approve: "اعتماد", contract_approved: "اعتماد عقد" };
+const entityLabels: Record<string, string> = { properties: "عقار", buildings: "مبنى", units: "وحدة", contracts: "عقد", tasks: "مهمة", contacts: "جهة اتصال", invoices: "فاتورة", contract_payments: "دفعة" };
+const duration = (seconds: number) => `${Math.floor(seconds / 3600)} س ${Math.floor((seconds % 3600) / 60)} د`;
+const dateTime = (value: string | null) => value ? new Date(value).toLocaleString("ar-SA", { dateStyle: "medium", timeStyle: "short" }) : "—";
+
 function ActivityLogPage() {
   const { isSuperAdmin, loading } = useCurrentUser();
-
-  return (
-    <>
-      <PageHero
-        title="سجل الأنشطة"
-        subtitle="تتبّع كامل لعمليات الإضافة والتعديل والحذف والاعتماد."
-        icon={History}
-      />
-
-      {loading ? (
-        <div className="surface-card grid place-items-center gap-2 px-6 py-16">
-          <Loader2 className="size-6 animate-spin text-primary" />
-          <p className="text-[13px] text-muted-foreground">جاري التحقق من الصلاحيات…</p>
-        </div>
-      ) : !isSuperAdmin ? (
-        <div className="surface-card grid place-items-center gap-2 px-6 py-16 text-center">
-          <ShieldAlert className="size-8 text-destructive" />
-          <p className="text-[14px] font-bold text-foreground">هذه الصفحة مخصّصة لمدير النظام فقط</p>
-          <p className="text-[13px] text-muted-foreground">
-            لا تملك صلاحية الوصول إلى سجل الأنشطة وجلسات الموظفين. تواصل مع مدير النظام إذا كنت بحاجة إلى ذلك.
-          </p>
-        </div>
-      ) : (
-        <>
-          <StaffSessionsPanel />
-          <ImportantActionsPanel />
-
-          <LiveTable<Row>
-            table="activity_log"
-            select="id, action, entity_type, entity_id, created_at, actor:actor_id(full_name)"
-            orderBy={{ column: "created_at" }}
-            searchPlaceholder="بحث بالعملية"
-            emptyText="لا توجد أنشطة مسجلة"
-            emptyHint="ستُسجَّل العمليات هنا تلقائيًا أثناء استخدام النظام."
-            columns={[
-              { header: "المستخدم", cell: (r) => r.actor?.full_name ?? "النظام", className: "font-semibold" },
-              { header: "العملية", cell: (r) => r.action },
-              { header: "النوع", cell: (r) => r.entity_type ?? "—" },
-              { header: "السجل", cell: (r) => <span dir="ltr">{r.entity_id ?? "—"}</span> },
-              { header: "التاريخ", cell: (r) => formatDate(r.created_at) },
-            ]}
-          />
-        </>
-      )}
-    </>
-  );
-}
-
-type SessionRow = {
-  id: string;
-  user_id: string;
-  started_at: string;
-  last_seen_at: string;
-  ended_at: string | null;
-};
-
-function useStaffSessionsData() {
-  return useQuery({
-    queryKey: ["activity-log-staff-sessions"],
+  const [employee, setEmployee] = useState("all");
+  const [range, setRange] = useState("7");
+  const since = new Date(Date.now() - Number(range) * 86400000).toISOString();
+  const query = useQuery({
+    queryKey: ["employee-monitoring", range],
+    enabled: isSuperAdmin,
+    refetchInterval: 30_000,
     queryFn: async () => {
-      const dayAgo = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-      const [sessionsRes, profilesRes] = await Promise.all([
-        supabase
-          .from("employee_sessions")
-          .select("id, user_id, started_at, last_seen_at, ended_at")
-          .gte("started_at", dayAgo)
-          .order("started_at", { ascending: false })
-          .limit(200),
-        supabase.from("profiles").select("id, full_name"),
+      const [profiles, sessions, events, taskHistory] = await Promise.all([
+        supabase.from("profiles").select("id, full_name, job_title, is_active").eq("org", "rashoudi").order("full_name"),
+        supabase.from("employee_sessions").select("id, user_id, started_at, last_seen_at, ended_at, duration_seconds, current_path, device_label").gte("started_at", since).order("started_at", { ascending: false }).limit(500),
+        supabase.from("activity_log").select("id, actor_id, action, entity_type, entity_id, details, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(500),
+        supabase.from("task_history").select("id, actor_id, action, task_id, created_at, task:task_id(title)").gte("created_at", since).order("created_at", { ascending: false }).limit(300),
       ]);
-      if (sessionsRes.error) throw sessionsRes.error;
-      if (profilesRes.error) throw profilesRes.error;
-
-      const sessions = (sessionsRes.data ?? []) as SessionRow[];
-      const names = new Map((profilesRes.data ?? []).map((p) => [p.id, p.full_name as string]));
-
-      const cutoff = Date.now() - 5 * 60 * 1000;
-      const online = sessions.filter(
-        (s) => !s.ended_at && new Date(s.last_seen_at).getTime() >= cutoff,
-      );
-
-      const today = new Date().toISOString().slice(0, 10);
-      const todaySessions = sessions.filter((s) => s.started_at.slice(0, 10) === today);
-      const logins = todaySessions.length;
-      const logouts = todaySessions.filter((s) => s.ended_at).length;
-
-      return {
-        online: online.map((s) => ({ ...s, name: names.get(s.user_id) ?? "موظف" })),
-        recent: sessions.slice(0, 15).map((s) => ({ ...s, name: names.get(s.user_id) ?? "موظف" })),
-        logins,
-        logouts,
-      };
+      for (const result of [profiles, sessions, events, taskHistory]) if (result.error) throw result.error;
+      return { profiles: profiles.data ?? [], sessions: sessions.data ?? [], events: events.data ?? [], taskHistory: taskHistory.data ?? [] };
     },
-    refetchInterval: 30000,
   });
-}
+  const rows = query.data;
+  const filteredSessions = (rows?.sessions ?? []).filter((row) => employee === "all" || row.user_id === employee);
+  const filteredEvents = (rows?.events ?? []).filter((row) => employee === "all" || row.actor_id === employee);
+  const filteredTasks = (rows?.taskHistory ?? []).filter((row) => employee === "all" || row.actor_id === employee);
+  const summaries = useMemo(() => (rows?.profiles ?? []).map((profile) => {
+    const ownSessions = (rows?.sessions ?? []).filter((session) => session.user_id === profile.id);
+    const latest = ownSessions[0];
+    const online = Boolean(latest && !latest.ended_at && Date.now() - new Date(latest.last_seen_at).getTime() < 130000);
+    return { ...profile, latest, online, total: ownSessions.reduce((sum, session) => sum + session.duration_seconds, 0), events: (rows?.events ?? []).filter((event) => event.actor_id === profile.id).length };
+  }), [rows]);
 
-function formatDuration(startIso: string, endIso: string | null) {
-  const end = endIso ? new Date(endIso).getTime() : Date.now();
-  const minutes = Math.max(Math.round((end - new Date(startIso).getTime()) / 60000), 0);
-  if (minutes < 60) return `${minutes} د`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return `${hours} س ${rest} د`;
-}
+  if (loading) return <div className="surface-card grid place-items-center py-24"><Loader2 className="size-6 animate-spin text-primary" /></div>;
+  if (!isSuperAdmin) return <div className="surface-card grid place-items-center gap-3 py-24 text-center"><ShieldAlert className="size-10 text-destructive" /><h1 className="text-lg font-bold">هذه الصفحة للمدير العام فقط</h1><p className="text-sm text-muted-foreground">لا يمكن عرض سجل استخدام الموظفين بهذه الصلاحية.</p></div>;
 
-function StaffSessionsPanel() {
-  const q = useStaffSessionsData();
-
-  if (q.isLoading) {
-    return (
-      <div className="surface-card grid place-items-center gap-2 px-6 py-12">
-        <Loader2 className="size-6 animate-spin text-primary" />
-        <p className="text-[13px] text-muted-foreground">جاري تحميل جلسات الموظفين…</p>
-      </div>
-    );
-  }
-  if (q.error || !q.data) {
-    return (
-      <div className="surface-card grid place-items-center gap-2 px-6 py-10 text-center">
-        <TriangleAlert className="size-7 text-destructive" />
-        <p className="text-[13px] text-destructive" dir="ltr">
-          {q.error instanceof Error ? q.error.message : "تعذّر تحميل جلسات الموظفين"}
-        </p>
-      </div>
-    );
-  }
-
-  const { online, recent, logins, logouts } = q.data;
-
-  return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      <section className="surface-card p-5 lg:col-span-1">
-        <div className="flex items-center gap-2">
-          <Radio className="size-4 text-success" />
-          <h2 className="text-[15px] font-bold text-foreground">الموظفون المتصلون الآن</h2>
-        </div>
-        <p className="mt-0.5 text-[12.5px] text-muted-foreground">نشاط خلال آخر 5 دقائق</p>
-
-        {online.length === 0 ? (
-          <p className="py-8 text-center text-[13px] text-muted-foreground">لا يوجد موظفون متصلون حاليًا.</p>
-        ) : (
-          <ul className="mt-4 divide-y divide-border">
-            {online.map((s) => (
-              <li key={s.id} className="flex items-center justify-between py-2.5 text-[13px]">
-                <span className="font-semibold text-foreground">{s.name}</span>
-                <Chip tone="success">متصل الآن</Chip>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl border border-border bg-muted/40 p-3 text-center">
-          <div>
-            <p className="text-lg font-bold text-foreground">{logins}</p>
-            <p className="text-[11.5px] text-muted-foreground">تسجيل دخول اليوم</p>
-          </div>
-          <div>
-            <p className="text-lg font-bold text-foreground">{logouts}</p>
-            <p className="text-[11.5px] text-muted-foreground">تسجيل خروج اليوم</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="surface-card p-5 lg:col-span-2">
-        <h2 className="text-[15px] font-bold text-foreground">جلسات الموظفين الأخيرة</h2>
-        <p className="mt-0.5 text-[12.5px] text-muted-foreground">
-          تسجيلات الدخول والخروج ومدة كل جلسة خلال آخر 24 ساعة
-        </p>
-
-        {recent.length === 0 ? (
-          <p className="py-10 text-center text-[13px] text-muted-foreground">لا توجد جلسات مسجّلة.</p>
-        ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[520px] text-right">
-              <thead>
-                <tr className="border-b border-border text-[12px] font-bold text-muted-foreground">
-                  <th className="py-2">الموظف</th>
-                  <th className="py-2">دخول</th>
-                  <th className="py-2">خروج</th>
-                  <th className="py-2">المدة</th>
-                  <th className="py-2">الحالة</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recent.map((s) => (
-                  <tr key={s.id} className="border-b border-border/70 text-[13px] last:border-0">
-                    <td className="py-3 font-semibold text-foreground">{s.name}</td>
-                    <td className="py-3">{formatDate(s.started_at)}</td>
-                    <td className="py-3">{s.ended_at ? formatDate(s.ended_at) : "—"}</td>
-                    <td className="py-3">{formatDuration(s.started_at, s.ended_at)}</td>
-                    <td className="py-3">
-                      {s.ended_at ? (
-                        <Chip tone="neutral">منتهية</Chip>
-                      ) : (
-                        <Chip tone="success">نشطة</Chip>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+  return <>
+    <PageHero title="متابعة الموظفين" subtitle="وقت الدخول والخروج، مدة الاستخدام، الصفحات والتغييرات والمهام — للمدير العام فقط." icon={History} stats={[
+      { label: "متصل الآن", value: String(summaries.filter((row) => row.online).length) },
+      { label: "جلسات الفترة", value: String(filteredSessions.length) },
+      { label: "عمليات مسجلة", value: String(filteredEvents.length + filteredTasks.length) },
+    ]} />
+    <div className="surface-card flex flex-wrap gap-3 p-4">
+      <select className="h-10 rounded-lg border border-border bg-card px-3 text-sm" value={employee} onChange={(event) => setEmployee(event.target.value)}><option value="all">كل الموظفين</option>{summaries.map((row) => <option key={row.id} value={row.id}>{row.full_name}</option>)}</select>
+      <select className="h-10 rounded-lg border border-border bg-card px-3 text-sm" value={range} onChange={(event) => setRange(event.target.value)}><option value="1">اليوم</option><option value="7">آخر 7 أيام</option><option value="30">آخر 30 يومًا</option><option value="90">آخر 90 يومًا</option></select>
     </div>
-  );
-}
-
-function useImportantActions() {
-  return useQuery({
-    queryKey: ["activity-log-important"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("activity_log")
-        .select("id, action, entity_type, entity_id, created_at, actor:actor_id(full_name)")
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return ((data ?? []) as unknown as Row[]).filter((r) => isImportantAction(r.action)).slice(0, 10);
-    },
-  });
-}
-
-function ImportantActionsPanel() {
-  const q = useImportantActions();
-
-  return (
-    <section className="surface-card p-5">
-      <h2 className="text-[15px] font-bold text-foreground">العمليات الهامة</h2>
-      <p className="mt-0.5 text-[12.5px] text-muted-foreground">
-        حذف، اعتماد، رفض، استيراد، وصلاحيات — من آخر 100 عملية مسجّلة
-      </p>
-
-      {q.isLoading ? (
-        <div className="grid place-items-center gap-2 py-10">
-          <Loader2 className="size-5 animate-spin text-primary" />
-          <p className="text-[13px] text-muted-foreground">جاري التحميل…</p>
-        </div>
-      ) : q.error ? (
-        <div className="grid place-items-center gap-2 py-8 text-center">
-          <TriangleAlert className="size-6 text-destructive" />
-          <p className="text-[13px] text-destructive" dir="ltr">
-            {q.error instanceof Error ? q.error.message : "تعذّر تحميل العمليات الهامة"}
-          </p>
-        </div>
-      ) : (q.data ?? []).length === 0 ? (
-        <p className="py-8 text-center text-[13px] text-muted-foreground">لا توجد عمليات هامة حديثة.</p>
-      ) : (
-        <ul className="mt-4 divide-y divide-border">
-          {(q.data ?? []).map((r) => (
-            <li key={r.id} className="flex items-center justify-between py-2.5 text-[13px]">
-              <div>
-                <span className="font-semibold text-foreground">{r.actor?.full_name ?? "النظام"}</span>
-                <span className="text-muted-foreground"> — {r.action}</span>
-              </div>
-              <span className="text-[11.5px] text-muted-foreground">{formatDate(r.created_at)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
+    {query.isLoading ? <div className="surface-card grid place-items-center py-20"><Loader2 className="size-6 animate-spin text-primary" /></div> : <>
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{summaries.filter((row) => employee === "all" || row.id === employee).map((row) => <button type="button" key={row.id} onClick={() => setEmployee(row.id)} className="surface-card p-4 text-start transition-colors hover:border-primary/40">
+        <div className="flex items-center justify-between"><span className="grid size-10 place-items-center rounded-full bg-accent font-bold text-primary">{row.full_name.slice(0, 1)}</span><Chip tone={row.online ? "success" : "neutral"}>{row.online ? "متصل الآن" : "غير متصل"}</Chip></div>
+        <h2 className="mt-3 text-sm font-bold">{row.full_name}</h2><p className="text-xs text-muted-foreground">{row.job_title ?? "موظف"}</p>
+        <div className="mt-4 grid grid-cols-2 gap-2 text-xs"><span className="rounded-lg bg-muted p-2"><b className="block text-foreground">{duration(row.total)}</b>مدة الاستخدام</span><span className="rounded-lg bg-muted p-2"><b className="block text-foreground">{row.events}</b>عملية</span></div>
+        <p className="mt-3 text-[11px] text-muted-foreground">آخر ظهور: {dateTime(row.latest?.last_seen_at ?? null)}</p>
+      </button>)}</section>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <section className="surface-card overflow-hidden"><header className="flex items-center gap-2 border-b border-border p-4 font-bold"><Clock3 className="size-4 text-primary" />جلسات الاستخدام</header><div className="max-h-[520px] overflow-auto divide-y divide-border">{filteredSessions.map((row) => { const profile = rows?.profiles.find((item) => item.id === row.user_id); return <div key={row.id} className="grid gap-2 p-4 text-xs sm:grid-cols-[1fr_1fr_auto]"><div><b className="block text-sm">{profile?.full_name ?? "—"}</b><span className="text-muted-foreground">{row.device_label ?? "جهاز غير محدد"}</span></div><div><span className="block">فتح: {dateTime(row.started_at)}</span><span className="text-muted-foreground">إغلاق: {row.ended_at ? dateTime(row.ended_at) : "الجلسة مفتوحة"}</span></div><div className="text-end"><Chip tone={row.ended_at ? "neutral" : "success"}>{duration(row.duration_seconds)}</Chip><span className="mt-1 block max-w-40 truncate text-muted-foreground" dir="ltr">{row.current_path ?? "—"}</span></div></div>})}{!filteredSessions.length ? <p className="p-8 text-center text-sm text-muted-foreground">لا توجد جلسات في هذه الفترة.</p> : null}</div></section>
+        <section className="surface-card overflow-hidden"><header className="flex items-center gap-2 border-b border-border p-4 font-bold"><Activity className="size-4 text-primary" />ما الذي تم داخل النظام</header><div className="max-h-[520px] overflow-auto divide-y divide-border">{[...filteredEvents.map((row) => ({ id: row.id, actor_id: row.actor_id, at: row.created_at, title: `${actionLabels[row.action] ?? row.action} ${entityLabels[row.entity_type ?? ""] ?? row.entity_type ?? "سجل"}`, hint: row.entity_id ?? "" })), ...filteredTasks.map((row) => ({ id: `task-${row.id}`, actor_id: row.actor_id, at: row.created_at, title: `مهمة: ${row.action}`, hint: (row.task as { title?: string } | null)?.title ?? row.task_id }))].sort((a,b) => b.at.localeCompare(a.at)).map((row) => <div key={row.id} className="flex items-start gap-3 p-4"><span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent text-primary"><UserRoundCheck className="size-4" /></span><div className="min-w-0 flex-1"><p className="text-sm font-bold">{row.title}</p><p className="truncate text-xs text-muted-foreground">{rows?.profiles.find((item) => item.id === row.actor_id)?.full_name ?? "النظام"} · {row.hint}</p></div><time className="shrink-0 text-[11px] text-muted-foreground">{dateTime(row.at)}</time></div>)}{!filteredEvents.length && !filteredTasks.length ? <p className="p-8 text-center text-sm text-muted-foreground">لا توجد عمليات مسجلة.</p> : null}</div></section>
+      </div>
+    </>}
+  </>;
 }

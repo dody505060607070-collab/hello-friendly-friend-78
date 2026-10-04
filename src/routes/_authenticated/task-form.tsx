@@ -18,11 +18,30 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Field, inputClass, textareaClass } from "@/components/kit/Modal";
-import { notifyTaskAssignment } from "@/lib/tasks.functions";
 import { PageHero } from "@/components/kit/PageHero";
 import { supabase } from "@/integrations/supabase/client";
 import { priorityLabels, taskStatusLabels } from "@/lib/labels";
+import { parseCoordsFromMapLink, resolveMapLink } from "@/lib/maps.functions";
+import { finishTask, notifyTaskNow } from "@/lib/tasks.functions";
 import { cn } from "@/lib/utils";
+
+/** الوقت المتبقي حتى الرسالة القادمة بصيغة عربية مختصرة. */
+function remainingLabel(iso: string) {
+  const diff = new Date(iso).getTime() - Date.now();
+  if (diff <= 0) return "أقل من دقيقة";
+  const hours = Math.floor(diff / 3_600_000);
+  const minutes = Math.floor((diff % 3_600_000) / 60_000);
+  if (hours >= 24) return `${Math.floor(hours / 24)} يوم و${hours % 24} ساعة`;
+  if (hours > 0) return `${hours} ساعة و${minutes} دقيقة`;
+  return `${minutes} دقيقة`;
+}
+
+/** فترة تكرار رسالة المهمة حسب الأولوية. */
+function intervalLabel(priority: string) {
+  if (priority === "urgent") return "12 ساعة";
+  if (priority === "high") return "24 ساعة";
+  return "3 أيام";
+}
 
 export const Route = createFileRoute("/_authenticated/task-form")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -61,37 +80,6 @@ const emptyForm = {
 
 type FormState = typeof emptyForm;
 
-function looksLikeUrl(value: string) {
-  try {
-    new URL(value);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function extractMapCoords(value: string): { lat: string; lng: string } | null {
-  if (!looksLikeUrl(value)) return null;
-  const patterns = [
-    /!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/,
-    /\/@(-?\d+\.?\d*),(-?\d+\.?\d*)/,
-    /[?&](?:q|query|destination|ll)=(-?\d+\.?\d*),(-?\d+\.?\d*)/,
-    /\/maps\/(?:place|search|dir)\/[^/]*\/@?(-?\d+\.?\d*),(-?\d+\.?\d*)/,
-    /\bdaddr=(-?\d+\.?\d*),(-?\d+\.?\d*)/,
-  ];
-  for (const re of patterns) {
-    const m = value.match(re);
-    if (m && m[1] != null && m[2] != null) {
-      const lat = parseFloat(m[1]);
-      const lng = parseFloat(m[2]);
-      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
-        return { lat: lat.toString(), lng: lng.toString() };
-      }
-    }
-  }
-  return null;
-}
-
 function SectionCard({
   title,
   subtitle,
@@ -126,8 +114,37 @@ function TaskFormPage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [assignees, setAssignees] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [mapLink, setMapLink] = useState("");
+  const [resolvingMap, setResolvingMap] = useState(false);
 
   const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
+
+  /** يقرأ الإحداثيات من رابط خرائط Google (بما فيها الروابط المختصرة). */
+  const applyMapLink = async (raw: string) => {
+    const value = raw.trim();
+    setMapLink(value);
+    if (!value) return;
+    const direct = parseCoordsFromMapLink(value);
+    if (direct) {
+      set({ location_lat: direct.lat, location_lng: direct.lng });
+      toast.success("تم تحديد الموقع من الرابط");
+      return;
+    }
+    setResolvingMap(true);
+    try {
+      const coords = await resolveMapLink({ data: { url: value } });
+      if (coords) {
+        set({ location_lat: coords.lat, location_lng: coords.lng });
+        toast.success("تم تحديد الموقع من الرابط");
+      } else {
+        toast.error("تعذّر قراءة الموقع من هذا الرابط — أدخل الإحداثيات يدويًا");
+      }
+    } catch {
+      toast.error("تعذّر قراءة الموقع من هذا الرابط");
+    } finally {
+      setResolvingMap(false);
+    }
+  };
 
   const task = useQuery({
     queryKey: ["task", id],
@@ -179,18 +196,6 @@ function TaskFormPage() {
     },
   });
 
-  const properties = useQuery({
-    queryKey: ["properties", "select"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("id, name, code")
-        .order("created_at", { ascending: false })
-        .limit(300);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
 
   const contacts = useQuery({
     queryKey: ["contacts", "select"],
@@ -222,14 +227,16 @@ function TaskFormPage() {
       location_lat: (row as Record<string, unknown>)["location_lat"]?.toString() ?? "",
       location_lng: (row as Record<string, unknown>)["location_lng"]?.toString() ?? "",
     });
+    const lat = (row as Record<string, unknown>)["location_lat"];
+    const lng = (row as Record<string, unknown>)["location_lng"];
+    if (lat && lng) setMapLink(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
   }, [task.data]);
 
   useEffect(() => {
     if (taskAssignees.data) setAssignees(taskAssignees.data.map((a) => a.user_id));
   }, [taskAssignees.data]);
 
-  const save = useMutation({
-    mutationFn: async () => {
+  const persistTask = async () => {
       if (!form.title.trim()) throw new Error("عنوان المهمة مطلوب");
       const payload = {
         title: form.title.trim(),
@@ -271,57 +278,106 @@ function TaskFormPage() {
           .in("user_id", toRemove);
         if (error) throw error;
       }
-      return { taskId };
-    },
-    onSuccess: ({ taskId: newId }) => {
+      return { taskId: taskId as string, added: toAdd };
+  };
+
+  const save = useMutation({
+    mutationFn: persistTask,
+    onSuccess: async ({ taskId: newId, added }) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
       queryClient.invalidateQueries({ queryKey: ["task-assignees", newId] });
       toast.success(id ? "تم تحديث المهمة" : "تم إنشاء المهمة وتكليف الفريق");
+      if (added.length && newId) {
+        try {
+          const result = await notifyTaskNow({
+            data: { taskId: newId, userIds: added, schedule: true },
+          });
+          if (result.sent > 0) toast.success(`تم إرسال المهمة على واتساب لـ ${result.sent} موظف`);
+          if (result.failed > 0) toast.error(`تعذّر إرسال واتساب لـ ${result.failed} موظف`);
+          queryClient.invalidateQueries({ queryKey: ["task-reminder-state", newId] });
+        } catch {
+          toast.error("تعذّر إرسال المهمة على واتساب");
+        }
+      }
       if (!id && newId) navigate({ to: "/task-form", search: { id: newId } });
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الحفظ"),
   });
 
-  const sendWhatsApp = useMutation({
+  const reminderState = useQuery({
+    queryKey: ["task-reminder-state", id],
+    enabled: Boolean(id),
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_reminder_state")
+        .select("id, user_id, next_send_at, sent_count")
+        .eq("task_id", id!);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const nextSend = (reminderState.data ?? [])
+    .map((r) => r.next_send_at)
+    .filter(Boolean)
+    .sort()[0] as string | undefined;
+
+  const sendTask = useMutation({
+    mutationFn: async () => {
+      if (!id) throw new Error("احفظ المهمة أولًا قبل إرسالها");
+      if (!assignees.length) throw new Error("اختر موظفًا واحدًا على الأقل");
+      return notifyTaskNow({ data: { taskId: id, userIds: assignees, schedule: true } });
+    },
+    onSuccess: (result) => {
+      if (result.sent > 0) toast.success(`تم إرسال المهمة على واتساب لـ ${result.sent} موظف`);
+      if (result.failed > 0) toast.error(`تعذّر إرسال واتساب لـ ${result.failed} موظف`);
+      if (result.skipped > 0) toast.warning(`${result.skipped} موظف بدون رقم واتساب مفعّل`);
+      queryClient.invalidateQueries({ queryKey: ["task-reminder-state", id] });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر إرسال المهمة"),
+  });
+
+  const completeTask = useMutation({
     mutationFn: async () => {
       if (!id) throw new Error("احفظ المهمة أولًا");
-      if (!assignees.length) throw new Error("لا يوجد موظفون مكلّفون بالمهمة");
-      return notifyTaskAssignment({ data: { taskId: id, userIds: assignees } });
+      return finishTask({ data: { taskId: id } });
     },
-    onSuccess: (res) => {
-      if (res.sent) toast.success(`تم الإرسال بنجاح لـ ${res.sent} موظف`);
-      if (res.failed) toast.error(`فشل الإرسال لـ ${res.failed} موظف`);
-      if (res.skipped) toast.warning(`${res.skipped} موظف بدون رقم واتساب أو الإشعارات مقفولة`);
-      for (const r of res.results) {
-        if (r.skipped) continue;
-        if (r.ok) toast.success(`${r.name}: نجح الإرسال`);
-        else toast.error(`${r.name}: فشل الإرسال${r.error ? ` — ${r.error}` : ""}`);
-      }
+    onSuccess: () => {
+      toast.success("تم إنهاء المهمة وإيقاف رسائل واتساب المتكررة");
+      setForm((f) => ({ ...f, status: "done" }));
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["nav-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["task-reminder-state", id] });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر الإرسال"),
+    onError: (err) => toast.error(err instanceof Error ? err.message : "تعذّر إنهاء المهمة"),
   });
 
   const upload = async (files: FileList | null) => {
     if (!files?.length) return;
-    if (!id) {
-      toast.error("احفظ المهمة أولًا ثم أرفق الملفات");
-      return;
-    }
     setUploading(true);
     try {
+      // المرفقات متاحة فورًا: لو المهمة جديدة تُحفظ تلقائيًا قبل الرفع.
+      let taskId = id;
+      if (!taskId) {
+        const saved = await persistTask();
+        taskId = saved.taskId;
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        navigate({ to: "/task-form", search: { id: taskId } });
+      }
       for (const file of Array.from(files)) {
-        const path = `tasks/${id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
+        const path = `tasks/${taskId}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
         await uploadMedia("internal-files", path, file);
         const { error } = await supabase.from("task_attachments").insert({
-          task_id: id,
+          task_id: taskId,
           file_path: path,
           file_name: file.name,
           kind: "reference",
         });
         if (error) throw error;
       }
-      queryClient.invalidateQueries({ queryKey: ["task-attachments", id] });
+      queryClient.invalidateQueries({ queryKey: ["task-attachments", taskId] });
       toast.success("تم إرفاق الملفات");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "تعذّر الإرفاق");
@@ -378,17 +434,6 @@ function TaskFormPage() {
           {save.isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
           {id ? "حفظ التعديلات" : "حفظ المهمة"}
         </button>
-        {id && assignees.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => sendWhatsApp.mutate()}
-            disabled={sendWhatsApp.isPending}
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-primary/40 bg-accent/40 px-5 text-[13px] font-bold text-primary disabled:opacity-60"
-          >
-            {sendWhatsApp.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-            إرسال المهمة على واتساب
-          </button>
-        ) : null}
       </div>
 
       <SectionCard
@@ -490,22 +535,7 @@ function TaskFormPage() {
               onChange={(e) => set({ due_time: e.target.value })}
             />
           </Field>
-          <Field label="العقار المرتبط">
-            <select
-              className={inputClass}
-              value={form.property_id}
-              onChange={(e) => set({ property_id: e.target.value })}
-            >
-              <option value="">— بدون —</option>
-              {(properties.data ?? []).map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.code ? `${p.code} — ` : ""}
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="العميل المرتبط">
+          <Field label="العميل المرتبط (اختياري)">
             <select
               className={inputClass}
               value={form.contact_id}
@@ -524,29 +554,41 @@ function TaskFormPage() {
 
       <SectionCard
         title="موقع المهمة"
-        subtitle="ألصق رابط Google Maps مباشرة، أو اكتب الإحداثيات يدويًا؛ تظهر خريطة مصغّرة للموظف مع إمكانية فتح الاتجاهات."
+        subtitle="الصق رابط خرائط Google أو أدخل الإحداثيات — يصل الرابط مع رسالة واتساب للموظف."
         icon={MapPin}
       >
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="رابط / موقع الموقع" className="sm:col-span-3">
+          <Field label="رابط خرائط Google (الصق الرابط هنا)" className="sm:col-span-3">
+            <div className="flex gap-2">
+              <input
+                className={inputClass}
+                dir="ltr"
+                value={mapLink}
+                onChange={(e) => setMapLink(e.target.value)}
+                onPaste={(e) => {
+                  const text = e.clipboardData.getData("text");
+                  if (text) applyMapLink(text);
+                }}
+                placeholder="https://maps.app.goo.gl/..."
+              />
+              <button
+                type="button"
+                onClick={() => applyMapLink(mapLink)}
+                disabled={resolvingMap || !mapLink.trim()}
+                className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border border-border bg-card px-4 text-[13px] font-semibold text-primary disabled:opacity-60"
+              >
+                {resolvingMap ? <Loader2 className="size-4 animate-spin" /> : <MapPin className="size-4" />}
+                تحديد الموقع
+              </button>
+            </div>
+          </Field>
+          <Field label="وصف الموقع" className="sm:col-span-3">
             <input
               className={inputClass}
-              dir="ltr"
               value={form.location_text}
-              onChange={(e) => {
-                const value = e.target.value;
-                const coords = extractMapCoords(value);
-                if (coords) {
-                  set({ location_text: value, location_lat: coords.lat, location_lng: coords.lng });
-                } else {
-                  set({ location_text: value });
-                }
-              }}
-              placeholder="https://maps.google.com/... أو وصف الموقع"
+              onChange={(e) => set({ location_text: e.target.value })}
+              placeholder="مثال: حي الملقا - شارع أنس بن مالك"
             />
-            <p className="mt-1.5 text-[12px] text-muted-foreground">
-              يمكنك نسخ رابط Google Maps كاملاً وسيتم استخراج الإحداثيات تلقائيًا.
-            </p>
           </Field>
           <Field label="خط العرض (Lat)">
             <input
@@ -576,17 +618,8 @@ function TaskFormPage() {
               >
                 فتح في خرائط Google
               </a>
-            ) : looksLikeUrl(form.location_text) ? (
-              <a
-                className="inline-flex h-10 items-center rounded-lg border border-border px-3 text-[13px] font-semibold text-primary"
-                href={form.location_text}
-                target="_blank"
-                rel="noreferrer"
-              >
-                فتح الرابط المباشر
-              </a>
             ) : (
-              <p className="text-[12.5px] text-muted-foreground">أدخل رابط Google Maps أو الإحداثيات.</p>
+              <p className="text-[12.5px] text-muted-foreground">أدخل الإحداثيات لعرض الخريطة.</p>
             )}
           </Field>
         </div>
@@ -603,7 +636,7 @@ function TaskFormPage() {
 
       <SectionCard
         title="الموظفون المكلّفون"
-        subtitle="اختر موظفًا أو أكثر؛ كل مكلّف يرى المهمة في لوحته ويستطيع تحديث حالتها."
+        subtitle="اختيار الموظف يحفظ التكليف فقط؛ لن تُرسل أي رسالة إلا عند الضغط على زر واتساب."
         icon={Users}
       >
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -642,25 +675,39 @@ function TaskFormPage() {
       </SectionCard>
 
       <SectionCard
-        title="المرفقات المرجعية"
-        subtitle="صور أو ملفات توضّح المطلوب — تُخزَّن بشكل خاص للفريق فقط."
+        title="صور ومرفقات المهمة"
+        subtitle="أضف الصور مباشرة — تُحفظ المهمة تلقائيًا، وتُرسل الصور مع رسالة واتساب للموظف."
         icon={Paperclip}
       >
-        {!id ? (
-          <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-[12.5px] text-muted-foreground">
-            احفظ المهمة أولًا لتفعيل المرفقات.
-          </p>
-        ) : (
-          <div className="space-y-4">
-            <label className="grid cursor-pointer place-items-center gap-2 rounded-xl border border-dashed border-border px-6 py-10 text-center">
-              {uploading ? (
-                <Loader2 className="size-6 animate-spin text-primary" />
-              ) : (
-                <UploadCloud className="size-6 text-muted-foreground" />
-              )}
-              <span className="text-[13px] text-muted-foreground">اضغط لاختيار الملفات</span>
-              <input type="file" multiple className="hidden" onChange={(e) => upload(e.target.files)} />
-            </label>
+        <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="grid cursor-pointer place-items-center gap-2 rounded-xl border border-dashed border-border px-6 py-10 text-center hover:bg-muted">
+                {uploading ? (
+                  <Loader2 className="size-6 animate-spin text-primary" />
+                ) : (
+                  <UploadCloud className="size-6 text-muted-foreground" />
+                )}
+                <span className="text-[13px] text-muted-foreground">اختر صورًا أو ملفات من الجهاز</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  onChange={(e) => upload(e.target.files)}
+                />
+              </label>
+              <label className="grid cursor-pointer place-items-center gap-2 rounded-xl border border-dashed border-border px-6 py-10 text-center hover:bg-muted">
+                <Camera className="size-6 text-muted-foreground" />
+                <span className="text-[13px] text-muted-foreground">التقاط صورة بالكاميرا</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => upload(e.target.files)}
+                />
+              </label>
+            </div>
             <ul className="divide-y divide-border rounded-xl border border-border">
               {(attachments.data ?? []).map((file) => (
                 <li key={file.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
@@ -687,9 +734,14 @@ function TaskFormPage() {
                 </li>
               ) : null}
             </ul>
-          </div>
-        )}
+        </div>
       </SectionCard>
+
+      {id && nextSend ? (
+        <p className="mx-auto w-fit rounded-lg bg-secondary/70 px-4 py-2 text-center text-[12.5px] text-muted-foreground">
+          {`رسالة التذكير القادمة على واتساب بعد ${remainingLabel(nextSend)} (${new Date(nextSend).toLocaleString("ar-SA")}) — التكرار كل ${intervalLabel(form.priority)} حتى إنهاء المهمة`}
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap items-center justify-center gap-3 pb-4">
         <button
@@ -701,6 +753,32 @@ function TaskFormPage() {
           {save.isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
           {id ? "حفظ التعديلات" : "حفظ المهمة"}
         </button>
+        {id ? (
+          <button
+            type="button"
+            onClick={() => sendTask.mutate()}
+            disabled={sendTask.isPending || assignees.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-[13.5px] font-bold text-primary disabled:opacity-60"
+          >
+            {sendTask.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+            إرسال المهمة على واتساب
+          </button>
+        ) : null}
+        {id ? (
+          <button
+            type="button"
+            onClick={() => completeTask.mutate()}
+            disabled={completeTask.isPending}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-[13.5px] font-bold text-success disabled:opacity-60"
+          >
+            {completeTask.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Check className="size-4" />
+            )}
+            المهمة خلصت
+          </button>
+        ) : null}
         <Link
           to="/tasks"
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-[13.5px] font-semibold"

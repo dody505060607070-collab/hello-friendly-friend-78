@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import "leaflet/dist/leaflet.css";
 
 import type { PublicProperty } from "@/lib/site-data";
 
@@ -15,7 +14,7 @@ const filters = [
 ] as const;
 
 const colors: Record<string, string> = {
-  sale: "#F59E0B",
+  sale: "var(--map-sale)",
   rent: "var(--primary)",
 };
 
@@ -28,7 +27,7 @@ function normalizePurpose(p?: string | null): "sale" | "rent" {
 export function PropertyMap({
   properties,
   title = "العقارات على الخريطة",
-  description = "اضغط على أي نقطة لعرض تفاصيل العقار — الأصفر للبيع والأزرق للإيجار.",
+  description = "اضغط على أي نقطة لعرض تفاصيل العقار — الرمادي للبيع والأحمر للإيجار.",
 }: {
   properties: MapProperty[] | undefined;
   title?: string;
@@ -53,7 +52,7 @@ export function PropertyMap({
 
   useEffect(() => {
     let cancelled = false;
-    void import("leaflet").then((mod) => {
+    void Promise.all([import("leaflet/dist/leaflet.css"), import("leaflet")]).then(([, mod]) => {
       if (!cancelled) setLeaflet(mod);
     });
     return () => {
@@ -65,18 +64,17 @@ export function PropertyMap({
     if (!leaflet || !containerRef.current) return;
     const L = leaflet;
     if (!mapRef.current) {
-      const map = L.map(containerRef.current, { scrollWheelZoom: false, zoomControl: false }).setView(
+      const map = L.map(containerRef.current, { scrollWheelZoom: true, zoomControl: false }).setView(
         [26.3536, 43.9667],
         11,
       );
+      setTimeout(() => map.invalidateSize(), 200);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap",
         maxZoom: 19,
       }).addTo(map);
       L.control.zoom({ position: "bottomleft" }).addTo(map);
       L.control.scale({ position: "bottomright", imperial: false }).addTo(map);
-      map.on("click", () => map.scrollWheelZoom.enable());
-      map.on("mouseout", () => map.scrollWheelZoom.disable());
       mapRef.current = map;
       layerRef.current = L.layerGroup().addTo(map);
 
@@ -99,7 +97,7 @@ export function PropertyMap({
         iconAnchor: [20, 50],
         popupAnchor: [0, -46],
         html: `<div class="mithra-marker-pin" style="--marker-color:${color};display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35))">
-          <div style="background:${color};border:2px solid #fff;border-radius:999px;width:36px;height:36px;display:flex;align-items:center;justify-content:center">
+          <div style="background:${color};border:2px solid #fff;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/>
             </svg>
@@ -178,10 +176,12 @@ export function PropertyMap({
         <span>{points.length} عقار على الخريطة</span>
       </div>
 
-      <div
-        ref={containerRef}
-        className="h-[380px] w-full overflow-hidden rounded-2xl border border-border shadow-float sm:h-[480px]"
-      />
+      <div className="relative h-[420px] w-full overflow-hidden rounded-xl border border-border shadow-float sm:h-[520px] lg:h-[600px]">
+        <div
+          ref={containerRef}
+          className="size-full"
+        />
+      </div>
     </section>
   );
 }

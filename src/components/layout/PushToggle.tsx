@@ -26,8 +26,8 @@ export function PushToggle() {
         else if (msg) toast.error(msg);
       }}
       className={cn(
-        "grid size-9 place-items-center rounded-full transition-colors hover:bg-accent",
-        active ? "text-primary" : "text-muted-foreground hover:text-accent-foreground",
+        "grid size-9 place-items-center rounded-full transition-colors hover:bg-primary-foreground/15",
+        active ? "text-secondary" : "text-primary-foreground/80 hover:text-primary-foreground",
       )}
       aria-label="تفعيل إشعارات الهاتف"
       title={active ? "إشعارات الهاتف مفعّلة" : "تفعيل إشعارات الهاتف"}

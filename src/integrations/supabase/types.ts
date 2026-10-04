@@ -211,6 +211,39 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_job_state: {
+        Row: {
+          consecutive_failures: number
+          job_name: string
+          last_error: string | null
+          last_finished_at: string | null
+          last_started_at: string | null
+          lease_until: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          consecutive_failures?: number
+          job_name: string
+          last_error?: string | null
+          last_finished_at?: string | null
+          last_started_at?: string | null
+          lease_until?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          consecutive_failures?: number
+          job_name?: string
+          last_error?: string | null
+          last_finished_at?: string | null
+          last_started_at?: string | null
+          lease_until?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       backup_runs: {
         Row: {
           created_at: string
@@ -1472,6 +1505,7 @@ export type Database = {
           result: string
           sent_by: string | null
           sent_by_system: boolean
+          task_id: string | null
           unit_id: string | null
           updated_at: string
         }
@@ -1491,6 +1525,7 @@ export type Database = {
           result?: string
           sent_by?: string | null
           sent_by_system?: boolean
+          task_id?: string | null
           unit_id?: string | null
           updated_at?: string
         }
@@ -1510,6 +1545,7 @@ export type Database = {
           result?: string
           sent_by?: string | null
           sent_by_system?: boolean
+          task_id?: string | null
           unit_id?: string | null
           updated_at?: string
         }
@@ -1533,6 +1569,13 @@ export type Database = {
             columns: ["payment_id"]
             isOneToOne: false
             referencedRelation: "contract_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_log_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
           {
@@ -1610,6 +1653,7 @@ export type Database = {
       opportunities: {
         Row: {
           assigned_to: string | null
+          close_probability: number
           close_reason: string | null
           contact_id: string | null
           contract_id: string | null
@@ -1628,6 +1672,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          close_probability?: number
           close_reason?: string | null
           contact_id?: string | null
           contract_id?: string | null
@@ -1646,6 +1691,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          close_probability?: number
           close_reason?: string | null
           contact_id?: string | null
           contract_id?: string | null
@@ -2486,6 +2532,9 @@ export type Database = {
           cancelled_at: string | null
           cancelled_by: string | null
           contact_id: string | null
+          contract_id: string | null
+          converted_at: string | null
+          converted_by: string | null
           created_at: string
           created_by: string | null
           employee_id: string | null
@@ -2503,6 +2552,9 @@ export type Database = {
           cancelled_at?: string | null
           cancelled_by?: string | null
           contact_id?: string | null
+          contract_id?: string | null
+          converted_at?: string | null
+          converted_by?: string | null
           created_at?: string
           created_by?: string | null
           employee_id?: string | null
@@ -2520,6 +2572,9 @@ export type Database = {
           cancelled_at?: string | null
           cancelled_by?: string | null
           contact_id?: string | null
+          contract_id?: string | null
+          converted_at?: string | null
+          converted_by?: string | null
           created_at?: string
           created_by?: string | null
           employee_id?: string | null
@@ -2539,6 +2594,13 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
             referencedColumns: ["id"]
           },
           {
@@ -2844,12 +2906,64 @@ export type Database = {
           },
         ]
       }
+      task_reminder_state: {
+        Row: {
+          created_at: string
+          id: string
+          last_error: string | null
+          last_sent_at: string | null
+          next_send_at: string
+          sent_count: number
+          task_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_sent_at?: string | null
+          next_send_at?: string
+          sent_count?: number
+          task_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_sent_at?: string | null
+          next_send_at?: string
+          sent_count?: number
+          task_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_reminder_state_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_reminder_state_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           approved_at: string | null
           approved_by: string | null
           assigned_by: string | null
           contact_id: string | null
+          contract_id: string | null
           created_at: string
           details: string | null
           due_date: string | null
@@ -2873,6 +2987,7 @@ export type Database = {
           approved_by?: string | null
           assigned_by?: string | null
           contact_id?: string | null
+          contract_id?: string | null
           created_at?: string
           details?: string | null
           due_date?: string | null
@@ -2896,6 +3011,7 @@ export type Database = {
           approved_by?: string | null
           assigned_by?: string | null
           contact_id?: string | null
+          contract_id?: string | null
           created_at?: string
           details?: string | null
           due_date?: string | null
@@ -2927,6 +3043,13 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
             referencedColumns: ["id"]
           },
           {
@@ -3102,11 +3225,122 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acquire_automation_lease: {
+        Args: { _job_name: string; _lease_seconds?: number }
+        Returns: boolean
+      }
       bootstrap_current_user: { Args: never; Returns: undefined }
       can_view_activity: {
         Args: { _activity_id: string; _user_id: string }
         Returns: boolean
       }
+      cancel_reservation: {
+        Args: { _reservation_id: string }
+        Returns: {
+          cancelled_at: string | null
+          cancelled_by: string | null
+          contact_id: string | null
+          contract_id: string | null
+          converted_at: string | null
+          converted_by: string | null
+          created_at: string
+          created_by: string | null
+          employee_id: string | null
+          ends_at: string
+          extended_count: number
+          id: string
+          notes: string | null
+          property_id: string | null
+          starts_at: string
+          status: string
+          unit_id: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reservations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      convert_reservation_to_contract: {
+        Args: { _reservation_id: string }
+        Returns: string
+      }
+      create_reservation: {
+        Args: {
+          _contact_id?: string
+          _duration_hours?: number
+          _employee_id: string
+          _notes?: string
+          _property_id: string
+        }
+        Returns: {
+          cancelled_at: string | null
+          cancelled_by: string | null
+          contact_id: string | null
+          contract_id: string | null
+          converted_at: string | null
+          converted_by: string | null
+          created_at: string
+          created_by: string | null
+          employee_id: string | null
+          ends_at: string
+          extended_count: number
+          id: string
+          notes: string | null
+          property_id: string | null
+          starts_at: string
+          status: string
+          unit_id: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reservations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      expire_reservations: { Args: never; Returns: number }
+      extend_reservation: {
+        Args: { _reservation_id: string }
+        Returns: {
+          cancelled_at: string | null
+          cancelled_by: string | null
+          contact_id: string | null
+          contract_id: string | null
+          converted_at: string | null
+          converted_by: string | null
+          created_at: string
+          created_by: string | null
+          employee_id: string | null
+          ends_at: string
+          extended_count: number
+          id: string
+          notes: string | null
+          property_id: string | null
+          starts_at: string
+          status: string
+          unit_id: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reservations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      finish_automation_lease: {
+        Args: { _error?: string; _job_name: string }
+        Returns: undefined
+      }
+      get_public_properties: {
+        Args: { _code?: string; _limit?: number; _purpose?: string }
+        Returns: Json
+      }
+      get_public_settings: { Args: never; Returns: Json }
       has_perm: {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
@@ -3126,7 +3360,7 @@ export type Database = {
       user_org: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
-      app_role: "super_admin" | "employee"
+      app_role: "super_admin" | "employee" | "owner"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3254,7 +3488,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["super_admin", "employee"],
+      app_role: ["super_admin", "employee", "owner"],
     },
   },
 } as const

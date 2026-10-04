@@ -165,6 +165,9 @@ export type EjarParsed = {
   tenant_rep_name: string;
   tenant_rep_national_id: string;
   tenant_rep_phone: string;
+  owner_rep_name?: string;
+  owner_rep_national_id?: string;
+  owner_rep_phone?: string;
   broker_entity_name: string;
   broker_name: string;
   broker_phone: string;
@@ -200,11 +203,9 @@ export function parseEjarContract(rawText: string): EjarParsed | null {
 
   const put = (key: string, value: string) => {
     if (section === "units") {
-      if (key === "Unit Type" || !currentUnit) {
-        if (key === "Unit Type") {
-          currentUnit = {};
-          unitBuckets.push(currentUnit);
-        } else return;
+      if (!currentUnit || (key === "Unit No." && currentUnit["Unit No."])) {
+        currentUnit = {};
+        unitBuckets.push(currentUnit);
       }
       if (currentUnit[key] === undefined) currentUnit[key] = value;
       return;
@@ -215,7 +216,10 @@ export function parseEjarContract(rawText: string): EjarParsed | null {
 
   for (let i = 0; i < parts.length; i++) {
     const p = parts[i]!;
-    const sec = SECTION_OF[p];
+    const sectionLabel = Object.keys(SECTION_OF)
+      .sort((a, b) => b.length - a.length)
+      .find((label) => p === label || p.endsWith(label));
+    const sec = sectionLabel ? SECTION_OF[sectionLabel] : undefined;
     if (sec) {
       section = sec;
       if (sec === "units") currentUnit = null;
@@ -296,6 +300,7 @@ export function parseEjarContract(rawText: string): EjarParsed | null {
     .slice(-1)[0] ?? "";
 
 
+  const ownerCompanyName = g("lessor", "Company name/Founder");
   const companyName = g("tenant", "Company name/Founder");
   const isCompany = Boolean(companyName || g("tenant", "CR No."));
   const propertyType = g("property", "Property Type");
@@ -311,10 +316,10 @@ export function parseEjarContract(rawText: string): EjarParsed | null {
     end_date: contract("Tenancy End Date"),
     city: contract("Contract Sealing Location"),
     district,
-    owner_name: g("lessor", "Name"),
-    owner_national_id: g("lessor", "ID No."),
-    owner_phone: g("lessor", "Mobile No.").replace(/\s/g, ""),
-    owner_email: g("lessor", "Email").replace(/\s/g, ""),
+    owner_name: ownerCompanyName || g("lessor", "Name") || g("lessorRep", "Name"),
+    owner_national_id: g("lessor", "CR No.") || g("lessor", "Unified Number") || g("lessor", "ID No.") || g("lessorRep", "ID No."),
+    owner_phone: (g("lessor", "Mobile No.") || g("lessorRep", "Mobile No.")).replace(/\s/g, ""),
+    owner_email: (g("lessor", "Email") || g("lessorRep", "Email")).replace(/\s/g, ""),
     tenant_is_company: isCompany,
     tenant_name: isCompany ? companyName : g("tenant", "Name"),
     tenant_national_id: isCompany ? "" : g("tenant", "ID No."),
@@ -324,6 +329,9 @@ export function parseEjarContract(rawText: string): EjarParsed | null {
     tenant_rep_name: g("tenantRep", "Name"),
     tenant_rep_national_id: g("tenantRep", "ID No."),
     tenant_rep_phone: g("tenantRep", "Mobile No.").replace(/\s/g, ""),
+    owner_rep_name: g("lessorRep", "Name"),
+    owner_rep_national_id: g("lessorRep", "ID No."),
+    owner_rep_phone: g("lessorRep", "Mobile No.").replace(/\s/g, ""),
     broker_entity_name: g("broker", "Brokerage Entity Name"),
     broker_name: g("broker", "Broker Name"),
     broker_phone: g("broker", "Mobile No.").replace(/\s/g, ""),

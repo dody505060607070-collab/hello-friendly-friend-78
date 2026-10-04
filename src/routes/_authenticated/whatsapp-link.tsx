@@ -10,12 +10,12 @@ import { getWhatsAppLinkStatus, unlinkWhatsApp } from "@/lib/whatsapp.functions"
 export const Route = createFileRoute("/_authenticated/whatsapp-link")({
   head: () => ({
     meta: [
-      { title: "ربط واتساب | مثراء" },
+      { title: "ربط واتساب | مثراء العقارية" },
       {
         name: "description",
         content: "ربط رقم واتساب بالنظام عبر رمز QR لإرسال التذكيرات مباشرة من الرقم.",
       },
-      { property: "og:title", content: "ربط واتساب | مثراء" },
+      { property: "og:title", content: "ربط واتساب | مثراء العقارية" },
       {
         property: "og:description",
         content: "ربط رقم واتساب بالنظام عبر رمز QR لإرسال التذكيرات مباشرة من الرقم.",
@@ -35,20 +35,7 @@ function WhatsAppLinkPage() {
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["whatsapp-link-status"],
-    queryFn: async () => {
-      try {
-        return await fetchStatus();
-      } catch (e) {
-        return {
-          configured: true,
-          connection: "closed" as const,
-          qr: null,
-          me: null,
-          error: `تعذر الوصول للخادم: ${(e as Error).message}`,
-        };
-      }
-    },
-    retry: false,
+    queryFn: () => fetchStatus(),
     refetchInterval: 5000,
   });
 
@@ -82,8 +69,9 @@ function WhatsAppLinkPage() {
           <div className="space-y-3 text-sm">
             <p className="font-semibold text-destructive">خدمة الربط غير مُفعّلة بعد</p>
             <p className="text-muted-foreground">
-              أضف بيانات خدمة واتساب السحابية في إعدادات النظام: رابط الخدمة ومفتاحها واسم الاتصال.
-              بعد حفظها سيظهر رمز QR هنا مباشرة، وتمسحه من جوالك مرة واحدة فقط.
+              أضف إعدادات خدمة واتساب في النظام: <code>WHATSAPP_API_URL</code> و
+              <code>WHATSAPP_API_KEY</code> و<code>WHATSAPP_INSTANCE</code>. بعدها سيظهر رمز QR هنا
+              مباشرة.
             </p>
           </div>
         ) : connected ? (
@@ -142,8 +130,7 @@ function WhatsAppLinkPage() {
       </section>
 
       <p className="text-[12px] text-muted-foreground">
-        ملاحظة: الربط يتم عبر جلسة واتساب بمسح رمز QR. إن انقطع الاتصال، أعد المسح من هنا؛ ولا
-        يُرسل النظام أي رسالة تلقائية — كل إرسال يتم بضغطة يدوية.
+        ملاحظة: هذا ربط عبر واتساب ويب. إن انقطع الاتصال، لن تُرسل الرسائل حتى يُعاد مسح رمز QR.
       </p>
     </div>
   );

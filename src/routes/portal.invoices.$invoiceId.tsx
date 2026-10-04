@@ -6,9 +6,9 @@ import { getPortalInvoice } from "@/lib/portal.functions";
 export const Route = createFileRoute("/portal/invoices/$invoiceId")({
   head: () => ({
     meta: [
-      { title: "عرض الفاتورة | بوابة عميل مثراء" },
+      { title: "عرض الفاتورة | بوابة عميل مثراء العقارية" },
       { name: "description", content: "تفاصيل الفاتورة وبنودها والإجمالي شامل الضريبة." },
-      { property: "og:title", content: "عرض الفاتورة | بوابة عميل مثراء" },
+      { property: "og:title", content: "عرض الفاتورة | بوابة عميل مثراء العقارية" },
       { property: "og:description", content: "تفاصيل الفاتورة وبنودها والإجمالي شامل الضريبة." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -161,7 +161,7 @@ function InvoiceView() {
             </div>
             <div>
               <p className="font-bold text-foreground">البريد الإلكتروني</p>
-              <p dir="ltr">info@mithra.sa</p>
+              <p dir="ltr">info@al-rashudi.com</p>
             </div>
             <div>
               <p className="font-bold text-foreground">العملة</p>

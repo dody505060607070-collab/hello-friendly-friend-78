@@ -44,15 +44,24 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
-/** ترويسات أمان أساسية على كل استجابة. */
+/** ترويسات حماية تُضاف لكل استجابة. */
+const SECURITY_HEADERS: Record<string, string> = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "SAMEORIGIN",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(self), payment=(), usb=()",
+  "Cross-Origin-Opener-Policy": "same-origin",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+  "X-Permitted-Cross-Domain-Policies": "none",
+};
+
 function withSecurityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
-  headers.set("X-Content-Type-Options", "nosniff");
-  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  headers.set("X-DNS-Prefetch-Control", "off");
-  headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-  headers.set("Permissions-Policy", "geolocation=(self), microphone=(), camera=(), payment=()");
-  headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    if (!headers.has(key)) headers.set(key, value);
+  }
+  headers.delete("X-Powered-By");
+  headers.delete("Server");
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

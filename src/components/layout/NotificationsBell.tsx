@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Bell, CheckCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { useCurrentUser } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +41,30 @@ export function NotificationsBell() {
 
   const unread = (list.data ?? []).filter((n) => !n.is_read).length;
 
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`notifications-${userId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` }, (payload) => {
+        const notification = payload.new as Notif;
+        void qc.invalidateQueries({ queryKey: ["my-notifications", userId] });
+        void qc.invalidateQueries({ queryKey: ["notifications-center"] });
+        toast(notification.title, { description: notification.body ?? undefined });
+        try {
+          const AudioContextCtor = window.AudioContext ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+          if (AudioContextCtor) {
+            const context = new AudioContextCtor(); const oscillator = context.createOscillator(); const gain = context.createGain();
+            oscillator.frequency.setValueAtTime(880, context.currentTime); oscillator.frequency.exponentialRampToValueAtTime(1320, context.currentTime + 0.18);
+            gain.gain.setValueAtTime(0.22, context.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.45);
+            oscillator.connect(gain); gain.connect(context.destination); oscillator.start(); oscillator.stop(context.currentTime + 0.45);
+          }
+        } catch { /* قد يمنع المتصفح الصوت قبل أول تفاعل */ }
+        if ("Notification" in window && Notification.permission === "granted") new Notification(notification.title, { body: notification.body ?? "لديك إشعار جديد" });
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [qc, userId]);
+
   const markRead = useMutation({
     mutationFn: async (id?: string) => {
       const q = supabase.from("notifications").update({ is_read: true }).eq("user_id", userId!);
@@ -54,7 +79,7 @@ export function NotificationsBell() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        className="relative grid size-9 place-items-center rounded-full text-primary-foreground/80 transition-colors hover:bg-primary-foreground/15 hover:text-primary-foreground"
         aria-label="الإشعارات"
       >
         <Bell className="size-[18px]" />

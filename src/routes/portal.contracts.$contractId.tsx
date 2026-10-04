@@ -1,14 +1,20 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { PenLine } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
+import { SignaturePad } from "@/components/kit/SignaturePad";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import { getPortalContract } from "@/lib/portal.functions";
 
 export const Route = createFileRoute("/portal/contracts/$contractId")({
   head: () => ({
     meta: [
-      { title: "جدول الأقساط | بوابة عميل مثراء" },
+      { title: "جدول الأقساط | بوابة عميل مثراء العقارية" },
       { name: "description", content: "تفاصيل العقد وجدول الأقساط والمدفوع والمتبقي." },
-      { property: "og:title", content: "جدول الأقساط | بوابة عميل مثراء" },
+      { property: "og:title", content: "جدول الأقساط | بوابة عميل مثراء العقارية" },
       { property: "og:description", content: "تفاصيل العقد وجدول الأقساط والمدفوع والمتبقي." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -23,13 +29,16 @@ const money = (v: number) => Number(v ?? 0).toLocaleString("en-US");
 const statusChip: Record<string, { label: string; cls: string }> = {
   paid: { label: "مدفوعة", cls: "bg-emerald-50 text-emerald-700" },
   partial: { label: "مدفوع جزئياً", cls: "bg-blue-50 text-blue-700" },
-  overdue: { label: "متأخر", cls: "bg-red-50 text-red-700" },
+  overdue: { label: "متأخر", cls: "bg-destructive/10 text-destructive" },
   pending: { label: "قادمة", cls: "bg-amber-50 text-amber-700" },
   cancelled: { label: "ملغاة", cls: "bg-muted text-muted-foreground" },
 };
 
 function ContractDetail() {
   const { contractId } = Route.useParams();
+  const queryClient = useQueryClient();
+  const [signature, setSignature] = useState("");
+  const [signerName, setSignerName] = useState("");
   const { data, isLoading, error } = useQuery({
     queryKey: ["portal-contract", contractId],
     queryFn: () => getPortalContract({ data: { contractId } }),
@@ -53,6 +62,8 @@ function ContractDetail() {
   };
   const totalDue = data.payments.reduce((s, p) => s + Number(p.amount_due), 0);
   const totalPaid = data.payments.reduce((s, p) => s + Number(p.amount_paid), 0);
+  const signatures = useQuery({ queryKey: ["portal-contract-signatures", contractId], queryFn: async () => { const { data: rows, error: signatureError } = await supabase.from("contract_signatures").select("id,signer_name,image_data,signed_at").eq("contract_id", contractId).order("signed_at", { ascending: false }); if (signatureError) throw signatureError; return rows ?? []; } });
+  const sign = useMutation({ mutationFn: async () => { if (!signerName.trim() || !signature) throw new Error("اكتب اسمك وأضف توقيعك"); const { data: auth } = await supabase.auth.getUser(); if (!auth.user) throw new Error("يجب تسجيل الدخول"); const { error: signError } = await supabase.from("contract_signatures").insert({ contract_id: contractId, signer_name: signerName.trim(), signer_role: "tenant", image_data: signature, created_by: auth.user.id }); if (signError) throw signError; }, onSuccess: () => { setSignature(""); setSignerName(""); void queryClient.invalidateQueries({ queryKey: ["portal-contract-signatures", contractId] }); toast.success("تم توقيع العقد بنجاح"); }, onError: (signError) => toast.error(signError instanceof Error ? signError.message : "تعذّر التوقيع") });
 
   return (
     <div className="space-y-5">
@@ -125,7 +136,7 @@ function ContractDetail() {
           <span className="flex flex-wrap items-center gap-3 text-[11px] font-medium text-muted-foreground">
             <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-emerald-500" /> مدفوع</span>
             <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-blue-500" /> مدفوع جزئياً</span>
-            <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-red-500" /> متأخر</span>
+            <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-destructive" /> متأخر</span>
             <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-amber-500" /> قادم</span>
           </span>
         </header>
@@ -147,7 +158,7 @@ function ContractDetail() {
                 const chip = statusChip[p.status] ?? statusChip["pending"]!;
                 const rest = Number(p.amount_due) - Number(p.amount_paid);
                 return (
-                  <tr key={p.id} className={p.status === "paid" ? "bg-emerald-50/40" : rest > 0 && p.due_date < new Date().toISOString().slice(0, 10) ? "bg-red-50/40" : ""}>
+                  <tr key={p.id} className={p.status === "paid" ? "bg-success/5" : rest > 0 && p.due_date < new Date().toISOString().slice(0, 10) ? "bg-destructive/5" : ""}>
                     <td className="px-4 py-3">{p.payment_number}</td>
                     <td className="px-4 py-3">{p.due_date}</td>
                     <td className="px-4 py-3">{money(Number(p.amount_due))}</td>
@@ -166,6 +177,14 @@ function ContractDetail() {
               ) : null}
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-card p-5">
+        <h2 className="flex items-center gap-2 text-sm font-bold"><PenLine className="size-4 text-primary" />التوقيع الإلكتروني</h2>
+        <div className="mt-4 grid gap-5 lg:grid-cols-2">
+          <div className="space-y-3"><label className="grid gap-1 text-xs font-semibold">اسم الموقّع<input className="h-10 rounded-lg border border-input bg-background px-3" value={signerName} onChange={(event) => setSignerName(event.target.value)} /></label><SignaturePad onChange={setSignature} /><Button onClick={() => sign.mutate()} disabled={sign.isPending || !signature}>توقيع العقد</Button></div>
+          <div className="space-y-2">{(signatures.data ?? []).map((row) => <article key={row.id} className="rounded-lg border border-border p-3"><img src={row.image_data} alt={`توقيع ${row.signer_name}`} className="h-20 w-full object-contain" /><p className="mt-1 text-xs font-bold">{row.signer_name}</p><p className="text-[11px] text-muted-foreground">{new Date(row.signed_at).toLocaleString("ar-SA")}</p></article>)}{!signatures.data?.length ? <p className="text-xs text-muted-foreground">لم يُوقّع هذا العقد بعد.</p> : null}</div>
         </div>
       </section>
     </div>

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
 
-const BASE = "https://friendly-fellow-kit.lovable.app";
+const BASE = "https://www.mithra.work";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -35,7 +35,7 @@ const sections = [
   },
   {
     title: "الطلبات والحجوزات",
-    body: "إرسال طلب عرض أو توفير عقار لا يُعدّ حجزًا أو التزامًا تعاقديًا، ويُعتمد الطلب بعد تأكيد فريق مثراء والاتفاق على الشروط.",
+    body: "إرسال طلب عرض أو توفير عقار لا يُعدّ حجزًا أو التزامًا تعاقديًا، ويُعتمد الطلب بعد تأكيد فريق مثراء العقارية والاتفاق على الشروط.",
   },
   {
     title: "العقود والمبالغ",

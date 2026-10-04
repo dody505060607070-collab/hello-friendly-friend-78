@@ -1,12 +1,31 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
+import { supabase } from "@/integrations/supabase/client";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-3-flash-preview";
+const GATEWAY = "https://ai.gateway.lovable.dev/v1/responses";
+const MODEL = "openai/gpt-6-astra";
 
 type Part = { type: "input_text"; text: string } | { type: "input_file"; filename: string; file_data: string };
 type Item = { role: "system" | "user" | "assistant"; content: Part[] };
+
+/**
+ * The Responses API only accepts `output_text` parts on assistant items;
+ * `input_text` on an assistant turn fails with 400 invalid_value.
+ */
+function normalize(input: Item[]) {
+  return input.map((item) => ({
+    role: item.role,
+    content: item.content.map((part) =>
+      item.role === "assistant" && part.type === "input_text"
+        ? { type: "output_text", text: part.text }
+        : part,
+    ),
+  }));
+}
+
+const FALLBACK_MODELS = [MODEL];
 
 /** يحوّل عناصر Responses إلى نص/أجزاء صالحة لمزوّدي الاحتياط. */
 function toPlainMessages(input: Item[]) {
@@ -48,7 +67,7 @@ type CallOpts = { json?: boolean; fast?: boolean; maxTokens?: number };
 
 /** المزوّد الاحتياطي الثاني: Gemini (يدعم الملفات). */
 async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
-  const keys = [process.env["GEMINI_API_KEY"], process.env["GEMINI_API_KEY_BACKUP"]].filter(
+  const keys = [process.env["GEMINI_API_KEY"], process.env["GEMINI_BACKUP_API_KEY"]].filter(
     (k): k is string => Boolean(k),
   );
   if (!keys.length) throw new Error("مفاتيح Gemini غير مهيأة.");
@@ -77,7 +96,7 @@ async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
   let last = "";
   for (const model of models) {
     for (const key of keys) {
-      for (let attempt = 0; attempt < 3; attempt += 1) {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
           {
@@ -99,8 +118,8 @@ async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
         if (!res.ok) {
           last = `Gemini ${res.status}: ${(await res.text()).slice(0, 200)}`;
           // 503/429 مؤقتة: أعد المحاولة مرة واحدة ثم انتقل للمفتاح/النموذج التالي
-          if ((res.status === 503 || res.status === 429 || res.status >= 500) && attempt < 2) {
-            await new Promise((r) => setTimeout(r, 1200 * (attempt + 1)));
+          if ((res.status === 503 || res.status === 429) && attempt === 0) {
+            await new Promise((r) => setTimeout(r, 1500));
             continue;
           }
           break;
@@ -123,77 +142,91 @@ async function callGemini(input: Item[], opts: CallOpts = {}): Promise<string> {
 
 
 /**
- * سلسلة تعويض المزوّدين، تُقرأ المفاتيح من process.env داخل كل معالج:
- * (1) Gemini بمفتاحه الأساسي ثم الاحتياطي إن وُجد، (2) Groq، (3) بوابة Lovable
- * كملاذ أخير متاح دائمًا. أي مزوّد بلا مفتاح أو يفشل يُتخطّى دون تسريب تفاصيله.
+ * ترتيب المزوّدين: Google Gemini أولًا، ثم Groq، وبوابة Lovable هي الملاذ الأخير دائمًا.
+ * أي مزوّد بمفتاح غير صالح يُتجاوز تلقائيًا.
  */
 async function callGateway(input: Item[], opts: CallOpts = {}): Promise<string> {
   const errors: string[] = [];
-  if (process.env["GEMINI_API_KEY"] || process.env["GEMINI_API_KEY_BACKUP"]) {
-    try {
-      return await callGemini(input, opts);
-    } catch (e) {
-      errors.push(e instanceof Error ? e.message : String(e));
-    }
+  try {
+    return await callGemini(input, opts);
+  } catch (e) {
+    errors.push(e instanceof Error ? e.message : String(e));
   }
-  if (process.env["GROQ_API_KEY"]) {
-    try {
-      return await callGroq(input, opts);
-    } catch (e) {
-      errors.push(e instanceof Error ? e.message : String(e));
-    }
+  try {
+    return await callGroq(input, opts);
+  } catch (e) {
+    errors.push(e instanceof Error ? e.message : String(e));
   }
   if (process.env["LOVABLE_API_KEY"]) {
     try {
-      return await callLovable(input, opts);
+      return await callLovable(input);
     } catch (e) {
       errors.push(e instanceof Error ? e.message : String(e));
     }
   }
-  throw new Error("تعذّر الوصول للمساعد الذكي حاليًا، يرجى المحاولة لاحقًا أو التواصل معنا مباشرة.");
+  throw new Error(`تعذّر الوصول لأي مزوّد ذكاء اصطناعي. (${errors.join(" | ").slice(0, 400)})`);
 }
 
-async function callLovable(input: Item[], opts: CallOpts = {}): Promise<string> {
+
+
+async function callLovable(input: Item[]): Promise<string> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("خدمة الذكاء الاصطناعي غير مهيأة على الخادم.");
 
-  const plain = toPlainMessages(input);
-  if (plain.some((m) => m.files.length)) throw new Error("بوابة Lovable لا تدعم الملفات هنا.");
+  const payloadInput = normalize(input);
+  let res: Response | null = null;
+  let lastBody = "";
+  let lastStatus = 0;
 
-  const res = await fetch(GATEWAY, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: plain.map((m) => ({ role: m.role, content: m.text })),
-      temperature: 0,
-      ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
-      ...(opts.json ? { response_format: { type: "json_object" } } : {}),
-    }),
-  });
-  if (!res.ok) throw new Error(`Lovable ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  const text = json.choices?.[0]?.message?.content?.trim();
-  if (!text) throw new Error("Lovable: رد فارغ.");
-  return text;
+  for (const model of FALLBACK_MODELS) {
+    const attempt = await fetch(GATEWAY, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+        "Lovable-API-Key": key,
+      },
+      body: JSON.stringify({ model, input: payloadInput, store: false }),
+    });
+    if (attempt.ok) {
+      res = attempt;
+      break;
+    }
+    lastStatus = attempt.status;
+    lastBody = await attempt.text();
+    // 400 = بنية الطلب خاطئة، تغيير النموذج لن يفيد.
+    if (attempt.status === 400 || attempt.status === 401) break;
+  }
+
+  if (!res) throw new Error(`Lovable ${lastStatus}: ${lastBody.slice(0, 200)}`);
+
+  const json = (await res.json()) as {
+    output_text?: string;
+    output?: { content?: { text?: string }[] }[];
+  };
+  if (typeof json.output_text === "string" && json.output_text.trim()) return json.output_text;
+  const parts: string[] = [];
+  for (const item of json.output ?? [])
+    for (const c of item.content ?? []) if (typeof c.text === "string") parts.push(c.text);
+  const joined = parts.join("\n").trim();
+  if (!joined) throw new Error("Lovable: رد فارغ.");
+  return joined;
 }
 
 const SCOPE_RULE = `نطاقك محصور في العقارات وأعمال شركة مثراء العقارية (عقارات، ملاك، مستأجرون، عقود، إيجار، بيع، فواتير، مدفوعات، تذكيرات، مهام، عملاء، تقارير، سوق العقار في السعودية).
 إذا سُئلت عن أي موضوع خارج هذا النطاق (طبخ، رياضة، برمجة عامة، سياسة، صحة… إلخ) فاعتذر بلطف بجملة واحدة مثل: «أنا مساعد مختص بالعقارات فقط، كيف أساعدك في عقارك أو طلبك؟» ولا تُجب عن الموضوع الخارجي إطلاقًا.`;
 
-const SYSTEM_PROMPT = `أنت "مساعد مثراء" — مساعد ذكي داخل لوحة تحكم شركة مثراء العقارية في بريدة، السعودية.
+const SYSTEM_PROMPT = `أنت "مساعد مثراء العقارية" — مساعد ذكي داخل لوحة تحكم شركة مثراء العقارية في بريدة، السعودية.
 تعرف أقسام اللوحة: لوحة التحكم، العقارات، الطلبات (عرض وتوفير عقار)، الحجوزات، الملاك، العقود واستيراد PDF، الفواتير، التذكيرات، المهام، CRM (العملاء/الفرص/الأنشطة/التقارير)، إعدادات الموقع، الموظفون والصلاحيات، السجلات.
 ${SCOPE_RULE}
 أجب دائمًا بالعربية الفصحى المبسطة، بإجابات قصيرة عملية ومرتبة بنقاط عند الحاجة. إن أرسل المستخدم بيانات مسحوبة من جدول، حللها واشرحها واقترح الخطوة التالية.`;
 
 export const askAdminAi = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: {
-      messages: { role: "user" | "assistant"; content: string }[];
-      context?: string;
-    }) => input,
-  )
+  .inputValidator((input: unknown) => z.object({
+    messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().trim().min(1).max(4000) })).min(1).max(20),
+    context: z.string().max(12000).optional(),
+  }).parse(input))
   .handler(async ({ data, context }) => {
     const { requireUnlocked } = await import("./kill-switch.server");
     await requireUnlocked();
@@ -243,7 +276,11 @@ export const askAdminAi = createServerFn({ method: "POST" })
 
 export const analyzeContractPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { fileName: string; dataUrl?: string; extractedText?: string }) => input)
+  .inputValidator((input: unknown) => z.object({
+    fileName: z.string().trim().min(1).max(255).refine((name) => name.toLowerCase().endsWith(".pdf"), "PDF فقط"),
+    dataUrl: z.string().max(30_000_000).optional(),
+    extractedText: z.string().max(100_000).optional(),
+  }).refine((value) => Boolean(value.dataUrl || value.extractedText), "ملف العقد فارغ").parse(input))
   .handler(async ({ data }) => {
     const { requireUnlocked } = await import("./kill-switch.server");
     await requireUnlocked();
@@ -319,14 +356,9 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
         },
       ];
 
-    // Gemini أسرع مسار؛ وعند ازدحامه نستخدم Groq للنص المستخرج.
-    let text: string;
-    try {
-      text = await callGemini(items, { json: true, fast: true, maxTokens: 3000 });
-    } catch (e) {
-      if (!extractedText) throw e;
-      text = await callGroq(items, { json: true, maxTokens: 3000 });
-    }
+    // يجرّب كل المزوّدين المتاحين بالترتيب بدل الاعتماد على مزوّد واحد قد يكون مفتاحه غير صالح.
+    const text = await callGateway(items, { json: true, fast: true, maxTokens: 3000 });
+
 
 
     const match = text.match(/\{[\s\S]*\}/);
@@ -354,63 +386,65 @@ export const analyzeContractPdf = createServerFn({ method: "POST" })
   });
 
 
-const PUBLIC_PROMPT = `أنت "مساعد مثراء" — مساعد ذكي على الموقع العام لشركة مثراء العقارية في بريدة، السعودية.
-مهمتك مساعدة الزوار: شرح أقسام الموقع (الإيجار، البيع، من نحن، تواصل معنا، اعرض/اطلب عقارك)، توضيح خطوات عرض عقار أو طلب عقار، والإجابة عن أسئلة عامة عن العقارات في بريدة.
-${SCOPE_RULE}
-أجب بالعربية الفصحى المبسطة بإجابات قصيرة ومهذبة.
-أدناه قائمة بالعقارات المتاحة فعليًا على الموقع (منشورة ومرئية) بصيغة JSON. اعتمد عليها فقط عند اقتراح عقارات — لا تخترع عقارات أو أسعارًا غير واردة فيها.
-عند اقتراح أي عقار من القائمة، اذكر اسمه والسعر والمدينة/الحي باختصار، وأرفق رابطه المباشر كما هو نصًا (مثل /properties/CODE) ليتمكن الزائر من فتحه مباشرة.
-إن لم تجد عقارًا مناسبًا في القائمة، وضّح ذلك واقترح على الزائر التواصل عبر صفحة «تواصل معنا» أو الواتساب.`;
+const PUBLIC_PROMPT = `أنت "مساعد مثراء العقارية" — مستشار عقاري ذكي على الموقع العام لشركة مثراء العقارية في بريدة، السعودية.
+افهم احتياج الزائر ثم رشّح له من قائمة العقارات المنشورة المرفقة فقط. استخرج الغرض (إيجار/بيع)، الميزانية، الحي أو المنطقة، ونوع العقار. إذا نقصت معلومة مهمة فاسأل سؤال متابعة واحدًا واضحًا بدل إجابة عامة.
 
-async function fetchPublicListingsContext(): Promise<string> {
-  try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
-      .from("properties")
-      .select("code, name, price_value, price_text, purpose, property_type, city, district, status, is_visible")
-      .eq("is_visible", true)
-      .eq("status", "available")
-      .order("is_featured", { ascending: false })
-      .limit(80);
-    const listings = (data ?? []).map((p) => ({
-      name: p.name,
-      price: p.price_value ?? p.price_text ?? null,
-      purpose: p.purpose,
-      type: p.property_type,
-      location: [p.city, p.district].filter(Boolean).join(" - "),
-      code: p.code,
-      url: `/properties/${p.code}`,
-    }));
-    return JSON.stringify(listings);
-  } catch {
-    return "[]";
-  }
-}
+قواعد الاستجابة:
+1. رشّح حتى 3 عقارات مناسبة، واذكر الاسم والسعر والموقع وسبب ملاءمة كل عقار.
+2. اكتب رابط كل عقار هكذا: [اسم العقار](/properties/CODE)، ولا تخترع عقارًا أو سعرًا أو رابطًا.
+3. إذا لم توجد مطابقة كاملة، اقترح الأقرب واشرح الاختلاف بوضوح.
+4. لا تذكر بيانات داخلية أو أسماء ملاك أو وسطاء.
+5. أجب بالعربية الفصحى المبسطة وبشكل ودود ومختصر.
+6. في نهاية الرد اقترح 2-3 أسئلة متابعة قصيرة بعد الفاصل ---suggestions---، سؤال واحد بكل سطر.
+
+${SCOPE_RULE}`;
 
 export const askPublicAi = createServerFn({ method: "POST" })
-  .inputValidator((input: { messages: { role: "user" | "assistant"; content: string }[] }) => input)
+  .inputValidator((input: unknown) => z.object({
+    messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().trim().min(1).max(2000) })).min(1).max(12),
+  }).parse(input))
   .handler(async ({ data }) => {
     const { requireUnlocked } = await import("./kill-switch.server");
     await requireUnlocked();
+
+    const url = process.env["SUPABASE_URL"];
+    const publishableKey = process.env["SUPABASE_PUBLISHABLE_KEY"];
+    if (!url || !publishableKey) throw new Error("خدمة العقارات غير مهيأة حاليًا.");
+    const inventoryResponse = await fetch(`${url}/rest/v1/rpc/get_public_properties`, {
+      method: "POST",
+      headers: { apikey: publishableKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ _limit: 60 }),
+    });
+    if (!inventoryResponse.ok) throw new Error("تعذّر قراءة العقارات المتاحة حاليًا.");
+    const inventoryData: unknown = await inventoryResponse.json();
+    const inventoryText = (Array.isArray(inventoryData) ? inventoryData : [])
+      .map((row) => {
+        const property = row as Record<string, unknown>;
+        const purpose = property["purpose"] === "rent" ? "إيجار" : "بيع";
+        const price = property["price_text"] ?? property["price_value"] ?? "السعر عند الطلب";
+        return `- [${String(property["name"] ?? "عقار")}](/properties/${encodeURIComponent(String(property["code"] ?? ""))}) | ${String(property["property_type"] ?? "عقار")} | ${purpose} | ${String(property["district"] ?? "")}, ${String(property["city"] ?? "بريدة")} | السعر: ${String(price)} | ${String(property["description"] ?? "").slice(0, 200)}`;
+      })
+      .join("\n") || "لا توجد عقارات منشورة حاليًا.";
+
     const items: Item[] = [
       { role: "system", content: [{ type: "input_text", text: PUBLIC_PROMPT }] },
+      { role: "system", content: [{ type: "input_text", text: `العقارات المنشورة والمتاحة حاليًا:\n${inventoryText.slice(0, 30000)}` }] },
     ];
-    const listingsJson = await fetchPublicListingsContext();
-    items.push({
-      role: "user",
-      content: [
-        {
-          type: "input_text",
-          text: `قائمة العقارات المتاحة حاليًا (JSON):\n${listingsJson.slice(0, 20000)}`,
-        },
-      ],
-    });
-    for (const m of data.messages.slice(-12)) {
+    for (const message of data.messages.slice(-12)) {
       items.push({
-        role: m.role,
-        content: [{ type: "input_text", text: m.content.slice(0, 2000) }],
+        role: message.role,
+        content: [{ type: "input_text", text: message.content.slice(0, 2000) }],
       });
     }
     const text = await callGateway(items);
-    return { text };
+    const [mainText = "", suggestionsPart = ""] = text.split("---suggestions---");
+    return {
+      text: mainText.trim(),
+      suggestions: suggestionsPart
+        .trim()
+        .split("\n")
+        .map((suggestion) => suggestion.replace(/^[-\d.]+\s*/, "").trim())
+        .filter(Boolean)
+        .slice(0, 3),
+    };
   });

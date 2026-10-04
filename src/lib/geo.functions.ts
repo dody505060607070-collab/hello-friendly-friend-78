@@ -1,51 +1,44 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { extractLatLngFromUrl, isShortMapsUrl, type LatLng } from "@/lib/geo";
 
-/**
- * يحلّ إحداثيات نقطة من رابط خرائط جوجل (بما فيها الروابط المختصرة
- * maps.app.goo.gl / goo.gl/maps) عبر تتبّع إعادة التوجيه على الخادم،
- * دون كشف أي مفاتيح خارجية.
- */
-export const resolveMapCoordinates = createServerFn({ method: "POST" })
+const resolveSchema = z.object({
+  mapUrl: z.string().trim().max(2000).nullable().optional(),
+  hint: z.string().trim().max(300).nullable().optional(),
+});
+
+export const resolvePropertyCoordinates = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { url: string }) => {
-    if (!input?.url?.trim()) throw new Error("ضع رابط خرائط جوجل أولًا");
-    return input;
-  })
-  .handler(async ({ data }): Promise<LatLng> => {
-    const url = data.url.trim();
+  .inputValidator((data: unknown) => resolveSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { resolveMapUrlToCoords } = await import("./geo.server");
+    return (await resolveMapUrlToCoords(data.mapUrl ?? null, data.hint ?? null)) ?? null;
+  });
 
-    const direct = extractLatLngFromUrl(url);
-    if (direct) return direct;
+export const backfillPropertyCoordinates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { resolveMapUrlToCoords } = await import("./geo.server");
+    const { data: rows, error } = await context.supabase
+      .from("properties")
+      .select("id, name, city, district, map_url, latitude, longitude")
+      .is("latitude", null)
+      .limit(200);
+    if (error) throw new Error(error.message);
 
-    if (!isShortMapsUrl(url)) {
-      throw new Error("تعذّر استخراج الإحداثيات من هذا الرابط، تأكد أنه رابط خرائط جوجل صحيح");
+    let updated = 0;
+    for (const row of rows ?? []) {
+      const hint = [row.name, row.district, row.city, "بريدة، السعودية"]
+        .filter(Boolean)
+        .join("، ");
+      const coords = await resolveMapUrlToCoords(row.map_url, hint);
+      if (!coords) continue;
+      const { error: updateError } = await context.supabase
+        .from("properties")
+        .update({ latitude: coords.latitude, longitude: coords.longitude })
+        .eq("id", row.id);
+      if (!updateError) updated += 1;
     }
-
-    try {
-      let current = url;
-      for (let i = 0; i < 6; i += 1) {
-        const res = await fetch(current, { redirect: "manual" });
-        const location = res.headers.get("location");
-        const fromCurrent = extractLatLngFromUrl(current);
-        if (fromCurrent) return fromCurrent;
-        if (!location) {
-          if (res.status >= 200 && res.status < 300) {
-            const text = await res.text();
-            const fromBody = extractLatLngFromUrl(text);
-            if (fromBody) return fromBody;
-          }
-          break;
-        }
-        current = new URL(location, current).toString();
-        const fromRedirect = extractLatLngFromUrl(current);
-        if (fromRedirect) return fromRedirect;
-      }
-    } catch {
-      throw new Error("تعذّر الوصول إلى الرابط المختصر، تحقق من الاتصال أو الرابط");
-    }
-
-    throw new Error("تعذّر استخراج الإحداثيات من هذا الرابط، جرّب لصق رابط خرائط كامل");
+    return { checked: rows?.length ?? 0, updated };
   });

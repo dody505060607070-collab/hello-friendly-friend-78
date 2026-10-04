@@ -1,15 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
-import {
-  endEmployeeSession,
-  heartbeatEmployeeSession,
-  startEmployeeSession,
-} from "@/lib/sessions.functions";
 
-export type AppRole = "super_admin" | "employee";
+export type AppRole = "super_admin" | "employee" | "owner";
 
 export type Profile = {
   id: string;
@@ -27,65 +22,6 @@ type AuthValue = {
 
 const AuthContext = createContext<AuthValue>({ session: null, loading: true });
 
-const SESSION_HEARTBEAT_MS = 2 * 60 * 1000;
-
-/** يبدأ جلسة عمل للموظف عند الدخول، وينبض كل دقيقتين، ويغلقها عند الخروج. */
-function useEmployeeSessionTracking(session: Session | null) {
-  const sessionIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    let timer: ReturnType<typeof setInterval> | null = null;
-
-    const stop = async () => {
-      if (timer) clearInterval(timer);
-      timer = null;
-      const sid = sessionIdRef.current;
-      sessionIdRef.current = null;
-      if (sid) {
-        try {
-          await endEmployeeSession({ data: { sessionId: sid } });
-        } catch {
-          /* تجاهل */
-        }
-      }
-    };
-
-    if (!session) {
-      void stop();
-      return;
-    }
-
-    (async () => {
-      try {
-        const res = await startEmployeeSession({
-          data: {
-            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-            platform: typeof navigator !== "undefined" ? navigator.platform : "",
-          },
-        });
-        if (cancelled) return;
-        sessionIdRef.current = res.id;
-        timer = setInterval(() => {
-          const sid = sessionIdRef.current;
-          if (!sid) return;
-          void heartbeatEmployeeSession({ data: { sessionId: sid } }).catch(() => {
-            /* تجاهل */
-          });
-        }, SESSION_HEARTBEAT_MS);
-      } catch {
-        /* تجاهل: تتبع الجلسة ليس حرجًا لعمل التطبيق */
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      void stop();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user.id]);
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -102,6 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         /* تجاهل */
       }
     };
+
+    if (
+      window.localStorage.getItem("rashoudi_ephemeral") === "1" &&
+      !window.sessionStorage.getItem("rashoudi_alive")
+    ) {
+      window.localStorage.removeItem("rashoudi_ephemeral");
+      void supabase.auth.signOut();
+    }
 
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
@@ -126,8 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sub.subscription.unsubscribe();
     };
   }, [queryClient]);
-
-  useEmployeeSessionTracking(session);
 
   return <AuthContext.Provider value={{ session, loading }}>{children}</AuthContext.Provider>;
 }
@@ -179,5 +121,20 @@ export function useCurrentUser() {
 }
 
 export async function signOut() {
+  const sessionId = window.sessionStorage.getItem("rashoudi_employee_session");
+  if (sessionId) {
+    await supabase.rpc("close_employee_session", { _session_id: sessionId });
+    window.sessionStorage.removeItem("rashoudi_employee_session");
+  }
   await supabase.auth.signOut();
+}
+
+/** "البقاء متصلاً": إن لم يُختر، تنتهي الجلسة عند إغلاق المتصفح. */
+export function markSessionPersistence(remember: boolean) {
+  if (remember) {
+    window.localStorage.removeItem("rashoudi_ephemeral");
+  } else {
+    window.localStorage.setItem("rashoudi_ephemeral", "1");
+    window.sessionStorage.setItem("rashoudi_alive", "1");
+  }
 }
