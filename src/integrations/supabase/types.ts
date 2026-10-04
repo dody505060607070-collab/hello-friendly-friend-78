@@ -1167,6 +1167,7 @@ export type Database = {
       employee_goals: {
         Row: {
           achieved_value: number
+          auto_track: boolean
           created_at: string
           created_by: string | null
           employee_id: string
@@ -1174,11 +1175,13 @@ export type Database = {
           id: string
           notes: string | null
           period_month: string
+          points_per_unit: number
           target_value: number
           updated_at: string
         }
         Insert: {
           achieved_value?: number
+          auto_track?: boolean
           created_at?: string
           created_by?: string | null
           employee_id: string
@@ -1186,11 +1189,13 @@ export type Database = {
           id?: string
           notes?: string | null
           period_month: string
+          points_per_unit?: number
           target_value: number
           updated_at?: string
         }
         Update: {
           achieved_value?: number
+          auto_track?: boolean
           created_at?: string
           created_by?: string | null
           employee_id?: string
@@ -1198,6 +1203,7 @@ export type Database = {
           id?: string
           notes?: string | null
           period_month?: string
+          points_per_unit?: number
           target_value?: number
           updated_at?: string
         }
@@ -1596,6 +1602,107 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_requests: {
+        Row: {
+          after_images: string[]
+          before_images: string[]
+          category: string
+          contract_id: string | null
+          cost: number
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          internal_notes: string | null
+          priority: string
+          property_id: string | null
+          rating: number | null
+          reporter_name: string
+          reporter_phone: string
+          scheduled_at: string | null
+          status: string
+          technician_name: string | null
+          technician_phone: string | null
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          after_images?: string[]
+          before_images?: string[]
+          category?: string
+          contract_id?: string | null
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          internal_notes?: string | null
+          priority?: string
+          property_id?: string | null
+          rating?: number | null
+          reporter_name: string
+          reporter_phone: string
+          scheduled_at?: string | null
+          status?: string
+          technician_name?: string | null
+          technician_phone?: string | null
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          after_images?: string[]
+          before_images?: string[]
+          category?: string
+          contract_id?: string | null
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          internal_notes?: string | null
+          priority?: string
+          property_id?: string | null
+          rating?: number | null
+          reporter_name?: string
+          reporter_phone?: string
+          scheduled_at?: string | null
+          status?: string
+          technician_name?: string | null
+          technician_phone?: string | null
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_requests_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
             referencedColumns: ["id"]
           },
         ]
@@ -2055,6 +2162,30 @@ export type Database = {
         }
         Relationships: []
       }
+      mithraa_links: {
+        Row: {
+          created_at: string
+          email: string
+          secret: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          secret: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          secret?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -2256,6 +2387,163 @@ export type Database = {
           },
         ]
       }
+      owner_approvals: {
+        Row: {
+          amount: number | null
+          contract_id: string | null
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decision_note: string | null
+          details: string | null
+          id: string
+          kind: string
+          owner_id: string
+          property_id: string | null
+          status: string
+          title: string
+          unit_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decision_note?: string | null
+          details?: string | null
+          id?: string
+          kind?: string
+          owner_id: string
+          property_id?: string | null
+          status?: string
+          title: string
+          unit_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decision_note?: string | null
+          details?: string | null
+          id?: string
+          kind?: string
+          owner_id?: string
+          property_id?: string | null
+          status?: string
+          title?: string
+          unit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_approvals_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_approvals_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_approvals_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_approvals_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_asset_section_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          item_type: string
+          owner_id: string
+          section_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+          owner_id: string
+          section_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          owner_id?: string
+          section_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_asset_section_items_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_asset_section_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "owner_asset_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_asset_sections: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_asset_sections_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_delegates: {
         Row: {
           access_level: string
@@ -2345,6 +2633,208 @@ export type Database = {
           },
         ]
       }
+      owner_login_events: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string
+          path: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_id: string
+          path?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+          path?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_login_events_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_messages: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          owner_id: string
+          read_at: string | null
+          sender: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          owner_id: string
+          read_at?: string | null
+          sender?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          owner_id?: string
+          read_at?: string | null
+          sender?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_messages_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          kind: string
+          link: string | null
+          owner_id: string
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          kind?: string
+          link?: string | null
+          owner_id: string
+          title: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          kind?: string
+          link?: string | null
+          owner_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_notifications_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_payout_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          iban_last4: string | null
+          id: string
+          method: string
+          note: string | null
+          owner_id: string
+          processed_at: string | null
+          staff_note: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          iban_last4?: string | null
+          id?: string
+          method?: string
+          note?: string | null
+          owner_id: string
+          processed_at?: string | null
+          staff_note?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          iban_last4?: string | null
+          id?: string
+          method?: string
+          note?: string | null
+          owner_id?: string
+          processed_at?: string | null
+          staff_note?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_payout_requests_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_preferences: {
+        Row: {
+          currency: string
+          expense_approval_limit: number
+          language: string
+          notify_email: boolean
+          notify_whatsapp: boolean
+          owner_id: string
+          report_frequency: string
+          updated_at: string
+        }
+        Insert: {
+          currency?: string
+          expense_approval_limit?: number
+          language?: string
+          notify_email?: boolean
+          notify_whatsapp?: boolean
+          owner_id: string
+          report_frequency?: string
+          updated_at?: string
+        }
+        Update: {
+          currency?: string
+          expense_approval_limit?: number
+          language?: string
+          notify_email?: boolean
+          notify_whatsapp?: boolean
+          owner_id?: string
+          report_frequency?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_preferences_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: true
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_requests: {
         Row: {
           admin_notes: string | null
@@ -2359,6 +2849,7 @@ export type Database = {
           owner_user_id: string | null
           property_id: string | null
           request_type: string | null
+          staff_note: string | null
           status: string
           title: string | null
           unit_id: string | null
@@ -2377,6 +2868,7 @@ export type Database = {
           owner_user_id?: string | null
           property_id?: string | null
           request_type?: string | null
+          staff_note?: string | null
           status?: string
           title?: string | null
           unit_id?: string | null
@@ -2395,6 +2887,7 @@ export type Database = {
           owner_user_id?: string | null
           property_id?: string | null
           request_type?: string | null
+          staff_note?: string | null
           status?: string
           title?: string | null
           unit_id?: string | null
@@ -2434,6 +2927,114 @@ export type Database = {
             columns: ["unit_id"]
             isOneToOne: false
             referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_share_links: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          label: string | null
+          owner_id: string
+          revoked: boolean
+          token: string
+          views: number
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          label?: string | null
+          owner_id: string
+          revoked?: boolean
+          token: string
+          views?: number
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          label?: string | null
+          owner_id?: string
+          revoked?: boolean
+          token?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_share_links_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_signatures: {
+        Row: {
+          contract_id: string | null
+          created_at: string
+          doc_title: string
+          document_id: string | null
+          id: string
+          otp_code: string | null
+          otp_expires_at: string | null
+          owner_id: string
+          signature_text: string | null
+          signed_at: string | null
+          signer_name: string
+          status: string
+        }
+        Insert: {
+          contract_id?: string | null
+          created_at?: string
+          doc_title: string
+          document_id?: string | null
+          id?: string
+          otp_code?: string | null
+          otp_expires_at?: string | null
+          owner_id: string
+          signature_text?: string | null
+          signed_at?: string | null
+          signer_name: string
+          status?: string
+        }
+        Update: {
+          contract_id?: string | null
+          created_at?: string
+          doc_title?: string
+          document_id?: string | null
+          id?: string
+          otp_code?: string | null
+          otp_expires_at?: string | null
+          owner_id?: string
+          signature_text?: string | null
+          signed_at?: string | null
+          signer_name?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_signatures_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_signatures_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "unit_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_signatures_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
         ]
@@ -3682,11 +4283,73 @@ export type Database = {
           },
         ]
       }
+      unit_condition_reports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          images: string[]
+          kind: string
+          owner_id: string
+          property_id: string | null
+          reported_on: string
+          summary: string | null
+          unit_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          images?: string[]
+          kind?: string
+          owner_id: string
+          property_id?: string | null
+          reported_on?: string
+          summary?: string | null
+          unit_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          images?: string[]
+          kind?: string
+          owner_id?: string
+          property_id?: string | null
+          reported_on?: string
+          summary?: string | null
+          unit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_condition_reports_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_condition_reports_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_condition_reports_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       unit_documents: {
         Row: {
           created_at: string
           created_by: string | null
           doc_type: string
+          expires_at: string | null
           id: string
           mime_type: string | null
           owner_id: string
@@ -3699,6 +4362,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           doc_type?: string
+          expires_at?: string | null
           id?: string
           mime_type?: string | null
           owner_id: string
@@ -3711,6 +4375,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           doc_type?: string
+          expires_at?: string | null
           id?: string
           mime_type?: string | null
           owner_id?: string
@@ -3806,6 +4471,70 @@ export type Database = {
           },
           {
             foreignKeyName: "unit_expenses_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unit_visits: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          feedback: string | null
+          id: string
+          owner_id: string | null
+          property_id: string | null
+          source: string | null
+          unit_id: string | null
+          visit_date: string
+          visitor_name: string
+          visitor_phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          feedback?: string | null
+          id?: string
+          owner_id?: string | null
+          property_id?: string | null
+          source?: string | null
+          unit_id?: string | null
+          visit_date?: string
+          visitor_name: string
+          visitor_phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          feedback?: string | null
+          id?: string
+          owner_id?: string | null
+          property_id?: string | null
+          source?: string | null
+          unit_id?: string | null
+          visit_date?: string
+          visitor_name?: string
+          visitor_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_visits_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_visits_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_visits_unit_id_fkey"
             columns: ["unit_id"]
             isOneToOne: false
             referencedRelation: "units"
