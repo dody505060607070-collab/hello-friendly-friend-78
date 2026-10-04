@@ -20,7 +20,7 @@ export const createSystemBackup = createServerFn({ method: "POST" })
       }));
       const payload = JSON.stringify({ version: 1, created_at: new Date().toISOString(), tables: Object.fromEntries(entries) });
       await supabaseAdmin.from("backup_runs").update({ status: "completed", size_bytes: new TextEncoder().encode(payload).byteLength, tables_count: TABLES.length, completed_at: new Date().toISOString() }).eq("id", run.data.id);
-      return { fileName: `rashoudi-backup-${new Date().toISOString().slice(0, 10)}.json`, payload };
+      return { fileName: `mithra-backup-${new Date().toISOString().slice(0, 10)}.json`, payload };
     } catch (error) {
       await supabaseAdmin.from("backup_runs").update({ status: "failed", error_message: error instanceof Error ? error.message : "خطأ غير معروف", completed_at: new Date().toISOString() }).eq("id", run.data.id);
       throw error;
