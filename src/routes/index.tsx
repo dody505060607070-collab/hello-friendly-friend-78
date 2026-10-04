@@ -4,7 +4,7 @@ import { Building2, Handshake, Home, KeyRound, ShieldCheck } from "lucide-react"
 import { useMemo, useState } from "react";
 
 import ctaImage from "@/assets/cta-deal.jpg";
-import socialCard from "@/assets/rushdy-social-card.jpg.asset.json";
+import socialCard from "@/assets/mithra-social-card.jpg.asset.json";
 import { HeroVideo } from "@/components/site/HeroVideo";
 import { BuildingCard } from "@/components/site/BuildingCard";
 import { PropertyCard, PropertyGrid } from "@/components/site/PropertyCard";
