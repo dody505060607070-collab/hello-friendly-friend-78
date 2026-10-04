@@ -1,0 +1,10 @@
+ALTER TABLE public.backup_runs ADD COLUMN IF NOT EXISTS requested_by uuid;
+ALTER TABLE public.backup_runs ADD COLUMN IF NOT EXISTS size_bytes bigint;
+ALTER TABLE public.backup_runs ADD COLUMN IF NOT EXISTS error_message text;
+ALTER TABLE public.backup_runs ADD COLUMN IF NOT EXISTS completed_at timestamptz;
+ALTER TABLE public.backup_runs DROP CONSTRAINT IF EXISTS backup_runs_status_check;
+ALTER TABLE public.contract_signatures ADD COLUMN IF NOT EXISTS image_data text;
+ALTER TABLE public.contract_signatures ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE public.contract_signatures ALTER COLUMN signature_data SET DEFAULT '';
+UPDATE public.contract_signatures SET image_data = signature_data WHERE image_data IS NULL;
+COMMENT ON COLUMN public.contract_signatures.signature_data IS 'DEPRECATED: replaced by image_data';

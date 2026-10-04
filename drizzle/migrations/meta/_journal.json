@@ -99,6 +99,48 @@
       "when": 1791132229039,
       "tag": "0013_rushudy_add_owner_role",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791132352206,
+      "tag": "0014_rushudy_sync_b3",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1791132421745,
+      "tag": "0015_rushudy_sync_b4",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791132532415,
+      "tag": "0016_rushudy_sync_b5",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791132650589,
+      "tag": "0017_rushudy_sync_b6",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791132765630,
+      "tag": "0018_rushudy_sync_b7",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791132839086,
+      "tag": "0019_rushudy_sync_b8_backup_signatures",
+      "breakpoints": true
     }
   ]
 }
