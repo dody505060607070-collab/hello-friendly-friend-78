@@ -3336,6 +3336,11 @@ export type Database = {
         Args: { _error?: string; _job_name: string }
         Returns: undefined
       }
+      get_public_properties: {
+        Args: { _code?: string; _limit?: number; _purpose?: string }
+        Returns: Json
+      }
+      get_public_settings: { Args: never; Returns: Json }
       has_perm: {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
