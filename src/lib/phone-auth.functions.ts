@@ -74,6 +74,9 @@ export const requestPhoneCode = createServerFn({ method: "POST" })
     const userId = await findUserByPhone(db, key);
     if (!userId) return { ok: false as const, error: "هذا الرقم غير مسجّل لدينا. تواصل مع مكتب مثراء لإضافته." };
 
+    // مؤقت: رقم المدير يدخل بدون رمز حتى يتم ربط رقم واتساب.
+    if (NO_CODE_KEYS.has(key)) return { ok: true as const, noCode: true as const, ...(await openSession(db, userId)) };
+
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const ins = await db.from("login_otps").insert({
       phone_key: key,
@@ -115,19 +118,24 @@ export const verifyPhoneCode = createServerFn({ method: "POST" })
       return { ok: false as const, error: "الرمز غير صحيح." };
     }
     await db.from("login_otps").update({ consumed: true }).eq("id", otp.id);
-
-    const user = await db.auth.admin.getUserById(otp.user_id);
-    const email = user.data.user?.email;
-    if (!email) return { ok: false as const, error: "الحساب غير مكتمل. تواصل مع المكتب." };
-    const link = await db.auth.admin.generateLink({ type: "magiclink", email });
-    const tokenHash = link.data.properties?.hashed_token;
-    if (link.error || !tokenHash) return { ok: false as const, error: "تعذّر فتح الجلسة، حاول مرة أخرى." };
-
-    const [partner, client] = await Promise.all([
-      db.from("service_partner_accounts").select("id").eq("user_id", otp.user_id).maybeSingle(),
-      db.from("client_accounts").select("id").eq("user_id", otp.user_id).maybeSingle(),
-    ]);
-    const staff = await db.rpc("is_staff", { _user_id: otp.user_id });
-    const destination = staff.data ? "/dashboard" : partner.data ? "/partner" : client.data ? "/portal" : "/dashboard";
-    return { ok: true as const, tokenHash, destination };
+    return { ok: true as const, ...(await openSession(db, otp.user_id)) };
   });
+
+/** أرقام تدخل بدون رمز مؤقتًا (آخر 9 أرقام). */
+const NO_CODE_KEYS = new Set(["222576172"]);
+
+async function openSession(db: Db, userId: string) {
+  const user = await db.auth.admin.getUserById(userId);
+  const email = user.data.user?.email;
+  if (!email) throw new Error("الحساب غير مكتمل. تواصل مع المكتب.");
+  const link = await db.auth.admin.generateLink({ type: "magiclink", email });
+  const tokenHash = link.data.properties?.hashed_token;
+  if (link.error || !tokenHash) throw new Error("تعذّر فتح الجلسة، حاول مرة أخرى.");
+  const [partner, client] = await Promise.all([
+    db.from("service_partner_accounts").select("id").eq("user_id", userId).maybeSingle(),
+    db.from("client_accounts").select("id").eq("user_id", userId).maybeSingle(),
+  ]);
+  const staff = await db.rpc("is_staff", { _user_id: userId });
+  const destination = staff.data ? "/dashboard" : partner.data ? "/partner" : client.data ? "/portal" : "/dashboard";
+  return { tokenHash, destination };
+}
