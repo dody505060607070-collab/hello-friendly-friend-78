@@ -4,8 +4,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
- * إرسال واتساب عبر مزوّد سحابي واحد فقط (Wassenger / Evolution / جسر ذاتي).
- * لا يوجد أي مزوّد Twilio أو أي بث جماعي — الإرسال يدوي دائمًا من واجهة النظام.
+ * إرسال واتساب عبر Evolution API فقط (الرقم المرتبط برمز QR).
+ * السرّيات: WHATSAPP_API_URL + WHATSAPP_API_KEY + WHATSAPP_INSTANCE
  */
 
 /** يحوّل رقمًا سعوديًا محليًا (05xxxxxxxx) إلى صيغة +966xxxxxxxx. */
@@ -13,372 +13,131 @@ export function toE164(raw: string): string {
   const digits = raw.replace(/[^\d+]/g, "");
   if (digits.startsWith("+")) return digits;
   if (digits.startsWith("00966")) return `+${digits.slice(2)}`;
-  // مفتاح مكرر بالخطأ مثل 9966xxxxxxxxx → +966xxxxxxxxx
-  if (digits.startsWith("9966") && digits.length >= 13) return `+${digits.slice(1)}`;
   if (digits.startsWith("966")) return `+${digits}`;
   if (digits.startsWith("05")) return `+966${digits.slice(1)}`;
   if (digits.startsWith("5") && digits.length === 9) return `+966${digits}`;
-  if (digits.startsWith("00")) return `+${digits.slice(2)}`;
-  // رقم محلي سعودي يبدأ بصفر (مثل 0512345678) → نضيف مفتاح السعودية
-  if (digits.startsWith("0")) return `+966${digits.replace(/^0+/, "")}`;
-  // رقم من 9 خانات بدون مفتاح دولة يُعتبر سعوديًا
-  if (digits.length === 9) return `+966${digits}`;
-  return `+${digits}`;
+  return digits.startsWith("00") ? `+${digits.slice(2)}` : `+${digits}`;
 }
 
-type SendResult =
+type WhatsAppResult =
   | { ok: true; sid: string }
-  | { ok: false; error: string };
+  | { ok: false; error: string; needsTemplate?: boolean };
 
-function normalizeBridgeConfig() {
-  const rawUrl = process.env["WHATSAPP_BRIDGE_URL"] ?? "";
-  const rawToken = process.env["WHATSAPP_BRIDGE_TOKEN"] ?? "";
-  const url = rawUrl.trim().replace(/^['"]|['"]$/g, "").replace(/\/+$/, "");
-  const token = rawToken
-    .trim()
-    .replace(/^WHATSAPP_BRIDGE_TOKEN\s*=\s*/i, "")
-    .replace(/^BRIDGE_TOKEN\s*=\s*/i, "")
-    .replace(/^['"]|['"]$/g, "")
-    .trim();
-  return { url, token };
+/** إعداد Evolution API (الجسر المجاني على الـVPS). */
+function evoConfig() {
+  const url = process.env["WHATSAPP_API_URL"];
+  const key = process.env["WHATSAPP_API_KEY"];
+  const instance = process.env["WHATSAPP_INSTANCE"] ?? "mithra2";
+  if (!url || !key) return null;
+  return { url: url.replace(/\/$/, ""), key, instance };
 }
 
-function bridgeHeaders(token: string): Record<string, string> {
-  return {
-    Authorization: `Bearer ${token}`,
-    "X-Bridge-Token": token,
-  };
-}
-
-/* ------------------------------------------------------------------ */
-/* Wassenger — خدمة واتساب سحابية بالـQR                                */
-/* الأسرار: WASSENGER_API_KEY / WASSENGER_DEVICE_ID                     */
-/* ------------------------------------------------------------------ */
-
-const WASSENGER_API = "https://api.wassenger.com/v1";
-
-function wassengerConfig() {
-  const key = (process.env["WASSENGER_API_KEY"] ?? "").trim().replace(/^['"]|['"]$/g, "");
-  const device = (process.env["WASSENGER_DEVICE_ID"] ?? "").trim().replace(/^['"]|['"]$/g, "");
-  return { key, device, ready: Boolean(key && device) };
-}
-
-async function wassengerFetch(path: string, init?: { method?: string; body?: unknown }) {
-  const { key } = wassengerConfig();
-  const res = await fetch(`${WASSENGER_API}${path}`, {
-    method: init?.method ?? "GET",
-    headers: { Token: key, "Content-Type": "application/json" },
-    ...(init?.body ? { body: JSON.stringify(init.body) } : {}),
+async function evoFetch(path: string, init?: RequestInit) {
+  const cfg = evoConfig();
+  if (!cfg) throw new Error("إعدادات واتساب غير مكتملة");
+  return fetch(`${cfg.url}${path}`, {
+    ...init,
+    headers: {
+      apikey: cfg.key,
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
   });
-  const raw = await res.text().catch(() => "");
-  let data: Record<string, unknown> = {};
-  try {
-    data = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
-  } catch {
-    data = {};
-  }
-  return { status: res.status, data, raw };
 }
 
-/** إرسال رسالة عبر Wassenger. */
-async function wassengerSend(to: string, body: string): Promise<SendResult | null> {
-  const cfg = wassengerConfig();
-  if (!cfg.ready) return null;
-  const phone = toE164(to);
+/** ينشئ الـ instance الخاصة بهذا الموقع تلقائيًا لو مش موجودة. */
+export async function cloudEnsureInstance(): Promise<void> {
+  const cfg = evoConfig();
+  if (!cfg) return;
   try {
-    const { status, data, raw } = await wassengerFetch("/messages", {
+    const res = await evoFetch(`/instance/connectionState/${cfg.instance}`);
+    if (res.ok) return;
+    await evoFetch(`/instance/create`, {
       method: "POST",
-      body: { phone, message: body, device: cfg.device },
+      body: JSON.stringify({
+        instanceName: cfg.instance,
+        integration: "WHATSAPP-BAILEYS",
+        qrcode: true,
+      }),
     });
-    if (status >= 200 && status < 300) {
-      return { ok: true, sid: (data["id"] as string | undefined) ?? "" };
-    }
-    const message =
-      (data["message"] as string | undefined) ??
-      (data["error"] as string | undefined) ??
-      raw.slice(0, 200);
-    return { ok: false, error: `Wassenger ${status}: ${message}` };
-  } catch (e) {
-    return { ok: false, error: `تعذر الاتصال بـ Wassenger: ${(e as Error).message}` };
-  }
-}
-
-/** حالة الجهاز + رمز QR من Wassenger. */
-async function wassengerStatus(): Promise<LinkStatus | null> {
-  const cfg = wassengerConfig();
-  if (!cfg.ready) return null;
-  try {
-    const { status, data, raw } = await wassengerFetch(`/devices/${cfg.device}`);
-    if (status === 401 || status === 403) {
-      return {
-        configured: true,
-        connection: "closed",
-        qr: null,
-        me: null,
-        error: "مفتاح Wassenger غير صحيح — تأكد من قيمة WASSENGER_API_KEY.",
-      };
-    }
-    if (status === 404) {
-      return {
-        configured: true,
-        connection: "closed",
-        qr: null,
-        me: null,
-        error: "رقم الجهاز (WASSENGER_DEVICE_ID) غير صحيح — انسخه من لوحة Wassenger.",
-      };
-    }
-    if (status < 200 || status >= 300) {
-      return {
-        configured: true,
-        connection: "closed",
-        qr: null,
-        me: null,
-        error: `Wassenger ${status}: ${raw.slice(0, 160)}`,
-      };
-    }
-    const session = (data["session"] as { status?: string } | undefined) ?? {};
-    const phone = (data["phone"] as string | undefined) ?? null;
-    const state = (session.status ?? (data["status"] as string | undefined) ?? "").toLowerCase();
-    if (state === "operative" || state === "connected" || state === "open") {
-      return { configured: true, connection: "open", qr: null, me: phone, error: null };
-    }
-    // غير متصل → اجلب رمز QR
-    let qr: string | null = null;
-    try {
-      const qrRes = await fetch(`${WASSENGER_API}/devices/${cfg.device}/scan`, {
-        headers: { Token: cfg.key },
-      });
-      if (qrRes.ok) {
-        const ct = qrRes.headers.get("content-type") ?? "";
-        if (ct.includes("json")) {
-          const j = (await qrRes.json().catch(() => ({}))) as { qr?: string; base64?: string };
-          const b = j.qr ?? j.base64 ?? null;
-          qr = b ? (b.startsWith("data:") ? b : `data:image/png;base64,${b}`) : null;
-        } else {
-          const buf = Buffer.from(await qrRes.arrayBuffer());
-          qr = `data:${ct || "image/png"};base64,${buf.toString("base64")}`;
-        }
-      }
-    } catch {
-      qr = null;
-    }
-    return {
-      configured: true,
-      connection: qr ? "connecting" : "closed",
-      qr,
-      me: phone,
-      error: qr ? null : "الهاتف غير متصل — امسح رمز QR من لوحة Wassenger.",
-    };
-  } catch (e) {
-    return {
-      configured: true,
-      connection: "closed",
-      qr: null,
-      me: null,
-      error: `تعذر الوصول لـ Wassenger: ${(e as Error).message}`,
-    };
-  }
-}
-
-/* ------------------------------------------------------------------ */
-/* مزوّد واتساب السحابي (Evolution API) — ربط بالـQR بدون خادم خاص      */
-/* الأسرار: WHATSAPP_API_URL / WHATSAPP_API_KEY / WHATSAPP_INSTANCE     */
-/* ------------------------------------------------------------------ */
-
-function cloudConfig() {
-  const url = (process.env["WHATSAPP_API_URL"] ?? "")
-    .trim()
-    .replace(/^['"]|['"]$/g, "")
-    .replace(/\/+$/, "");
-  const key = (process.env["WHATSAPP_API_KEY"] ?? "").trim().replace(/^['"]|['"]$/g, "");
-  const instance = (process.env["WHATSAPP_INSTANCE"] ?? "mithra").trim().replace(/^['"]|['"]$/g, "");
-  return { url, key, instance, ready: Boolean(url && key) };
-}
-
-function cloudHeaders(key: string): Record<string, string> {
-  return { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
-}
-
-async function cloudJson(
-  path: string,
-  init?: { method?: string; body?: unknown },
-): Promise<{ status: number; data: Record<string, unknown>; raw: string }> {
-  const { url, key } = cloudConfig();
-  const res = await fetch(`${url}${path}`, {
-    method: init?.method ?? "GET",
-    headers: cloudHeaders(key),
-    ...(init?.body ? { body: JSON.stringify(init.body) } : {}),
-  });
-  const raw = await res.text().catch(() => "");
-  let data: Record<string, unknown> = {};
-  try {
-    data = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
   } catch {
-    data = {};
+    /* تجاهل — هيتم الإبلاغ عند المحاولة التالية */
   }
-  return { status: res.status, data, raw };
 }
 
-/** إرسال رسالة عبر المزوّد السحابي. */
-async function cloudSend(to: string, body: string): Promise<SendResult | null> {
-  const cfg = cloudConfig();
-  if (!cfg.ready) return null;
-  const number = toE164(to).replace(/[^\d]/g, "");
+/** إرسال عبر Evolution API من الرقم المرتبط بالـQR. */
+async function bridgeSend(to: string, body: string): Promise<WhatsAppResult | null> {
+  const cfg = evoConfig();
+  if (!cfg) return null;
   try {
-    const { status, data, raw } = await cloudJson(`/message/sendText/${cfg.instance}`, {
+    const res = await evoFetch(`/message/sendText/${cfg.instance}`, {
       method: "POST",
-      body: { number, text: body, textMessage: { text: body } },
+      body: JSON.stringify({ number: toE164(to).replace("+", ""), text: body }),
     });
-    if (status >= 200 && status < 300) {
-      const keyObj = data["key"] as { id?: string } | undefined;
-      return { ok: true, sid: keyObj?.id ?? "" };
-    }
-    const message =
-      (data["message"] as string | undefined) ??
-      (data["error"] as string | undefined) ??
-      raw.slice(0, 200);
-    return { ok: false, error: `واتساب ${status}: ${message}` };
+    const data = (await res.json().catch(() => ({}))) as {
+      key?: { id?: string };
+      message?: string;
+      error?: string;
+    };
+    if (res.ok) return { ok: true, sid: data.key?.id ?? "" };
+    return { ok: false, error: data.message ?? data.error ?? `WhatsApp ${res.status}` };
   } catch (e) {
     return { ok: false, error: `تعذر الاتصال بخدمة واتساب: ${(e as Error).message}` };
   }
 }
 
-type LinkStatus = {
-  configured: boolean;
-  connection: "open" | "connecting" | "closed";
-  qr: string | null;
-  me: string | null;
-  error: string | null;
-};
-
-/** إنشاء الاتصال لدى المزوّد إن لم يكن موجودًا، ثم طلب QR. */
-async function cloudEnsureInstance(instance: string): Promise<void> {
-  const created = await cloudJson(`/instance/create`, {
-    method: "POST",
-    body: {
-      instanceName: instance,
-      qrcode: true,
-      integration: "WHATSAPP-BAILEYS",
-      rejectCall: false,
-      groupsIgnore: true,
-      alwaysOnline: false,
-      readMessages: false,
-      syncFullHistory: false,
-    },
-  });
-  if (created.status === 401 || created.status === 403) {
-    throw new Error("AUTH");
+/** إرسال رسالة واتساب عبر الرقم المرتبط (Evolution API). */
+export async function whatsappSend(input: { to: string; body: string }): Promise<WhatsAppResult> {
+  const to = toE164(input.to);
+  if (!to.startsWith("+") || to.length < 8) {
+    return { ok: false, error: `رقم الجوال غير صالح: ${input.to}` };
   }
-  // 201/200 = أُنشئ؛ 409/400 "already in use" = موجود مسبقًا — كلاهما مقبول
+  const result = await bridgeSend(to, input.body);
+  if (!result) {
+    return { ok: false, error: "خدمة واتساب غير مُعدّة — تأكد من إعدادات الربط" };
+  }
+  return result;
 }
 
-/** حالة الربط + رمز QR من المزوّد السحابي. */
-async function cloudStatus(): Promise<LinkStatus | null> {
-  const cfg = cloudConfig();
-  if (!cfg.ready) return null;
-  try {
-    const state = await cloudJson(`/instance/connectionState/${cfg.instance}`);
-    if (state.status === 404) {
-      // لا يوجد اتصال بهذا الاسم → أنشئه تلقائيًا ثم تابع
-      try {
-        await cloudEnsureInstance(cfg.instance);
-      } catch (e) {
-        if ((e as Error).message === "AUTH") {
-          return {
-            configured: true,
-            connection: "closed",
-            qr: null,
-            me: null,
-            error: "مفتاح خدمة واتساب غير صحيح — تأكد من قيمة WHATSAPP_API_KEY.",
-          };
-        }
-        throw e;
-      }
-    }
-    const inst = (state.data["instance"] as { state?: string; owner?: string } | undefined) ?? {};
-    const raw = inst.state ?? (state.data["state"] as string | undefined) ?? "";
-    if (raw === "open") {
-      return {
-        configured: true,
-        connection: "open",
-        qr: null,
-        me: (inst.owner ?? "").toString().split("@")[0] || null,
-        error: null,
-      };
-    }
-
-    // غير مرتبط → اطلب رمز QR جديد
-    const conn = await cloudJson(`/instance/connect/${cfg.instance}`);
-    const b64 = (conn.data["base64"] as string | undefined) ?? null;
-    const qr = b64 ? (b64.startsWith("data:") ? b64 : `data:image/png;base64,${b64}`) : null;
-    if (conn.status === 401 || conn.status === 403) {
-      return {
-        configured: true,
-        connection: "closed",
-        qr: null,
-        me: null,
-        error: "مفتاح خدمة واتساب غير صحيح — تأكد من قيمة WHATSAPP_API_KEY.",
-      };
-    }
-    if (conn.status === 404) {
-      return {
-        configured: true,
-        connection: "closed",
-        qr: null,
-        me: null,
-        error: `لا يوجد اتصال باسم «${cfg.instance}» لدى المزوّد. أنشئه بنفس الاسم أو صحّح WHATSAPP_INSTANCE.`,
-      };
-    }
-    return {
-      configured: true,
-      connection: qr ? "connecting" : "closed",
-      qr,
-      me: null,
-      error: qr ? null : `المزوّد لم يُرجع رمز QR (${conn.status}).`,
-    };
-  } catch (e) {
-    return {
-      configured: true,
-      connection: "closed",
-      qr: null,
-      me: null,
-      error: `تعذر الوصول لخدمة واتساب: ${(e as Error).message}`,
-    };
-  }
-}
-
-/** إرسال عبر جسر واتساب المجاني على الـVPS (رقمك الشخصي/رقم الشركة). */
-async function bridgeSend(to: string, body: string): Promise<SendResult | null> {
-  const { url, token } = normalizeBridgeConfig();
-  if (!url || !token) return null;
-  try {
-    const res = await fetch(`${url}/send`, {
-      method: "POST",
-      headers: { ...bridgeHeaders(token), "Content-Type": "application/json" },
-      body: JSON.stringify({ to: toE164(to), body }),
-    });
-    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; id?: string; error?: string };
-    if (res.ok && data.ok) return { ok: true, sid: data.id ?? "" };
-    return { ok: false, error: data.error ?? `Bridge ${res.status}` };
-  } catch (e) {
-    return { ok: false, error: `تعذر الاتصال بجسر واتساب: ${(e as Error).message}` };
-  }
-}
-
-export async function sendWhatsApp(input: {
+/** إرسال صورة/ملف على واتساب عبر رابط مباشر (Evolution API). */
+export async function whatsappSendMedia(input: {
   to: string;
-  body: string;
-}): Promise<SendResult> {
-  // الأولوية لـWassenger (الرقم المرتبط بالـQR)، ثم المزوّد السحابي، ثم الجسر الذاتي.
-  const viaWassenger = await wassengerSend(input.to, input.body);
-  if (viaWassenger) return viaWassenger;
-  const viaCloud = await cloudSend(input.to, input.body);
-  if (viaCloud) return viaCloud;
-  const viaBridge = await bridgeSend(input.to, input.body);
-  if (viaBridge) return viaBridge;
-
-  return { ok: false, error: "لا يوجد مزوّد واتساب مُعد في النظام (اربط الرقم أولًا)" };
+  url: string;
+  caption?: string;
+  fileName?: string;
+  mediatype?: "image" | "document" | "video";
+}): Promise<WhatsAppResult> {
+  const cfg = evoConfig();
+  if (!cfg) return { ok: false, error: "خدمة واتساب غير مُعدّة — تأكد من إعدادات الربط" };
+  const to = toE164(input.to);
+  if (!to.startsWith("+") || to.length < 8) {
+    return { ok: false, error: `رقم الجوال غير صالح: ${input.to}` };
+  }
+  try {
+    const res = await evoFetch(`/message/sendMedia/${cfg.instance}`, {
+      method: "POST",
+      body: JSON.stringify({
+        number: to.replace("+", ""),
+        mediatype: input.mediatype ?? "image",
+        media: input.url,
+        ...(input.caption ? { caption: input.caption } : {}),
+        ...(input.fileName ? { fileName: input.fileName } : {}),
+      }),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      key?: { id?: string };
+      message?: string;
+      error?: string;
+    };
+    if (res.ok) return { ok: true, sid: data.key?.id ?? "" };
+    return { ok: false, error: data.message ?? data.error ?? `WhatsApp ${res.status}` };
+  } catch (e) {
+    return { ok: false, error: `تعذر إرسال الصورة على واتساب: ${(e as Error).message}` };
+  }
 }
+
+
+
 
 export const sendWhatsAppMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -386,15 +145,15 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     (input: unknown) =>
       z
         .object({
-          to: z.string().min(5),
-          body: z.string().min(1),
+          to: z.string().trim().regex(/^\+?[0-9\s()-]{8,20}$/),
+          body: z.string().trim().min(1).max(4000),
         })
         .parse(input),
   )
-  .handler(async ({ data }): Promise<SendResult> => {
+  .handler(async ({ data }): Promise<WhatsAppResult> => {
     const { requireUnlocked } = await import("@/lib/kill-switch.server");
     await requireUnlocked();
-    const result = await sendWhatsApp({ to: data.to, body: data.body });
+    const result = await whatsappSend({ to: data.to, body: data.body });
     const { dispatchAutomation } = await import("@/lib/automation.server");
     await dispatchAutomation("whatsapp.sent", {
       to: data.to,
@@ -406,58 +165,72 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     return result;
   });
 
+export const checkWhatsAppConfig = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const cfg = evoConfig();
+    return { configured: Boolean(cfg), instance: cfg?.instance ?? null };
+  });
 
-/** حالة ربط واتساب المجاني + رمز QR للمسح. */
+/** حالة ربط واتساب + رمز QR للمسح (Evolution API). */
 export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<LinkStatus> => {
-    const viaWassenger = await wassengerStatus();
-    if (viaWassenger) return viaWassenger;
-    const viaCloud = await cloudStatus();
-    if (viaCloud) return viaCloud;
-    const { url, token } = normalizeBridgeConfig();
-    if (!url || !token) {
+  .handler(async () => {
+    const cfg = evoConfig();
+    if (!cfg) {
       return { configured: false, connection: "closed" as const, qr: null, me: null, error: null };
     }
     try {
-      const res = await fetch(`${url}/status`, {
-        headers: bridgeHeaders(token),
-      });
-      const raw = await res.text().catch(() => "");
-      let data: { connection?: string; qr?: string | null; me?: string | null; error?: string | null } = {};
-      try {
-        data = raw ? JSON.parse(raw) : {};
-      } catch {
-        data = {};
+      await cloudEnsureInstance();
+      const stateRes = await evoFetch(`/instance/connectionState/${cfg.instance}`);
+      const stateData = (await stateRes.json().catch(() => ({}))) as {
+        instance?: { state?: string };
+        message?: string;
+      };
+      const state = stateData.instance?.state ?? "close";
+      if (state === "open") {
+        let me: string | null = null;
+        try {
+          const listRes = await evoFetch(`/instance/fetchInstances`);
+          const list = (await listRes.json().catch(() => [])) as Array<{
+            name?: string;
+            instance?: { instanceName?: string; owner?: string };
+            ownerJid?: string;
+          }>;
+          const found = list.find(
+            (i) => i.name === cfg.instance || i.instance?.instanceName === cfg.instance,
+          );
+          me = (found?.ownerJid ?? found?.instance?.owner ?? null)?.split("@")[0] ?? null;
+        } catch {
+          /* الاسم اختياري */
+        }
+        return { configured: true, connection: "open" as const, qr: null, me, error: null };
       }
-      if (!res.ok) {
-        const detail = (data.error ?? raw ?? "").toString().slice(0, 200);
-        return {
-          configured: true,
-          connection: "closed" as const,
-          qr: null,
-          me: null,
-          error:
-            res.status === 401 || res.status === 403
-              ? "الجسر يعمل لكنه رفض مفتاح الاتصال. أعد تشغيل خدمة واتساب من لوحة الخادم لتقرأ إعداداتها المحفوظة."
-              : `الجسر رجّع خطأ ${res.status}: ${detail}`,
-        };
-      }
+
+      const qrRes = await evoFetch(`/instance/connect/${cfg.instance}`);
+      const qrData = (await qrRes.json().catch(() => ({}))) as {
+        base64?: string;
+        code?: string;
+        message?: string;
+      };
       return {
         configured: true,
-        connection: (data.connection ?? "closed") as "open" | "connecting" | "closed",
-        qr: data.qr ?? null,
-        me: data.me ?? null,
-        error: data.error ?? null,
+        connection: "connecting" as const,
+        qr: qrData.base64
+          ? qrData.base64.startsWith("data:")
+            ? qrData.base64
+            : `data:image/png;base64,${qrData.base64}`
+          : null,
+        me: null,
+        error: qrRes.ok ? null : (qrData.message ?? `WhatsApp ${qrRes.status}`),
       };
-
     } catch (e) {
       return {
         configured: true,
         connection: "closed" as const,
         qr: null,
         me: null,
-        error: `تعذر الوصول للجسر: ${(e as Error).message}`,
+        error: `تعذر الوصول لخدمة واتساب: ${(e as Error).message}`,
       };
     }
   });
@@ -465,43 +238,12 @@ export const getWhatsAppLinkStatus = createServerFn({ method: "GET" })
 /** فصل الرقم المرتبط وإظهار رمز QR جديد. */
 export const unlinkWhatsApp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<{ ok: boolean; error: string | null }> => {
-    const wass = wassengerConfig();
-    if (wass.ready) {
-      try {
-        const { status, raw } = await wassengerFetch(`/devices/${wass.device}/disconnect`, {
-          method: "POST",
-        });
-        if (status >= 200 && status < 300) return { ok: true, error: null };
-        return {
-          ok: false,
-          error: `Wassenger ${status}: ${raw.slice(0, 160) || "افصل الجهاز من لوحة Wassenger"}`,
-        };
-      } catch (e) {
-        return { ok: false, error: (e as Error).message };
-      }
-    }
-    const cfg = cloudConfig();
-    if (cfg.ready) {
-      try {
-        const { status, raw } = await cloudJson(`/instance/logout/${cfg.instance}`, {
-          method: "DELETE",
-        });
-        return status >= 200 && status < 300
-          ? { ok: true, error: null }
-          : { ok: false, error: `واتساب ${status}: ${raw.slice(0, 160)}` };
-      } catch (e) {
-        return { ok: false, error: (e as Error).message };
-      }
-    }
-    const { url, token } = normalizeBridgeConfig();
-    if (!url || !token) return { ok: false, error: "الجسر غير مُعد" };
+  .handler(async () => {
+    const cfg = evoConfig();
+    if (!cfg) return { ok: false, error: "خدمة واتساب غير مُعدّة" };
     try {
-      const res = await fetch(`${url}/logout`, {
-        method: "POST",
-        headers: bridgeHeaders(token),
-      });
-      return { ok: res.ok, error: res.ok ? null : `Bridge ${res.status}` };
+      const res = await evoFetch(`/instance/logout/${cfg.instance}`, { method: "DELETE" });
+      return { ok: res.ok, error: res.ok ? null : `WhatsApp ${res.status}` };
     } catch (e) {
       return { ok: false, error: (e as Error).message };
     }

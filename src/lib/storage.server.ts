@@ -1,5 +1,5 @@
 import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
-import { dirname, join, normalize, resolve } from "node:path";
+import { dirname, extname, relative, resolve } from "node:path";
 
 /**
  * تخزين الملفات: يعمل بسائقين.
@@ -18,10 +18,27 @@ function rootDir() {
 
 /** يمنع الخروج من مجلد التخزين عبر ../ */
 export function safeStoragePath(key: string) {
-  const clean = normalize(key).replace(/^(\.\.[/\\])+/, "").replace(/^[/\\]+/, "");
-  const full = join(rootDir(), clean);
-  if (!full.startsWith(rootDir())) throw new Error("مسار ملف غير صالح");
+  if (!key || key.includes("\0") || key.includes("\\")) throw new Error("مسار ملف غير صالح");
+  const clean = key.replace(/^\/+/, "");
+  const root = rootDir();
+  const full = resolve(root, clean);
+  const rel = relative(root, full);
+  if (!rel || rel.startsWith("..") || rel.includes("/../")) throw new Error("مسار ملف غير صالح");
   return { clean, full };
+}
+
+const ALLOWED_EXTENSIONS = new Set([
+  ".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf", ".mp4", ".webm", ".doc", ".docx", ".xlsx",
+]);
+
+export function assertAllowedStorageKey(key: string) {
+  const { clean } = safeStoragePath(key);
+  const bucket = clean.split("/")[0];
+  if (!bucket || !["property-media", "internal-files", "contract-files"].includes(bucket)) {
+    throw new Error("مجلد التخزين غير مسموح");
+  }
+  if (!ALLOWED_EXTENSIONS.has(extname(clean).toLowerCase())) throw new Error("نوع الملف غير مسموح");
+  return clean;
 }
 
 export async function writeLocalFile(key: string, bytes: Uint8Array) {

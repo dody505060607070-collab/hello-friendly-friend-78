@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2, Search, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -9,7 +9,7 @@ import { PageHero } from "@/components/kit/PageHero";
 import { Pills } from "@/components/kit/Pills";
 import { requestStatusLabels } from "@/lib/labels";
 
-export type SupplyRow = {
+type SupplyRow = {
   id: string;
   full_name: string;
   phone: string;
@@ -29,16 +29,15 @@ export type SupplyRow = {
 export const Route = createFileRoute("/_authenticated/supply-requests/")({
   head: () => ({
     meta: [
-      { title: "طلبات توفير عقار | مثراء العقارية" },
+      { title: "طلبات توفير العقار | مثراء العقارية" },
       {
         name: "description",
-        content: "قائمة طلبات توفير العقار الواردة من العملاء والوسطاء مع متابعة كل طلب حتى إغلاقه.",
+        content: "متابعة طلبات توفير العقار الواردة من العملاء والوسطاء حتى إغلاق الطلب.",
       },
-      { property: "og:title", content: "طلبات توفير عقار | مثراء العقارية" },
-      { property: "og:description", content: "متابعة طلبات البحث عن عقار للإيجار أو الشراء." },
+      { property: "og:title", content: "طلبات توفير العقار | مثراء العقارية" },
+      { property: "og:description", content: "إدارة طلبات توفير العقار ومتابعتها." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: SupplyRequestsPage,
@@ -46,6 +45,7 @@ export const Route = createFileRoute("/_authenticated/supply-requests/")({
 
 function SupplyRequestsPage() {
   const [tab, setTab] = useState("all");
+  const navigate = useNavigate();
 
   const supply = useTableRows<SupplyRow>({
     table: "supply_requests",
@@ -55,7 +55,7 @@ function SupplyRequestsPage() {
     queryKey: ["supply_requests"],
   });
 
-  const rows = useMemo(() => supply.data ?? [], [supply.data]);
+  const rows = supply.data ?? [];
 
   const counts = useMemo(
     () => ({
@@ -79,8 +79,8 @@ function SupplyRequestsPage() {
   return (
     <>
       <PageHero
-        title="طلبات توفير عقار"
-        subtitle="طلبات العملاء والوسطاء الباحثين عن عقار للإيجار أو الشراء."
+        title="طلبات توفير العقار"
+        subtitle="الطلبات الواردة من العملاء والوسطاء للبحث عن عقار مناسب — اضغط على أي صف لعرض الطلب كاملًا."
         icon={Search}
         stats={[
           { value: String(counts.open), label: "قيد المراجعة" },
@@ -119,6 +119,9 @@ function SupplyRequestsPage() {
           rows={filtered}
           showColumnsButton
           searchPlaceholder="بحث بالاسم أو الجوال"
+          onRowClick={(r) =>
+            navigate({ to: "/supply-requests/$requestId", params: { requestId: r.id } })
+          }
           emptyState={
             <EmptyState
               text="لا توجد طلبات توفير عقار"
@@ -126,26 +129,11 @@ function SupplyRequestsPage() {
             />
           }
           columns={[
-            {
-              header: "مقدّم الطلب",
-              sortable: true,
-              cell: (r) => (
-                <Link
-                  to="/supply-requests/$id"
-                  params={{ id: r.id }}
-                  className="font-semibold text-primary hover:underline"
-                >
-                  {r.full_name}
-                </Link>
-              ),
-            },
+            { header: "مقدّم الطلب", sortable: true, cell: (r) => r.full_name, className: "font-semibold" },
             { header: "الجوال", cell: (r) => <span dir="ltr">{r.phone}</span> },
-            { header: "نوع الطلب", cell: (r) => (r.request_type === "buy" ? "شراء" : "إيجار") },
+            { header: "نوع الطلب", cell: (r) => (r.request_type === "buy" || r.request_type === "sale" ? "شراء" : "إيجار") },
             { header: "نوع العقار", cell: (r) => r.property_type ?? "—" },
-            {
-              header: "الموقع",
-              cell: (r) => [r.city, r.districts].filter(Boolean).join(" - ") || "—",
-            },
+            { header: "الموقع", cell: (r) => [r.city, r.districts].filter(Boolean).join(" - ") || "—" },
             {
               header: "الميزانية",
               cell: (r) =>
@@ -161,25 +149,8 @@ function SupplyRequestsPage() {
                 </Chip>
               ),
             },
-            { header: "الحالة", cell: (r) => requestStatusLabels[r.status] ?? r.status },
-            {
-              header: "التاريخ",
-              sortable: true,
-              value: (r) => r.created_at,
-              cell: (r) => formatDate(r.created_at),
-            },
-            {
-              header: "",
-              cell: (r) => (
-                <Link
-                  to="/supply-requests/$id"
-                  params={{ id: r.id }}
-                  className="text-[12.5px] font-semibold text-primary"
-                >
-                  التفاصيل
-                </Link>
-              ),
-            },
+            { header: "الحالة", cell: (r) => <Chip>{requestStatusLabels[r.status] ?? r.status}</Chip> },
+            { header: "التاريخ", sortable: true, value: (r) => r.created_at, cell: (r) => formatDate(r.created_at) },
           ]}
         />
       )}

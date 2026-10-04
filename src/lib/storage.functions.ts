@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -8,12 +9,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  */
 export const uploadToServerStorage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { key: string; dataBase64: string }) => {
-    if (!input.key || !input.dataBase64) throw new Error("بيانات الملف ناقصة");
-    return input;
-  })
+  .inputValidator((input: unknown) => z.object({
+    key: z.string().min(3).max(500),
+    dataBase64: z.string().min(1).max(280_000_000),
+  }).parse(input))
   .handler(async ({ data }) => {
-    const { writeLocalFile } = await import("./storage.server");
+    const { assertAllowedStorageKey, writeLocalFile } = await import("./storage.server");
+    assertAllowedStorageKey(data.key);
     const base64 = data.dataBase64.includes(",")
       ? data.dataBase64.slice(data.dataBase64.indexOf(",") + 1)
       : data.dataBase64;
@@ -26,9 +28,10 @@ export const uploadToServerStorage = createServerFn({ method: "POST" })
 
 export const deleteFromServerStorage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { key: string }) => input)
+  .inputValidator((input: unknown) => z.object({ key: z.string().min(3).max(500) }).parse(input))
   .handler(async ({ data }) => {
-    const { deleteLocalFile } = await import("./storage.server");
+    const { assertAllowedStorageKey, deleteLocalFile } = await import("./storage.server");
+    assertAllowedStorageKey(data.key);
     await deleteLocalFile(data.key);
     return { ok: true };
   });

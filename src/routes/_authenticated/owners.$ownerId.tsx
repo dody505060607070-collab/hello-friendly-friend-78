@@ -19,9 +19,11 @@ import {
   Pencil,
   Phone,
   ReceiptText,
+  Settings2,
   UserRound,
+  WalletCards,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { ReactNode } from "react";
 
@@ -32,7 +34,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { askAdminAi } from "@/lib/ai.functions";
 import { exportWorkbook, type ExportRow } from "@/lib/export";
 import { contractStatusLabels, invoiceStatusLabels } from "@/lib/labels";
+import { PaymentRecorder } from "@/components/payments/PaymentRecorder";
 import { ImportDialog } from "@/routes/_authenticated/contracts.index";
+import { assignOwnerContract, moveOwnerAsset } from "@/lib/owner-operations.functions";
+import { issueClientAccess } from "@/lib/portal.functions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/owners/$ownerId")({
   head: () => ({
@@ -69,6 +75,35 @@ function OwnerDetailPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [openUnits, setOpenUnits] = useState<Record<string, boolean>>({});
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [dragAsset, setDragAsset] = useState<{ id: string; type: "unit" | "property" } | null>(
+    null,
+  );
+  const [dragContractId, setDragContractId] = useState<string | null>(null);
+  const [newSectionName, setNewSectionName] = useState("");
+  const [organizeMode, setOrganizeMode] = useState(false);
+  const [showOwnerDetails, setShowOwnerDetails] = useState(false);
+  const [dragGroup, setDragGroup] = useState<{
+    id: string;
+    type: "building" | "property" | "unit";
+  } | null>(null);
+
+  const [ownerAccess, setOwnerAccess] = useState<{ username: string; password: string } | null>(
+    null,
+  );
+  const [payingPayment, setPayingPayment] = useState<PaymentRow | null>(null);
+
+  useEffect(() => {
+    const autoScrollWhileDragging = (event: DragEvent) => {
+      if (!dragAsset && !dragGroup && !dragContractId) return;
+      const edge = 110;
+      const speed = 22;
+      if (event.clientY < edge) window.scrollBy({ top: -speed, behavior: "instant" });
+      if (event.clientY > window.innerHeight - edge)
+        window.scrollBy({ top: speed, behavior: "instant" });
+    };
+    window.addEventListener("dragover", autoScrollWhileDragging);
+    return () => window.removeEventListener("dragover", autoScrollWhileDragging);
+  }, [dragAsset, dragContractId, dragGroup]);
 
   const dossier = useQuery({
     queryKey: ["owner-dossier", ownerId],
@@ -77,15 +112,22 @@ function OwnerDetailPage() {
         supabase.from("contacts").select("*").eq("id", ownerId).single(),
         supabase
           .from("properties")
-          .select("id, code, name, purpose, property_type, city, district, price_value, status, is_visible, building_id")
+          .select(
+            "id, code, name, purpose, property_type, city, district, price_value, status, is_visible, building_id",
+          )
           .eq("owner_id", ownerId)
           .order("created_at", { ascending: false }),
         supabase
           .from("units")
-          .select("id, unit_number, unit_type, floor, area, rooms, status, is_rentable, building_id")
+          .select(
+            "id, unit_number, unit_type, floor, area, rooms, status, is_rentable, building_id",
+          )
           .eq("owner_id", ownerId)
           .order("unit_number"),
-        supabase.from("buildings").select("id, name, city, district, address").eq("owner_id", ownerId),
+        supabase
+          .from("buildings")
+          .select("id, name, city, district, address")
+          .eq("owner_id", ownerId),
         supabase
           .from("contracts")
           .select(
@@ -118,7 +160,10 @@ function OwnerDetailPage() {
           const tx = await supabase
             .from("payment_transactions")
             .select("paid_at")
-            .in("payment_id", payments.map((p) => p.id))
+            .in(
+              "payment_id",
+              payments.map((p) => p.id),
+            )
             .order("paid_at", { ascending: false })
             .limit(1);
           lastPaidAt = tx.data?.[0]?.paid_at ?? null;
@@ -142,9 +187,13 @@ function OwnerDetailPage() {
   const stats = useMemo(() => {
     const payments = data?.payments ?? [];
     const remaining = (p: PaymentRow) => Math.max(Number(p.amount_due) - Number(p.amount_paid), 0);
-    const overdue = payments.filter((p) => p.status !== "paid" && p.status !== "cancelled" && daysBetween(p.due_date) < 0);
+    const overdue = payments.filter(
+      (p) => p.status !== "paid" && p.status !== "cancelled" && daysBetween(p.due_date) < 0,
+    );
     const upcoming = payments
-      .filter((p) => p.status !== "paid" && p.status !== "cancelled" && daysBetween(p.due_date) >= 0)
+      .filter(
+        (p) => p.status !== "paid" && p.status !== "cancelled" && daysBetween(p.due_date) >= 0,
+      )
       .sort((a, b) => a.due_date.localeCompare(b.due_date));
     const next30 = upcoming.filter((p) => daysBetween(p.due_date) <= 30);
     const totalDue = payments.reduce((s, p) => s + Number(p.amount_due), 0);
@@ -158,31 +207,181 @@ function OwnerDetailPage() {
       totalPaid,
       rate: totalDue > 0 ? Math.round((totalPaid / totalDue) * 100) : 0,
       nextPayment: upcoming[0] ?? null,
-      nearest: [...overdue.sort((a, b) => a.due_date.localeCompare(b.due_date)), ...upcoming].slice(0, 6),
+      nearest: [...overdue.sort((a, b) => a.due_date.localeCompare(b.due_date)), ...upcoming].slice(
+        0,
+        6,
+      ),
     };
   }, [data]);
 
   const activeContracts = data?.contracts.filter((c) => c.status === "active") ?? [];
 
-  const recordPayment = useMutation({
-    mutationFn: async (payment: PaymentRow) => {
-      const amount = Math.max(Number(payment.amount_due) - Number(payment.amount_paid), 0);
-      if (amount <= 0) throw new Error("لا يوجد مبلغ متبقٍ على هذه الدفعة");
-      const { data: auth } = await supabase.auth.getUser();
-      const { error } = await supabase.from("payment_transactions").insert({
-        payment_id: payment.id,
-        amount,
-        paid_at: today(),
-        method: "manual",
-        recorded_by: auth.user?.id ?? null,
+  const moveAsset = useMutation({
+    mutationFn: (buildingId: string | null) => {
+      if (!dragAsset) throw new Error("اختر الوحدة أو العقار أولًا");
+      return moveOwnerAsset({
+        data: { ownerId, buildingId, itemId: dragAsset.id, itemType: dragAsset.type },
       });
+    },
+    onSuccess: () => {
+      setDragAsset(null);
+      queryClient.invalidateQueries({ queryKey: ["owner-dossier", ownerId] });
+      toast.success("تم نقل العنصر إلى المبنى");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "تعذّر النقل"),
+  });
+
+  const issueOwnerAccess = useMutation({
+    mutationFn: () => issueClientAccess({ data: { contactId: ownerId } }),
+    onSuccess: (result) => {
+      setOwnerAccess({ username: result.username, password: result.password });
+      toast.success("تم تجهيز حساب دخول المالك");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "تعذّر تجهيز الحساب"),
+  });
+
+  const moveItem = useMutation({
+    mutationFn: (payload: {
+      itemId: string;
+      itemType: "unit" | "property";
+      buildingId: string | null;
+    }) =>
+      moveOwnerAsset({
+        data: {
+          ownerId,
+          buildingId: payload.buildingId,
+          itemId: payload.itemId,
+          itemType: payload.itemType,
+        },
+      }),
+    onSuccess: () => {
+      setDragAsset(null);
+      queryClient.invalidateQueries({ queryKey: ["owner-dossier", ownerId] });
+      toast.success("تم تحديث مكان الوحدة");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "تعذّر النقل"),
+  });
+
+  const sectionsQuery = useQuery({
+    queryKey: ["owner-sections", ownerId],
+    queryFn: async () => {
+      const [sections, items] = await Promise.all([
+        supabase
+          .from("owner_asset_sections")
+          .select("id, name, sort_order")
+          .eq("owner_id", ownerId)
+          .order("sort_order")
+          .order("created_at"),
+        supabase
+          .from("owner_asset_section_items")
+          .select("id, section_id, item_type, item_id")
+          .eq("owner_id", ownerId),
+      ]);
+      if (sections.error) throw sections.error;
+      if (items.error) throw items.error;
+      return { sections: sections.data ?? [], items: items.data ?? [] };
+    },
+  });
+  const refreshSections = () =>
+    queryClient.invalidateQueries({ queryKey: ["owner-sections", ownerId] });
+  const assignedAssetIds = new Set(
+    (sectionsQuery.data?.items ?? [])
+      .filter((item) => item.item_type !== "building")
+      .map((item) => item.item_id),
+  );
+
+  const createSection = useMutation({
+    mutationFn: async (name: string) => {
+      const clean = name.trim();
+      if (!clean) throw new Error("اكتب اسم القسم أولًا");
+      const { error } = await supabase
+        .from("owner_asset_sections")
+        .insert({ owner_id: ownerId, name: clean });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("تم تسجيل السداد");
-      queryClient.invalidateQueries({ queryKey: ["owner-dossier", ownerId] });
+      setNewSectionName("");
+      refreshSections();
+      toast.success("تمت إضافة القسم");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "تعذّر تسجيل السداد"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "تعذّرت الإضافة"),
+  });
+
+  const renameSection = useMutation({
+    mutationFn: async (payload: { id: string; name: string }) => {
+      const clean = payload.name.trim();
+      if (!clean) throw new Error("اسم القسم مطلوب");
+      const { error } = await supabase
+        .from("owner_asset_sections")
+        .update({ name: clean })
+        .eq("id", payload.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refreshSections();
+      toast.success("تم تعديل اسم القسم");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "تعذّر التعديل"),
+  });
+
+  const deleteSection = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("owner_asset_sections").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refreshSections();
+      toast.success("تم حذف القسم");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "تعذّر الحذف"),
+  });
+
+  const assignToSection = useMutation({
+    mutationFn: async (payload: {
+      sectionId: string | null;
+      itemType: "building" | "property" | "unit";
+      itemId: string;
+    }) => {
+      if (!payload.sectionId) {
+        const { error } = await supabase
+          .from("owner_asset_section_items")
+          .delete()
+          .eq("owner_id", ownerId)
+          .eq("item_type", payload.itemType)
+          .eq("item_id", payload.itemId);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await supabase.from("owner_asset_section_items").upsert(
+        {
+          owner_id: ownerId,
+          section_id: payload.sectionId,
+          item_type: payload.itemType,
+          item_id: payload.itemId,
+        },
+        { onConflict: "owner_id,item_type,item_id" },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setDragGroup(null);
+      refreshSections();
+      toast.success("تم ترتيب العنصر داخل القسم");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "تعذّر الترتيب"),
+  });
+
+  const assignContract = useMutation({
+    mutationFn: (unitId: string) => {
+      if (!dragContractId) throw new Error("اختر العقد أولًا");
+      return assignOwnerContract({ data: { ownerId, contractId: dragContractId, unitId } });
+    },
+    onSuccess: () => {
+      setDragContractId(null);
+      queryClient.invalidateQueries({ queryKey: ["owner-dossier", ownerId] });
+      toast.success("تم ربط العقد بالوحدة");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "تعذّر نقل العقد"),
   });
 
   const exportOwner = async (aiSummary?: string) => {
@@ -190,14 +389,14 @@ function OwnerDetailPage() {
     const ownerRows: ExportRow[] = [
       {
         "الاسم الكامل": data.owner.full_name,
-        "الصفة": "مالك",
+        الصفة: "مالك",
         "رقم الهوية / السجل": data.owner.national_id,
-        "الجوال": data.owner.phone,
-        "واتساب": data.owner.whatsapp,
-        "البريد": data.owner.email,
-        "العنوان": data.owner.address,
-        "الحالة": data.owner.is_active ? "نشط" : "موقوف",
-        "الملاحظات": data.owner.notes,
+        الجوال: data.owner.phone,
+        واتساب: data.owner.whatsapp,
+        البريد: data.owner.email,
+        العنوان: data.owner.address,
+        الحالة: data.owner.is_active ? "نشط" : "موقوف",
+        الملاحظات: data.owner.notes,
       },
     ];
     const sheets = [
@@ -300,7 +499,10 @@ function OwnerDetailPage() {
         <Loader2 className="size-7 animate-spin text-primary" />
       </div>
     );
-  if (!data) return <div className="surface-card p-10 text-center text-destructive">تعذّر تحميل ملف المالك</div>;
+  if (!data)
+    return (
+      <div className="surface-card p-10 text-center text-destructive">تعذّر تحميل ملف المالك</div>
+    );
 
   const phone = data.owner.phone?.replace(/\D/g, "") ?? "";
   const whatsapp = (data.owner.whatsapp || data.owner.phone)?.replace(/\D/g, "") ?? "";
@@ -310,7 +512,8 @@ function OwnerDetailPage() {
   for (const c of data.contracts) {
     if (c.status !== "active") continue;
     if (c.unit_id && !contractByUnit.has(c.unit_id)) contractByUnit.set(c.unit_id, c);
-    if (c.property_id && !contractByProperty.has(c.property_id)) contractByProperty.set(c.property_id, c);
+    if (c.property_id && !contractByProperty.has(c.property_id))
+      contractByProperty.set(c.property_id, c);
   }
   const paymentsByContract = new Map<string, PaymentRow[]>();
   for (const p of data.payments) {
@@ -319,23 +522,89 @@ function OwnerDetailPage() {
     paymentsByContract.set(p.contract_id, list);
   }
 
-  type GroupItem = { key: string; title: string; subtitle: string; contract: any | null; badge?: string };
+  const unitBoard = data.units.map((u) => {
+    const contract = contractByUnit.get(u.id) ?? null;
+    const pays: PaymentRow[] = contract ? (paymentsByContract.get(contract.id) ?? []) : [];
+    const remaining = pays.reduce(
+      (s, p) => s + Math.max(Number(p.amount_due) - Number(p.amount_paid), 0),
+      0,
+    );
+    return { unit: u, contract, remaining };
+  });
+  // الأصول = الوحدات داخل العمارات + العقارات المستقلة، والإشغال يُقرأ من العقد النشط أولًا ثم الحالة المخزنة
+  const assetRows: { status: string | null; hasContract: boolean }[] = [
+    ...data.units.map((u) => ({
+      status: u.status ?? null,
+      hasContract: Boolean(contractByUnit.get(u.id)),
+    })),
+    ...data.properties.map((p) => ({
+      status: p.status ?? null,
+      hasContract: Boolean(contractByProperty.get(p.id)),
+    })),
+  ];
+  const norm = (s: string | null) => (s ?? "").trim().toLowerCase();
+  const occupiedStatuses = [
+    "occupied",
+    "rented",
+    "leased",
+    "sold",
+    "busy",
+    "مؤجرة",
+    "مؤجر",
+    "مشغولة",
+  ];
+  const outStatuses = [
+    "maintenance",
+    "out_of_service",
+    "inactive",
+    "disabled",
+    "صيانة",
+    "خارج الخدمة",
+  ];
+  const unitCounts = {
+    total: assetRows.length,
+    occupied: assetRows.filter((a) => a.hasContract || occupiedStatuses.includes(norm(a.status)))
+      .length,
+    outOfService: assetRows.filter((a) => !a.hasContract && outStatuses.includes(norm(a.status)))
+      .length,
+    vacant: assetRows.filter(
+      (a) =>
+        !a.hasContract &&
+        !occupiedStatuses.includes(norm(a.status)) &&
+        !outStatuses.includes(norm(a.status)),
+    ).length,
+  };
+
+  type GroupItem = {
+    key: string;
+    title: string;
+    subtitle: string;
+    contract: any | null;
+    badge?: string;
+    assetType: "unit" | "property";
+  };
   const groups: { key: string; title: string; subtitle: string; items: GroupItem[] }[] = [];
   for (const building of data.buildings) {
     groups.push({
       key: building.id,
       title: building.name,
-      subtitle: [building.district, building.city, building.address].filter(Boolean).join(" ، ") || "—",
+      subtitle:
+        [building.district, building.city, building.address].filter(Boolean).join(" ، ") || "—",
       items: data.units
         .filter((u) => u.building_id === building.id)
         .map((u) => ({
           key: u.id,
           title: `وحدة رقم ${u.unit_number}`,
-          subtitle: [u.unit_type, u.floor ? `الدور ${u.floor}` : null, u.area ? `${u.area} م²` : null]
+          subtitle: [
+            u.unit_type,
+            u.floor ? `الدور ${u.floor}` : null,
+            u.area ? `${u.area} م²` : null,
+          ]
             .filter(Boolean)
             .join(" · "),
           contract: contractByUnit.get(u.id) ?? null,
           badge: u.status,
+          assetType: "unit" as const,
         })),
     });
   }
@@ -353,6 +622,7 @@ function OwnerDetailPage() {
           subtitle: [p.code, p.city, p.district].filter(Boolean).join(" · "),
           contract: contractByProperty.get(p.id) ?? null,
           badge: p.status,
+          assetType: "property" as const,
         })),
         ...looseUnits.map((u) => ({
           key: u.id,
@@ -360,6 +630,7 @@ function OwnerDetailPage() {
           subtitle: [u.unit_type, u.floor ? `الدور ${u.floor}` : null].filter(Boolean).join(" · "),
           contract: contractByUnit.get(u.id) ?? null,
           badge: u.status,
+          assetType: "unit" as const,
         })),
       ],
     });
@@ -370,30 +641,19 @@ function OwnerDetailPage() {
     p.status === "paid" ? "success" : daysBetween(p.due_date) < 0 ? "danger" : "warning";
   const paymentLabel = (p: PaymentRow) =>
     p.status === "paid" ? "مدفوع" : daysBetween(p.due_date) < 0 ? "متأخر" : "قادمة";
-  const reminderLink = (contract: any, payment?: PaymentRow) => {
-    const to = (contract?.tenant?.whatsapp || contract?.tenant?.phone || "").replace(/\D/g, "");
-    if (!to) return null;
-    const text = payment
-      ? `تذكير بسداد الدفعة رقم ${payment.payment_number} بمبلغ ${remainingOf(payment)} ريال بتاريخ استحقاق ${payment.due_date} — عقد ${contract.contract_number}.`
-      : `تذكير بخصوص عقد ${contract?.contract_number ?? ""}.`;
-    return `https://wa.me/${to}?text=${encodeURIComponent(text)}`;
+  /** التذكير يفتح صفحة قالب التذكير الجاهز بدل الإرسال المباشر على واتساب. */
+  const reminderPaymentId = (contract: { id: string } | null | undefined) => {
+    if (!contract) return null;
+    const list = paymentsByContract.get(contract.id) ?? [];
+    const next = [...list]
+      .filter((p) => p.status !== "paid" && p.status !== "cancelled")
+      .sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
+    return next?.id ?? null;
   };
 
   return (
     <>
-      <PageHero
-        title="الملاك"
-        subtitle="إدارة بيانات الملاك وعقاراتهم وعقودهم الإيجارية"
-        icon={UserRound}
-        stats={[
-          { value: String(data.properties.length + data.units.length), label: "العقارات والوحدات" },
-          { value: formatCurrency(stats.totalDue), label: "إجمالي الإيجارات" },
-          { value: formatCurrency(stats.overdueAmount), label: "المتأخرات" },
-          { value: `${stats.rate}%`, label: "نسبة التحصيل" },
-        ]}
-      />
-
-      <div className="flex flex-wrap items-center justify-between gap-3 text-[12px]">
+      <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background/95 py-3 text-[12px] backdrop-blur">
         <Link
           to="/owners"
           className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary"
@@ -402,6 +662,15 @@ function OwnerDetailPage() {
           <ArrowRight className="size-3.5" />
         </Link>
         <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => issueOwnerAccess.mutate()}
+            disabled={issueOwnerAccess.isPending}
+            className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 font-semibold hover:bg-muted disabled:opacity-50"
+          >
+            <KeyRound className="size-4" />
+            حساب دخول المالك
+          </button>
           <button
             type="button"
             onClick={() => setImportOpen(true)}
@@ -432,11 +701,49 @@ function OwnerDetailPage() {
             onClick={() => aiExport.mutate()}
             className="inline-flex h-9 items-center gap-2 rounded-md border border-primary/30 bg-accent px-3 font-semibold text-primary disabled:opacity-50"
           >
-            {aiExport.isPending ? <Loader2 className="size-4 animate-spin" /> : <Bot className="size-4" />}
+            {aiExport.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Bot className="size-4" />
+            )}
             ملف ذكي
           </button>
         </div>
       </div>
+
+      {ownerAccess ? (
+        <section className="surface-card border-e-4 border-e-success p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold">بيانات دخول بوابة المالك</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                انسخها وأرسلها للمالك بصورة آمنة. كلمة المرور لا تُعرض مرة أخرى.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setOwnerAccess(null)}
+              className="text-xs font-semibold text-muted-foreground"
+            >
+              إخفاء
+            </button>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="rounded-lg bg-muted p-3">
+              <span className="block text-xs text-muted-foreground">اسم المستخدم</span>
+              <b dir="ltr" className="mt-1 block">
+                {ownerAccess.username}
+              </b>
+            </div>
+            <div className="rounded-lg bg-muted p-3">
+              <span className="block text-xs text-muted-foreground">كلمة المرور المؤقتة</span>
+              <b dir="ltr" className="mt-1 block">
+                {ownerAccess.password}
+              </b>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="surface-card overflow-hidden border-e-4 border-e-primary">
         <div className="flex flex-wrap items-center justify-between gap-4 p-4">
@@ -453,7 +760,8 @@ function OwnerDetailPage() {
                 </Chip>
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground">
-                رقم المالك: <span dir="ltr">{data.owner.id.slice(0, 8)}</span> · أضيف في {formatDate(data.owner.created_at)}
+                رقم المالك: <span dir="ltr">{data.owner.id.slice(0, 8)}</span> · أضيف في{" "}
+                {formatDate(data.owner.created_at)}
               </p>
             </div>
           </div>
@@ -498,324 +806,1026 @@ function OwnerDetailPage() {
           </div>
         </div>
 
-        <div className="grid gap-px border-t border-border bg-border sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          <Kpi label="المتأخرات" value={formatCurrency(stats.overdueAmount)} hint={`${stats.overdueCount} دفعة متأخرة`} tone="danger" />
-          <Kpi label="المستحق خلال 30 يوم" value={formatCurrency(stats.next30Amount)} hint={`${stats.next30Count} دفعة قادمة`} />
+        <div className="grid gap-px border-t border-border bg-border sm:grid-cols-2 xl:grid-cols-4">
           <Kpi
-            label="نسبة التحصيل"
-            value={`${stats.rate}%`}
-            hint={`${formatCurrency(stats.totalPaid)} من ${formatCurrency(stats.totalDue)}`}
-            progress={stats.rate}
+            label="المتأخرات"
+            value={formatCurrency(stats.overdueAmount)}
+            hint={`${stats.overdueCount} دفعة متأخرة`}
+            tone="danger"
           />
           <Kpi
-            label="العقارات والوحدات"
-            value={`${data.properties.length + data.units.length}`}
-            hint={`${data.buildings.length} عمارة · ${data.units.length} وحدة`}
+            label="المستحق خلال 30 يوم"
+            value={formatCurrency(stats.next30Amount)}
+            hint={`${stats.next30Count} دفعة قادمة`}
           />
           <Kpi
-            label="أقرب دفعة"
-            value={stats.nextPayment ? formatDate(stats.nextPayment.due_date) : "—"}
-            hint={stats.nextPayment ? `${formatCurrency(remainingOf(stats.nextPayment))} ريال` : "لا توجد دفعات قادمة"}
+            label="العقود النشطة"
+            value={`${activeContracts.length}`}
+            hint={`من أصل ${data.contracts.length} عقد`}
           />
-          <Kpi label="آخر سداد" value={data.lastPaidAt ? formatDate(data.lastPaidAt) : "—"} hint="آخر عملية سداد مسجلة" />
+          <Kpi
+            label="الإشغال"
+            value={`${unitCounts.occupied} مؤجرة`}
+            hint={`${unitCounts.vacant} شاغرة · ${unitCounts.outOfService} خارج الخدمة`}
+          />
+        </div>
+
+        <div className="border-t border-border p-4">
+          <button
+            type="button"
+            onClick={() => setShowOwnerDetails((value) => !value)}
+            className="flex w-full items-center justify-between gap-3 text-start"
+          >
+            <span className="text-[13px] font-bold text-foreground">البيانات الشخصية والهوية</span>
+            <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-primary">
+              {showOwnerDetails ? "إخفاء التفاصيل" : "عرض كل التفاصيل"}
+              <ChevronDown
+                className={`size-4 transition-transform ${showOwnerDetails ? "rotate-180" : ""}`}
+              />
+            </span>
+          </button>
+          {showOwnerDetails ? (
+            <>
+              <div className="grid gap-px overflow-hidden rounded-md bg-border sm:grid-cols-2 lg:grid-cols-4">
+                <Info
+                  icon={KeyRound}
+                  label="رقم الهوية / السجل"
+                  value={data.owner.national_id}
+                  ltr
+                />
+                <Info icon={Phone} label="الجوال" value={data.owner.phone} ltr />
+                <Info
+                  icon={MessageCircle}
+                  label="واتساب"
+                  value={data.owner.whatsapp || data.owner.phone}
+                  ltr
+                />
+                <Info icon={Mail} label="البريد الإلكتروني" value={data.owner.email} ltr />
+                <Info icon={MapPin} label="العنوان" value={data.owner.address} />
+                <Info icon={Building2} label="التصنيف" value="مالك" />
+                <Info
+                  icon={CheckCircle2}
+                  label="الحالة"
+                  value={data.owner.is_active ? "نشط" : "موقوف"}
+                />
+                <Info icon={UserRound} label="أضيف في" value={formatDate(data.owner.created_at)} />
+              </div>
+              {data.owner.notes ? (
+                <p className="mt-3 rounded-lg bg-secondary/60 p-3 text-[13px]">
+                  {data.owner.notes}
+                </p>
+              ) : null}
+            </>
+          ) : null}
         </div>
       </section>
 
-      <RecordSection title="أقرب الدفعات" icon={CalendarClock} count={stats.nearest.length}>
-        <div className="space-y-2">
-          {stats.nearest.map((p) => {
-            const contract = data.contracts.find((c) => c.id === p.contract_id);
-            const late = daysBetween(p.due_date) < 0;
-            return (
-              <div
-                key={p.id}
-                className={`flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2.5 ${late ? "border-destructive/40 bg-destructive/5" : "border-border"}`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="font-bold">{formatCurrency(remainingOf(p))}</span>
-                  <span className="text-[12.5px] text-muted-foreground">
-                    {contract?.unit?.unit_number ? `وحدة ${contract.unit.unit_number}` : contract?.property?.name ?? "—"}
-                    {contract?.tenant?.full_name ? ` — ${contract.tenant.full_name}` : ""}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[12px] text-muted-foreground" dir="ltr">
-                    {formatDate(p.due_date)}
-                  </span>
-                  <Chip tone={paymentTone(p)}>
-                    {late ? `متأخرة منذ ${Math.abs(daysBetween(p.due_date))} يوم` : `خلال ${daysBetween(p.due_date)} يوم`}
-                  </Chip>
-                  <Link
-                    to="/payment-reminder/$paymentId"
-                    params={{ paymentId: p.id }}
-                    className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2.5 text-[12px] font-semibold text-muted-foreground hover:text-success"
-                    title="إرسال تذكير"
+      <Tabs defaultValue="overview" dir="rtl" className="w-full">
+        <TabsList className="sticky top-[64px] z-10 grid h-auto w-full grid-cols-2 border border-border bg-card p-1 sm:grid-cols-4">
+          <TabsTrigger value="overview" className="min-h-10 gap-2">
+            <House className="size-4" /> نظرة عامة
+          </TabsTrigger>
+          <TabsTrigger value="assets" className="min-h-10 gap-2">
+            <Building2 className="size-4" /> العقارات والوحدات
+          </TabsTrigger>
+          <TabsTrigger value="contracts" className="min-h-10 gap-2">
+            <UserRound className="size-4" /> العقود والمستأجرون
+          </TabsTrigger>
+          <TabsTrigger value="finance" className="min-h-10 gap-2">
+            <WalletCards className="size-4" /> الفواتير والتحصيل
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-5">
+          <RecordSection
+            title="أقرب الدفعات"
+            subtitle="أولوية المتابعة والتحصيل حسب تاريخ الاستحقاق"
+            icon={CalendarClock}
+            count={stats.nearest.length}
+            tone="gold"
+          >
+            <div className="space-y-2">
+              {stats.nearest.map((p) => {
+                const contract = data.contracts.find((c) => c.id === p.contract_id);
+                const late = daysBetween(p.due_date) < 0;
+                return (
+                  <div
+                    key={p.id}
+                    className={`flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2.5 ${late ? "border-destructive/40 bg-destructive/5" : "border-border"}`}
                   >
-                    <MessageCircle className="size-3.5" />
-                    إرسال تذكير
-                  </Link>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold">{formatCurrency(remainingOf(p))}</span>
+                      <span className="text-[12.5px] text-muted-foreground">
+                        {contract?.unit?.unit_number
+                          ? `وحدة ${contract.unit.unit_number}`
+                          : (contract?.property?.name ?? "—")}
+                        {contract?.tenant?.full_name ? ` — ${contract.tenant.full_name}` : ""}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[12px] text-muted-foreground" dir="ltr">
+                        {formatDate(p.due_date)}
+                      </span>
+                      <Chip tone={paymentTone(p)}>
+                        {late
+                          ? `متأخرة منذ ${Math.abs(daysBetween(p.due_date))} يوم`
+                          : `خلال ${daysBetween(p.due_date)} يوم`}
+                      </Chip>
+                      <Link
+                        to="/payment-reminder/$paymentId"
+                        params={{ paymentId: p.id }}
+                        className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2.5 text-[12px] font-semibold text-muted-foreground hover:text-success"
+                        title="إرسال تذكير"
+                      >
+                        <MessageCircle className="size-3.5" />
+                        إرسال تذكير
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+              {!stats.nearest.length ? <Empty text="لا توجد دفعات مستحقة" /> : null}
+            </div>
+          </RecordSection>
+
+          <section className="surface-card overflow-hidden">
+            <div className="border-b border-border bg-primary px-5 py-5 text-primary-foreground">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-bold opacity-75">لوحة المحفظة العقارية</p>
+                  <h2 className="mt-1 text-xl font-black">الوحدات وحالتها التشغيلية</h2>
+                  <p className="mt-1 text-[12.5px] opacity-75">
+                    حالة وحدات المالك ومستأجريها والمبالغ المتبقية
+                  </p>
                 </div>
+                <span className="rounded-md border border-primary-foreground/20 bg-primary-foreground/10 px-3 py-1 text-xs font-bold">
+                  {unitCounts.total} وحدة
+                </span>
               </div>
-            );
-          })}
-          {!stats.nearest.length ? <Empty text="لا توجد دفعات مستحقة" /> : null}
-        </div>
-      </RecordSection>
+            </div>
 
-      <RecordSection title="البيانات الأساسية" icon={UserRound} count={data.owner.is_active ? 1 : 0}>
-        <div className="grid gap-px overflow-hidden rounded-md bg-border sm:grid-cols-2 lg:grid-cols-4">
-          <Info icon={UserRound} label="الاسم" value={data.owner.full_name} />
-          <Info icon={KeyRound} label="رقم الهوية / السجل" value={data.owner.national_id} ltr />
-          <Info icon={Phone} label="الجوال" value={data.owner.phone} ltr />
-          <Info icon={MessageCircle} label="واتساب" value={data.owner.whatsapp || data.owner.phone} ltr />
-          <Info icon={Mail} label="البريد الإلكتروني" value={data.owner.email} ltr />
-          <Info icon={MapPin} label="العنوان" value={data.owner.address} />
-          <Info icon={Building2} label="التصنيف" value="مالك" />
-          <Info icon={CheckCircle2} label="الحالة" value={data.owner.is_active ? "نشط" : "موقوف"} />
-        </div>
-        {data.owner.notes ? (
-          <p className="mt-3 rounded-lg bg-secondary/60 p-3 text-[13px]">{data.owner.notes}</p>
-        ) : null}
-      </RecordSection>
+            <div className="grid gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
+              <UnitStat label="شاغرة" value={unitCounts.vacant} tone="success" />
+              <UnitStat label="مشغولة" value={unitCounts.occupied} tone="danger" />
+              <UnitStat label="خارج الخدمة" value={unitCounts.outOfService} tone="warning" />
+              <UnitStat label="إجمالي الوحدات" value={unitCounts.total} tone="neutral" />
+            </div>
 
-      <RecordSection title="العقارات والوحدات" icon={House} count={groups.reduce((s, g) => s + g.items.length, 0)}>
-        <div className="space-y-4">
-          {groups.map((group) => {
-            const collapsed = collapsedGroups[group.key];
-            return (
-              <article key={group.key} className="overflow-hidden rounded-md border border-border border-e-primary">
-                <header className="flex flex-wrap items-center justify-between gap-3 bg-secondary/40 px-4 py-3">
-                  <div>
-                    <h3 className="text-[14px] font-bold">{group.title}</h3>
-                    <p className="mt-1 text-[12px] text-muted-foreground">{group.subtitle}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Chip tone="primary">{group.items.length} وحدة</Chip>
-                    <button
-                      type="button"
-                      onClick={() => setCollapsedGroups((s) => ({ ...s, [group.key]: !collapsed }))}
-                      className="grid size-8 place-items-center rounded-md border border-border bg-card hover:bg-muted"
-                      aria-label="طي / فتح"
-                    >
-                      <ChevronDown className={`size-4 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
-                    </button>
-                  </div>
-                </header>
-                {collapsed ? null : (
-                  <div className="space-y-3 p-3">
-                    {group.items.map((item) => {
-                      const contract = item.contract;
-                      const list = contract ? (paymentsByContract.get(contract.id) ?? []) : [];
-                      const shown = openUnits[item.key];
-                      const paid = list.filter((p) => p.status === "paid").length;
-                      const totalRemaining = list.reduce((s, p) => s + remainingOf(p), 0);
-                      const link = reminderLink(contract);
-                      return (
-                        <div key={item.key} className="rounded-md border border-border bg-card">
-                          <div className="flex flex-wrap items-center justify-between gap-3 p-3">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="text-[13.5px] font-bold">{item.title}</h4>
-                                {contract ? (
-                                  <Chip tone="success">مؤجرة</Chip>
-                                ) : (
-                                  <Chip tone="neutral">شاغرة</Chip>
-                                )}
-                              </div>
-                              <p className="mt-1 text-[12px] text-muted-foreground">
-                                {contract
-                                  ? `${contract.tenant?.full_name ?? "مستأجر غير مسجل"}${contract.tenant?.phone ? ` · ${contract.tenant.phone}` : ""} · ينتهي ${formatDate(contract.end_date)}`
-                                  : item.subtitle || "لا يوجد عقد نشط"}
-                              </p>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              {contract ? (
-                                <span className="rounded-md bg-secondary px-3 py-1 text-[12.5px] font-bold">
-                                  {formatCurrency(contract.annual_rent ?? contract.total_value)}
-                                </span>
-                              ) : null}
-                              {link ? (
-                                <a
-                                  href={link}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex h-8 items-center gap-2 rounded-md border border-success/30 px-3 text-[12px] font-semibold text-success"
-                                >
-                                  <MessageCircle className="size-3.5" />
-                                  تذكير
-                                </a>
-                              ) : null}
-                              {contract ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => setOpenUnits((s) => ({ ...s, [item.key]: !shown }))}
-                                    className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-3 text-[12px] font-semibold hover:bg-muted"
-                                  >
-                                    <ReceiptText className="size-3.5" />
-                                    {shown ? "إخفاء الدفعات" : "عرض الدفعات"}
-                                  </button>
-                                  <Link
-                                    to="/contracts/$contractId"
-                                    params={{ contractId: contract.id }}
-                                    className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-3 text-[12px] font-semibold hover:bg-muted"
-                                  >
-                                    <FileText className="size-3.5" />
-                                    العقد
-                                  </Link>
-                                </>
-                              ) : null}
-                            </div>
+            <div className="p-5">
+              {unitBoard.length === 0 ? (
+                <p className="py-10 text-center text-[13px] text-muted-foreground">
+                  لا توجد وحدات مسجلة لهذا المالك.
+                </p>
+              ) : (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                  {unitBoard.map(({ unit, contract, remaining }) => {
+                    const occupied = unit.status === "occupied" || Boolean(contract);
+                    const accent = occupied ? "border-destructive/50" : "border-success/50";
+                    return (
+                      <article
+                        key={unit.id}
+                        className={`rounded-xl border-2 ${accent} bg-card p-3`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-[11.5px] text-muted-foreground">
+                              {unit.unit_type ?? "وحدة"}
+                            </p>
+                            <p className="text-base font-bold">{unit.unit_number}</p>
                           </div>
+                          <Chip tone={occupied ? "danger" : "success"}>
+                            {occupied ? "مشغولة" : "شاغرة"}
+                          </Chip>
+                        </div>
 
-                          {contract && shown ? (
-                            <div className="border-t border-border p-3">
-                              <div className="mb-3 grid gap-2 sm:grid-cols-4">
-                                <MiniStat label="الدفعات" value={`${paid}/${list.length}`} />
-                                <MiniStat
-                                  label="مدفوع"
-                                  value={formatCurrency(list.reduce((s, p) => s + Number(p.amount_paid), 0))}
-                                  tone="success"
-                                />
-                                <MiniStat label="متبقي" value={formatCurrency(totalRemaining)} tone="danger" />
-                                <MiniStat
-                                  label="نسبة التحصيل"
-                                  value={`${list.length ? Math.round((paid / list.length) * 100) : 0}%`}
-                                />
-                              </div>
-                              <div className="overflow-x-auto">
-                                <table className="w-full min-w-[620px] text-[12.5px]">
-                                  <thead className="bg-secondary/60 text-[11.5px] text-muted-foreground">
-                                    <tr>
-                                      <th className="p-2 text-start">#</th>
-                                      <th className="p-2 text-start">الاستحقاق</th>
-                                      <th className="p-2 text-start">المبلغ</th>
-                                      <th className="p-2 text-start">المدفوع</th>
-                                      <th className="p-2 text-start">المتبقي</th>
-                                      <th className="p-2 text-start">الحالة</th>
-                                      <th className="p-2 text-start">إجراء</th>
-                                      <th className="p-2 text-start">تذكير</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {list.map((p) => {
-                                      const payLink = reminderLink(contract, p);
-                                      return (
-                                        <tr key={p.id} className="border-t border-border">
-                                          <td className="p-2 font-semibold">{p.payment_number}</td>
-                                          <td className="p-2" dir="ltr">
-                                            {formatDate(p.due_date)}
-                                          </td>
-                                          <td className="p-2">{formatCurrency(p.amount_due)}</td>
-                                          <td className="p-2 text-success">{formatCurrency(p.amount_paid)}</td>
-                                          <td className="p-2">{formatCurrency(remainingOf(p))}</td>
-                                          <td className="p-2">
-                                            <Chip tone={paymentTone(p)}>{paymentLabel(p)}</Chip>
-                                          </td>
-                                          <td className="p-2">
-                                            {p.status === "paid" ? (
-                                              <span className="inline-flex items-center gap-1 text-success">
-                                                <CheckCircle2 className="size-3.5" />
-                                                مسددة
-                                              </span>
-                                            ) : (
-                                              <button
-                                                type="button"
-                                                disabled={recordPayment.isPending}
-                                                onClick={() => recordPayment.mutate(p)}
-                                                className="inline-flex h-8 items-center gap-1 rounded-lg bg-primary px-3 text-[12px] font-semibold text-primary-foreground disabled:opacity-50"
-                                              >
-                                                <CheckCircle2 className="size-3.5" />
-                                                تسجيل سداد
-                                              </button>
-                                            )}
-                                          </td>
-                                          <td className="p-2">
-                                            <Link
-                                              to="/payment-reminder/$paymentId"
-                                              params={{ paymentId: p.id }}
-                                              className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2.5 text-[12px] font-semibold text-muted-foreground hover:text-success"
-                                              title="إرسال تذكير"
-                                            >
-                                              <MessageCircle className="size-3.5" />
-                                              إرسال تذكير
-                                            </Link>
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                    {!list.length ? (
-                                      <tr>
-                                        <td colSpan={8} className="p-4 text-center text-muted-foreground">
-                                          لا توجد دفعات مسجلة على هذا العقد.
-                                        </td>
-                                      </tr>
-                                    ) : null}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
+                        <div className="mt-3 border-t border-border pt-3 text-[12.5px]">
+                          <p className="flex items-center gap-2 font-semibold">
+                            <UserRound className="size-3.5 text-muted-foreground" />
+                            {contract?.tenant?.full_name ?? "لا يوجد مستأجر"}
+                          </p>
+                          <p className="mt-1 text-[11.5px] text-muted-foreground">
+                            تسجيل الدخول:{" "}
+                            {contract?.start_date ? formatDate(contract.start_date) : "—"}
+                          </p>
+                          <p className="text-[11.5px] text-muted-foreground">
+                            تسجيل الخروج: {contract?.end_date ? formatDate(contract.end_date) : "—"}
+                          </p>
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-[12px]">
+                          <span
+                            className={
+                              remaining > 0
+                                ? "font-semibold text-destructive"
+                                : "text-muted-foreground"
+                            }
+                          >
+                            المتبقي: {formatCurrency(remaining)}
+                          </span>
+                          {contract ? (
+                            <Link
+                              to="/contracts/$contractId"
+                              params={{ contractId: contract.id }}
+                              className="font-semibold text-primary"
+                            >
+                              العقد
+                            </Link>
                           ) : null}
                         </div>
-                      );
-                    })}
-                    {!group.items.length ? <Empty text="لا توجد وحدات في هذه العمارة" /> : null}
-                  </div>
-                )}
-              </article>
-            );
-          })}
-          {!groups.length ? <Empty text="لا توجد عقارات أو وحدات مرتبطة" /> : null}
-        </div>
-      </RecordSection>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+        </TabsContent>
 
-      <RecordSection title="العقود" icon={FileText} count={data.contracts.length}>
-        <div className="space-y-2">
-          {data.contracts.map((contract) => (
-            <Link
-              key={contract.id}
-              to="/contracts/$contractId"
-              params={{ contractId: contract.id }}
-              className="grid items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-muted sm:grid-cols-5"
-            >
-              <strong>{contract.contract_number}</strong>
-              <span>{contract.property?.name ?? (contract.unit?.unit_number ? `وحدة ${contract.unit.unit_number}` : "—")}</span>
-              <span>
-                {formatDate(contract.start_date)} — {formatDate(contract.end_date)}
-              </span>
-              <span className="font-semibold">{formatCurrency(contract.annual_rent ?? contract.total_value)}</span>
-              <Chip tone={contract.status === "active" ? "success" : "neutral"}>
-                {contractStatusLabels[contract.status] ?? contract.status}
-              </Chip>
-            </Link>
-          ))}
-          {!data.contracts.length ? <Empty text="لا توجد عقود مرتبطة" /> : null}
-        </div>
-      </RecordSection>
-
-      <RecordSection title="الفواتير" icon={ReceiptText} count={data.invoices.length}>
-        <div className="space-y-2">
-          {data.invoices.map((invoice) => (
-            <Link
-              key={invoice.id}
-              to="/invoices/$invoiceId"
-              params={{ invoiceId: invoice.id }}
-              className="grid items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-muted sm:grid-cols-5"
-            >
-              <strong dir="ltr">{invoice.invoice_number}</strong>
-              <span>{formatDate(invoice.issue_date)}</span>
-              <span>{formatDate(invoice.due_date)}</span>
-              <span className="font-semibold">{formatCurrency(invoice.total)}</span>
-              <Chip
-                tone={invoice.status === "paid" ? "success" : invoice.status === "overdue" ? "danger" : "warning"}
+        <TabsContent value="assets" className="space-y-5">
+          <RecordSection
+            title="العقارات والوحدات"
+            subtitle="المباني والأصول والعقود المرتبطة بكل وحدة"
+            icon={House}
+            count={groups.reduce((s, g) => s + g.items.length, 0)}
+          >
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-card p-3">
+              <div>
+                <h3 className="text-[13.5px] font-bold">تقسيم محفظة المالك</h3>
+                <p className="mt-1 text-[12px] text-muted-foreground">
+                  الأقسام ظاهرة دائمًا، وأدوات النقل والتعديل تظهر فقط عند تشغيل وضع التنظيم.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOrganizeMode((value) => !value)}
+                className={`inline-flex h-9 items-center gap-2 rounded-md px-3 text-[12.5px] font-semibold ${organizeMode ? "bg-primary text-primary-foreground" : "border border-border bg-card"}`}
               >
-                {invoiceStatusLabels[invoice.status] ?? invoice.status}
-              </Chip>
-            </Link>
-          ))}
-          {!data.invoices.length ? <Empty text="لا توجد فواتير مرتبطة" /> : null}
-        </div>
-      </RecordSection>
+                <Settings2 className="size-4" />
+                {organizeMode ? "إنهاء التنظيم" : "تنظيم الأقسام"}
+              </button>
+            </div>
+
+            {organizeMode ? (
+              <div className="mb-4 rounded-md border border-border bg-card p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-[13.5px] font-bold">أقسامي (تقسيم بأسماء من عندك)</h3>
+                    <p className="mt-1 text-[12px] text-muted-foreground">
+                      أنشئ قسمًا بالاسم اللي تحبه (مثال: عبد الرحمن، المحطات، العمائر)، ثم اسحب أي
+                      عمارة أو عقار من الأسفل وأسقطه داخل القسم. العمارة تنتقل بكل شققها.
+                    </p>
+                  </div>
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      createSection.mutate(newSectionName);
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <input
+                      value={newSectionName}
+                      onChange={(event) => setNewSectionName(event.target.value)}
+                      placeholder="اسم القسم الجديد"
+                      className="h-9 w-56 rounded-md border border-border bg-background px-3 text-[12.5px]"
+                    />
+                    <button
+                      type="submit"
+                      className="h-9 rounded-md bg-primary px-4 text-[12.5px] font-semibold text-primary-foreground"
+                    >
+                      إضافة قسم
+                    </button>
+                  </form>
+                </div>
+              </div>
+            ) : null}
+
+            {organizeMode ? (
+              <div className="mb-4 rounded-md border border-dashed border-primary/40 bg-secondary/20 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-[13.5px] font-bold">لوحة الترتيب اليدوي</h3>
+                  <p className="text-[12px] text-muted-foreground">
+                    اسحب أي وحدة أو عقار من الشريط وأسقطه على العمارة اللي تختارها، أو استخدم قائمة
+                    «نقل إلى».
+                  </p>
+                </div>
+
+                <p className="mt-3 text-[12px] font-semibold text-muted-foreground">
+                  وحدات وعقارات غير مرتبطة بعمارة
+                </p>
+                <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                  {[
+                    ...data.properties
+                      .filter((p) => !p.building_id && !assignedAssetIds.has(p.id))
+                      .map((p) => ({ id: p.id, type: "property" as const, label: p.name })),
+                    ...data.units
+                      .filter((u) => !u.building_id && !assignedAssetIds.has(u.id))
+                      .map((u) => ({
+                        id: u.id,
+                        type: "unit" as const,
+                        label: `وحدة رقم ${u.unit_number}`,
+                      })),
+                  ].map((item) => (
+                    <div
+                      key={item.id}
+                      draggable
+                      onDragStart={() => setDragAsset({ id: item.id, type: item.type })}
+                      onDragEnd={() => setDragAsset(null)}
+                      className="shrink-0 cursor-grab rounded-md border border-border bg-card px-3 py-2 text-[12.5px] font-semibold active:cursor-grabbing"
+                    >
+                      {item.label}
+                    </div>
+                  ))}
+                  {!data.properties.some((p) => !p.building_id) &&
+                  !data.units.some((u) => !u.building_id) ? (
+                    <span className="text-[12px] text-muted-foreground">
+                      كل الوحدات والعقارات مرتبة داخل العمارات.
+                    </span>
+                  ) : null}
+                </div>
+
+                <p className="mt-4 text-[12px] font-semibold text-muted-foreground">
+                  العمارات — أسقط هنا للإضافة
+                </p>
+                <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                  {data.buildings.map((building, index) => (
+                    <button
+                      key={building.id}
+                      type="button"
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={() => {
+                        if (!dragAsset) return;
+                        moveItem.mutate({
+                          itemId: dragAsset.id,
+                          itemType: dragAsset.type,
+                          buildingId: building.id,
+                        });
+                      }}
+                      onClick={() =>
+                        dragAsset
+                          ? moveItem.mutate({
+                              itemId: dragAsset.id,
+                              itemType: dragAsset.type,
+                              buildingId: building.id,
+                            })
+                          : toast.info("اختر وحدة من الشريط أولًا")
+                      }
+                      className="min-w-[170px] shrink-0 rounded-md border border-border bg-card p-3 text-start transition-colors hover:border-primary"
+                    >
+                      <span className="block text-[12px] text-muted-foreground">
+                        عمارة {index + 1}
+                      </span>
+                      <span className="block text-[13px] font-bold">{building.name}</span>
+                      <span className="mt-1 block text-[12px] text-muted-foreground">
+                        {data.units.filter((u) => u.building_id === building.id).length} وحدة
+                      </span>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={() => {
+                      if (!dragAsset) return;
+                      moveItem.mutate({
+                        itemId: dragAsset.id,
+                        itemType: dragAsset.type,
+                        buildingId: null,
+                      });
+                    }}
+                    className="min-w-[150px] shrink-0 rounded-md border border-dashed border-border bg-card/50 p-3 text-start text-[12.5px] font-semibold text-muted-foreground hover:border-primary"
+                  >
+                    إخراج من العمارات (مستقل)
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {(() => {
+              const renderGroup = (group: (typeof groups)[number], plain = false) => {
+                const collapsed = collapsedGroups[group.key];
+                return (
+                  <article
+                    key={group.key}
+                    draggable={organizeMode && !plain && group.key !== "__standalone"}
+                    onDragStart={(event) => {
+                      if (plain || group.key === "__standalone") return;
+                      event.stopPropagation();
+                      setDragGroup({ id: group.key, type: "building" });
+                    }}
+                    onDragEnd={() => setDragGroup(null)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={() => {
+                      if (plain || dragGroup) return;
+                      moveAsset.mutate(group.key === "__standalone" ? null : group.key);
+                    }}
+                    className="overflow-hidden rounded-md border border-border border-e-primary transition-colors hover:border-primary/50"
+                  >
+                    <header className="flex flex-wrap items-center justify-between gap-3 bg-secondary/40 px-4 py-3">
+                      <div>
+                        <h3 className="text-[14px] font-bold">{group.title}</h3>
+                        <p className="mt-1 text-[12px] text-muted-foreground">{group.subtitle}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Chip tone="primary">{group.items.length} وحدة</Chip>
+                        {organizeMode && !plain && group.key !== "__standalone" ? (
+                          <select
+                            value={sectionOfBuilding.get(group.key) ?? ""}
+                            onChange={(event) =>
+                              assignToSection.mutate({
+                                sectionId: event.target.value || null,
+                                itemType: "building",
+                                itemId: group.key,
+                              })
+                            }
+                            onClick={(event) => event.stopPropagation()}
+                            className="h-8 max-w-40 rounded-md border border-border bg-card px-2 text-[12px]"
+                            aria-label="نقل العمارة إلى قسم"
+                          >
+                            <option value="">بدون قسم</option>
+                            {sections.map((section) => (
+                              <option key={section.id} value={section.id}>
+                                {section.name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCollapsedGroups((s) => ({ ...s, [group.key]: !collapsed }))
+                          }
+                          className="grid size-8 place-items-center rounded-md border border-border bg-card hover:bg-muted"
+                          aria-label="طي / فتح"
+                        >
+                          <ChevronDown
+                            className={`size-4 transition-transform ${collapsed ? "-rotate-90" : ""}`}
+                          />
+                        </button>
+                      </div>
+                    </header>
+                    {collapsed ? null : (
+                      <div className="grid gap-3 p-3 xl:grid-cols-2 2xl:grid-cols-3">
+                        {group.items.map((item) => {
+                          const contract = item.contract;
+                          const list = contract ? (paymentsByContract.get(contract.id) ?? []) : [];
+                          const shown = openUnits[item.key];
+                          const paid = list.filter((p) => p.status === "paid").length;
+                          const totalRemaining = list.reduce((s, p) => s + remainingOf(p), 0);
+                          const reminderId = reminderPaymentId(contract);
+                          return (
+                            <div
+                              key={item.key}
+                              draggable={organizeMode}
+                              onDragStart={(event) => {
+                                event.stopPropagation();
+                                setDragAsset({ id: item.key, type: item.assetType });
+                                setDragGroup({ id: item.key, type: item.assetType });
+                              }}
+                              onDragEnd={() => {
+                                setDragAsset(null);
+                                setDragGroup(null);
+                              }}
+                              onDragOver={(event) => event.preventDefault()}
+                              onDrop={(event) => {
+                                if (!dragContractId || item.assetType !== "unit") return;
+                                event.preventDefault();
+                                event.stopPropagation();
+                                assignContract.mutate(item.key);
+                              }}
+                              className="cursor-grab rounded-md border border-border bg-card active:cursor-grabbing"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-3 p-3">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="text-[13.5px] font-bold">{item.title}</h4>
+                                    {contract ? (
+                                      <Chip tone="success">مؤجرة</Chip>
+                                    ) : (
+                                      <Chip tone="neutral">شاغرة</Chip>
+                                    )}
+                                  </div>
+                                  <p className="mt-1 text-[12px] text-muted-foreground">
+                                    {contract
+                                      ? `${contract.tenant?.full_name ?? "مستأجر غير مسجل"}${contract.tenant?.phone ? ` · ${contract.tenant.phone}` : ""} · ينتهي ${formatDate(contract.end_date)}`
+                                      : item.subtitle || "لا يوجد عقد نشط"}
+                                  </p>
+                                  {organizeMode ? (
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                      <select
+                                        value={group.key === "__standalone" ? "" : group.key}
+                                        onChange={(event) =>
+                                          moveItem.mutate({
+                                            itemId: item.key,
+                                            itemType: item.assetType,
+                                            buildingId: event.target.value || null,
+                                          })
+                                        }
+                                        className="mt-2 h-8 rounded-md border border-border bg-card px-2 text-[12px]"
+                                        aria-label="نقل إلى عمارة"
+                                      >
+                                        <option value="">بدون عمارة (مستقل)</option>
+                                        {data.buildings.map((b, i) => (
+                                          <option key={b.id} value={b.id}>
+                                            عمارة {i + 1} — {b.name}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      <select
+                                        value={sectionOfAsset.get(item.key) ?? ""}
+                                        onChange={(event) =>
+                                          assignToSection.mutate({
+                                            sectionId: event.target.value || null,
+                                            itemType: item.assetType,
+                                            itemId: item.key,
+                                          })
+                                        }
+                                        className="h-8 rounded-md border border-border bg-card px-2 text-[12px]"
+                                        aria-label="نقل إلى قسم"
+                                      >
+                                        <option value="">بدون قسم</option>
+                                        {sections.map((section) => (
+                                          <option key={section.id} value={section.id}>
+                                            {section.name}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  ) : null}
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {contract ? (
+                                    <span className="rounded-md bg-secondary px-3 py-1 text-[12.5px] font-bold">
+                                      {formatCurrency(contract.annual_rent ?? contract.total_value)}
+                                    </span>
+                                  ) : null}
+                                  {reminderId ? (
+                                    <Link
+                                      to="/payment-reminder/$paymentId"
+                                      params={{ paymentId: reminderId }}
+                                      className="inline-flex h-8 items-center gap-2 rounded-md border border-success/30 px-3 text-[12px] font-semibold text-success"
+                                      title="فتح قالب التذكير"
+                                    >
+                                      <MessageCircle className="size-3.5" />
+                                      تذكير
+                                    </Link>
+                                  ) : null}
+                                  {contract ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setOpenUnits((s) => ({ ...s, [item.key]: !shown }))
+                                        }
+                                        className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-3 text-[12px] font-semibold hover:bg-muted"
+                                      >
+                                        <ReceiptText className="size-3.5" />
+                                        {shown ? "إخفاء الدفعات" : "عرض الدفعات"}
+                                      </button>
+                                      <Link
+                                        to="/contracts/$contractId"
+                                        params={{ contractId: contract.id }}
+                                        className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-3 text-[12px] font-semibold hover:bg-muted"
+                                      >
+                                        <FileText className="size-3.5" />
+                                        العقد
+                                      </Link>
+                                    </>
+                                  ) : null}
+                                </div>
+                              </div>
+
+                              {contract && shown ? (
+                                <div className="border-t border-border p-3">
+                                  <div className="mb-3 grid gap-2 sm:grid-cols-4">
+                                    <MiniStat label="الدفعات" value={`${paid}/${list.length}`} />
+                                    <MiniStat
+                                      label="مدفوع"
+                                      value={formatCurrency(
+                                        list.reduce((s, p) => s + Number(p.amount_paid), 0),
+                                      )}
+                                      tone="success"
+                                    />
+                                    <MiniStat
+                                      label="متبقي"
+                                      value={formatCurrency(totalRemaining)}
+                                      tone="danger"
+                                    />
+                                    <MiniStat
+                                      label="نسبة التحصيل"
+                                      value={`${list.length ? Math.round((paid / list.length) * 100) : 0}%`}
+                                    />
+                                  </div>
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[620px] text-[12.5px]">
+                                      <thead className="bg-secondary/60 text-[11.5px] text-muted-foreground">
+                                        <tr>
+                                          <th className="p-2 text-start">#</th>
+                                          <th className="p-2 text-start">الاستحقاق</th>
+                                          <th className="p-2 text-start">المبلغ</th>
+                                          <th className="p-2 text-start">المدفوع</th>
+                                          <th className="p-2 text-start">المتبقي</th>
+                                          <th className="p-2 text-start">الحالة</th>
+                                          <th className="p-2 text-start">إجراء</th>
+                                          <th className="p-2 text-start">تذكير</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {list.map((p) => {
+                                          return (
+                                            <tr key={p.id} className="border-t border-border">
+                                              <td className="p-2 font-semibold">
+                                                {p.payment_number}
+                                              </td>
+                                              <td className="p-2" dir="ltr">
+                                                {formatDate(p.due_date)}
+                                              </td>
+                                              <td className="p-2">
+                                                {formatCurrency(p.amount_due)}
+                                              </td>
+                                              <td className="p-2 text-success">
+                                                {formatCurrency(p.amount_paid)}
+                                              </td>
+                                              <td className="p-2">
+                                                {formatCurrency(remainingOf(p))}
+                                              </td>
+                                              <td className="p-2">
+                                                <Chip tone={paymentTone(p)}>{paymentLabel(p)}</Chip>
+                                              </td>
+                                              <td className="p-2">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setPayingPayment(p)}
+                                                  className={
+                                                    p.status === "paid"
+                                                      ? "inline-flex h-8 items-center gap-1 rounded-lg border border-border px-3 text-[12px] font-semibold text-success"
+                                                      : "inline-flex h-8 items-center gap-1 rounded-lg bg-primary px-3 text-[12px] font-semibold text-primary-foreground"
+                                                  }
+                                                >
+                                                  <CheckCircle2 className="size-3.5" />
+                                                  {p.status === "paid"
+                                                    ? "مسددة — تعديل"
+                                                    : "تسجيل سداد"}
+                                                </button>
+                                              </td>
+                                              <td className="p-2">
+                                                <Link
+                                                  to="/payment-reminder/$paymentId"
+                                                  params={{ paymentId: p.id }}
+                                                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2.5 text-[12px] font-semibold text-muted-foreground hover:text-success"
+                                                  title="إرسال تذكير"
+                                                >
+                                                  <MessageCircle className="size-3.5" />
+                                                  إرسال تذكير
+                                                </Link>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                        {!list.length ? (
+                                          <tr>
+                                            <td
+                                              colSpan={8}
+                                              className="p-4 text-center text-muted-foreground"
+                                            >
+                                              لا توجد دفعات مسجلة على هذا العقد.
+                                            </td>
+                                          </tr>
+                                        ) : null}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                        {!group.items.length ? <Empty text="لا توجد وحدات في هذه العمارة" /> : null}
+                      </div>
+                    )}
+                  </article>
+                );
+              };
+              const sections = sectionsQuery.data?.sections ?? [];
+              const sectionItems = sectionsQuery.data?.items ?? [];
+              const sectionOfBuilding = new Map(
+                sectionItems
+                  .filter((i) => i.item_type === "building")
+                  .map((i) => [i.item_id, i.section_id] as const),
+              );
+              const sectionOfAsset = new Map(
+                sectionItems
+                  .filter((i) => i.item_type !== "building")
+                  .map((i) => [i.item_id, i.section_id] as const),
+              );
+              const allItems = groups.flatMap((g) => g.items);
+              const assetsOfSection = (sectionId: string) =>
+                allItems.filter((item) => sectionOfAsset.get(item.key) === sectionId);
+              const unassigned = groups
+                .filter((g) => g.key === "__standalone" || !sectionOfBuilding.has(g.key))
+                .map((g) => ({
+                  ...g,
+                  items: g.items.filter((item) => !sectionOfAsset.has(item.key)),
+                }))
+                .filter((g) => g.key !== "__standalone" || g.items.length);
+              return (
+                <div className="grid w-full grid-cols-1 gap-5">
+                  {sections.map((section) => {
+                    const inSection = groups.filter(
+                      (g) => sectionOfBuilding.get(g.key) === section.id,
+                    );
+                    const looseInSection = assetsOfSection(section.id);
+                    const sectionCount = inSection.length + looseInSection.length;
+                    return (
+                      <section
+                        key={section.id}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={() => {
+                          if (!dragGroup) return;
+                          assignToSection.mutate({
+                            sectionId: section.id,
+                            itemType: dragGroup.type,
+                            itemId: dragGroup.id,
+                          });
+                        }}
+                        className="rounded-md border-2 border-dashed border-primary/40 bg-secondary/10 p-3"
+                      >
+                        <header className="flex flex-wrap items-center justify-between gap-2">
+                          {organizeMode ? (
+                            <input
+                              defaultValue={section.name}
+                              onBlur={(event) => {
+                                if (event.target.value.trim() === section.name) return;
+                                renameSection.mutate({ id: section.id, name: event.target.value });
+                              }}
+                              className="h-9 rounded-md border border-transparent bg-transparent px-2 text-[14px] font-bold hover:border-border focus:border-border"
+                              aria-label="اسم القسم"
+                            />
+                          ) : (
+                            <h3 className="px-2 text-[14px] font-bold">{section.name}</h3>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <Chip tone="primary">{sectionCount} عنصر</Chip>
+                            <Link
+                              to="/owner-section/$sectionId"
+                              params={{ sectionId: section.id }}
+                              className="h-8 rounded-md border border-primary/40 px-3 text-[12px] font-semibold leading-8 text-primary"
+                            >
+                              فتح القسم
+                            </Link>
+                            {organizeMode ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (window.confirm(`حذف القسم «${section.name}»؟`))
+                                    deleteSection.mutate(section.id);
+                                }}
+                                className="h-8 rounded-md border border-border px-3 text-[12px] font-semibold text-muted-foreground hover:text-destructive"
+                              >
+                                حذف القسم
+                              </button>
+                            ) : null}
+                          </div>
+                        </header>
+                        <div className="mt-3 grid gap-4">
+                          {inSection.map((group) => renderGroup(group))}
+                          {looseInSection.length
+                            ? renderGroup(
+                                {
+                                  key: `section-${section.id}-assets`,
+                                  title: "عقارات ووحدات داخل القسم",
+                                  subtitle: `${looseInSection.length} عنصر`,
+                                  items: looseInSection,
+                                },
+                                true,
+                              )
+                            : null}
+                          {!sectionCount ? (
+                            <Empty text="اسحب عمارة أو عقارًا أو وحدة وأسقطها داخل هذا القسم" />
+                          ) : null}
+                        </div>
+                      </section>
+                    );
+                  })}
+
+                  <section
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={() => {
+                      if (!dragGroup) return;
+                      assignToSection.mutate({
+                        sectionId: null,
+                        itemType: dragGroup.type,
+                        itemId: dragGroup.id,
+                      });
+                    }}
+                    className="rounded-md border border-border p-3"
+                  >
+                    <h3 className="text-[14px] font-bold">غير مصنّف</h3>
+                    <div className="mt-3 grid gap-4">
+                      {unassigned.map((group) => renderGroup(group))}
+                      {!groups.length ? <Empty text="لا توجد عقارات أو وحدات مرتبطة" /> : null}
+                    </div>
+                  </section>
+                </div>
+              );
+            })()}
+          </RecordSection>
+        </TabsContent>
+
+        <TabsContent value="contracts" className="space-y-5">
+          <RecordSection
+            title="العقود"
+            subtitle="القيمة والمدة والتحصيل والمتأخرات لكل عقد"
+            icon={FileText}
+            count={data.contracts.length}
+            tone="primary"
+          >
+            <div className="grid w-full gap-4">
+              {data.contracts.map((contract) => {
+                const rows = data.payments.filter((p) => p.contract_id === contract.id);
+                const due = rows.reduce((s, p) => s + Number(p.amount_due), 0);
+                const paid = rows.reduce((s, p) => s + Number(p.amount_paid), 0);
+                const remaining = Math.max(due - paid, 0);
+                const rate = due > 0 ? Math.round((paid / due) * 100) : 0;
+                const overdue = rows.filter(
+                  (p) =>
+                    p.status !== "paid" && p.status !== "cancelled" && daysBetween(p.due_date) < 0,
+                );
+                const next = rows
+                  .filter(
+                    (p) =>
+                      p.status !== "paid" &&
+                      p.status !== "cancelled" &&
+                      daysBetween(p.due_date) >= 0,
+                  )
+                  .sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
+                const left = daysBetween(contract.end_date);
+                return (
+                  <article
+                    key={contract.id}
+                    draggable={contract.status === "active"}
+                    onDragStart={() => setDragContractId(contract.id)}
+                    onDragEnd={() => setDragContractId(null)}
+                    className="w-full overflow-hidden rounded-lg border border-border bg-card shadow-card transition-shadow hover:shadow-float"
+                  >
+                    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/40 px-5 py-4">
+                      <div className="min-w-0">
+                        <h3 className="text-[15px] font-bold text-foreground">
+                          عقد {contract.contract_number}
+                          <span className="ms-2 text-[12.5px] font-normal text-muted-foreground">
+                            {contract.contract_type === "sale" ? "بيع" : "إيجار"}
+                          </span>
+                        </h3>
+                        <p className="mt-1 text-[12.5px] text-muted-foreground">
+                          {contract.property?.name ??
+                            (contract.unit?.unit_number
+                              ? `وحدة ${contract.unit.unit_number}`
+                              : "—")}
+                          {contract.tenant?.full_name
+                            ? ` • المستأجر: ${contract.tenant.full_name}`
+                            : ""}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {overdue.length ? (
+                          <Chip tone="danger">{overdue.length} دفعة متأخرة</Chip>
+                        ) : null}
+                        <Chip tone={contract.status === "active" ? "success" : "neutral"}>
+                          {contractStatusLabels[contract.status] ?? contract.status}
+                        </Chip>
+                        <Link
+                          to="/contracts/$contractId"
+                          params={{ contractId: contract.id }}
+                          className="inline-flex h-9 items-center rounded-lg border border-border px-3 text-[12.5px] font-semibold text-foreground hover:bg-muted"
+                        >
+                          فتح العقد
+                        </Link>
+                      </div>
+                    </header>
+
+                    <div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-4">
+                      <Detail
+                        label="مدة العقد"
+                        value={`${formatDate(contract.start_date)} — ${formatDate(contract.end_date)}`}
+                        hint={
+                          contract.status === "active"
+                            ? left >= 0
+                              ? `متبقٍ ${left} يوم`
+                              : `منتهٍ منذ ${Math.abs(left)} يوم`
+                            : undefined
+                        }
+                      />
+                      <Detail
+                        label="قيمة الإيجار السنوي"
+                        value={formatCurrency(contract.annual_rent ?? contract.total_value)}
+                        hint={
+                          contract.payment_cycle
+                            ? `دورة السداد: ${contract.payment_cycle}`
+                            : undefined
+                        }
+                      />
+                      <Detail
+                        label="إجمالي العقد"
+                        value={formatCurrency(contract.total_value)}
+                        hint={
+                          contract.deposit
+                            ? `التأمين: ${formatCurrency(contract.deposit)}`
+                            : undefined
+                        }
+                      />
+                      <Detail
+                        label="الدفعة القادمة"
+                        value={
+                          next
+                            ? formatCurrency(Number(next.amount_due) - Number(next.amount_paid))
+                            : "لا توجد"
+                        }
+                        hint={next ? `تستحق ${formatDate(next.due_date)}` : undefined}
+                      />
+                    </div>
+
+                    <div className="space-y-3 border-t border-border bg-muted/20 px-5 py-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-[12.5px] text-muted-foreground">
+                        <span>
+                          المسدد {formatCurrency(paid)} من {formatCurrency(due)} • المتبقي{" "}
+                          <strong className="text-foreground">{formatCurrency(remaining)}</strong>
+                        </span>
+                        <span>
+                          {rows.length.toLocaleString("ar-SA")} دفعة • نسبة التحصيل {rate}%
+                        </span>
+                      </div>
+                      <progress
+                        value={Math.min(rate, 100)}
+                        max={100}
+                        className="h-2.5 w-full overflow-hidden rounded-full accent-primary"
+                      />
+                      {contract.tenant?.phone || contract.tenant?.whatsapp ? (
+                        <p className="text-[12px] text-muted-foreground" dir="ltr">
+                          {contract.tenant?.whatsapp ?? contract.tenant?.phone}
+                        </p>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })}
+              {!data.contracts.length ? <Empty text="لا توجد عقود مرتبطة" /> : null}
+            </div>
+          </RecordSection>
+        </TabsContent>
+
+        <TabsContent value="finance" className="space-y-5">
+          <RecordSection
+            title="الفواتير"
+            subtitle="تواريخ الإصدار والاستحقاق وحالة السداد"
+            icon={ReceiptText}
+            count={data.invoices.length}
+            tone="gold"
+          >
+            <div className="grid gap-3 lg:grid-cols-2">
+              {data.invoices.map((invoice) => (
+                <Link
+                  key={invoice.id}
+                  to="/invoices/$invoiceId"
+                  params={{ invoiceId: invoice.id }}
+                  className="grid items-center gap-3 rounded-lg border border-border bg-muted/20 p-4 transition-colors hover:bg-muted sm:grid-cols-2"
+                >
+                  <div>
+                    <span className="text-[11px] text-muted-foreground">رقم الفاتورة</span>
+                    <strong className="mt-1 block" dir="ltr">
+                      {invoice.invoice_number}
+                    </strong>
+                  </div>
+                  <div className="justify-self-start sm:justify-self-end">
+                    <Chip
+                      tone={
+                        invoice.status === "paid"
+                          ? "success"
+                          : invoice.status === "overdue"
+                            ? "danger"
+                            : "warning"
+                      }
+                    >
+                      {invoiceStatusLabels[invoice.status] ?? invoice.status}
+                    </Chip>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-muted-foreground">الإصدار / الاستحقاق</span>
+                    <p className="mt-1 text-[12.5px]">
+                      {formatDate(invoice.issue_date)} — {formatDate(invoice.due_date)}
+                    </p>
+                  </div>
+                  <div className="sm:text-end">
+                    <span className="text-[11px] text-muted-foreground">الإجمالي</span>
+                    <strong className="mt-1 block text-base">
+                      {formatCurrency(invoice.total)}
+                    </strong>
+                  </div>
+                </Link>
+              ))}
+              {!data.invoices.length ? <Empty text="لا توجد فواتير مرتبطة" /> : null}
+            </div>
+          </RecordSection>
+        </TabsContent>
+      </Tabs>
 
       <ImportDialog
         open={importOpen}
@@ -823,6 +1833,16 @@ function OwnerDetailPage() {
         onExtracted={() => {
           setImportOpen(false);
           void navigate({ to: "/contracts" });
+        }}
+      />
+
+      <PaymentRecorder
+        open={Boolean(payingPayment)}
+        payment={payingPayment}
+        onClose={() => setPayingPayment(null)}
+        onChanged={() => {
+          queryClient.invalidateQueries({ queryKey: ["owner-dossier", ownerId] });
+          queryClient.invalidateQueries({ queryKey: ["contract_payments"] });
         }}
       />
     </>
@@ -845,10 +1865,15 @@ function Kpi({
   return (
     <div className="min-h-24 bg-card p-4">
       <p className="text-[11.5px] text-muted-foreground">{label}</p>
-      <p className={`mt-2 text-[17px] font-bold ${tone === "danger" ? "text-destructive" : ""}`}>{value}</p>
+      <p className={`mt-2 text-[17px] font-bold ${tone === "danger" ? "text-destructive" : ""}`}>
+        {value}
+      </p>
       {progress != null ? (
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-success" style={{ width: `${Math.min(progress, 100)}%` }} />
+          <div
+            className="h-full rounded-full bg-success"
+            style={{ width: `${Math.min(progress, 100)}%` }}
+          />
         </div>
       ) : null}
       {hint ? <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p> : null}
@@ -856,7 +1881,15 @@ function Kpi({
   );
 }
 
-function MiniStat({ label, value, tone }: { label: string; value: string; tone?: "success" | "danger" }) {
+function MiniStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "success" | "danger";
+}) {
   return (
     <div className="rounded-md bg-secondary/60 p-2 text-center">
       <p className="text-[11px] text-muted-foreground">{label}</p>
@@ -895,22 +1928,37 @@ function Info({
 
 function RecordSection({
   title,
+  subtitle,
   icon: Icon,
   count,
+  tone = "primary",
   children,
 }: {
   title: string;
+  subtitle?: string;
   icon: typeof Building2;
   count: number;
+  tone?: "primary" | "gold";
   children: ReactNode;
 }) {
   return (
-    <section className="surface-card overflow-hidden border-e-2 border-e-primary">
-      <header className="flex items-center justify-between border-b border-border px-5 py-3.5">
-        <h2 className="flex items-center gap-2 text-[14px] font-bold">
-          <Icon className="size-4 text-primary" />
-          {title}
-        </h2>
+    <section
+      className={`surface-card overflow-hidden border-e-2 ${tone === "gold" ? "border-e-gold" : "border-e-primary"}`}
+    >
+      <header className="flex items-center justify-between border-b border-border bg-muted/25 px-5 py-4">
+        <div className="flex items-center gap-3">
+          <span
+            className={`grid size-9 place-items-center rounded-lg ${tone === "gold" ? "bg-gold/15 text-gold" : "bg-accent text-primary"}`}
+          >
+            <Icon className="size-4" />
+          </span>
+          <div>
+            <h2 className="text-[14px] font-black">{title}</h2>
+            {subtitle ? (
+              <p className="mt-0.5 text-[11.5px] text-muted-foreground">{subtitle}</p>
+            ) : null}
+          </div>
+        </div>
         <Chip tone="primary">{count}</Chip>
       </header>
       <div className="p-4">{children}</div>
@@ -919,5 +1967,51 @@ function RecordSection({
 }
 
 function Empty({ text }: { text: string }) {
-  return <p className="col-span-full py-7 text-center text-[12.5px] text-muted-foreground">{text}</p>;
+  return (
+    <p className="col-span-full py-7 text-center text-[12.5px] text-muted-foreground">{text}</p>
+  );
+}
+
+function UnitStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "success" | "danger" | "warning" | "neutral";
+}) {
+  const toneClass =
+    tone === "success"
+      ? "text-success"
+      : tone === "danger"
+        ? "text-destructive"
+        : tone === "warning"
+          ? "text-warning"
+          : "text-foreground";
+  return (
+    <div className="flex min-h-24 items-center justify-between bg-card px-5 py-4">
+      <span className="text-[12.5px] text-muted-foreground">{label}</span>
+      <b className={`text-2xl ${toneClass}`}>{value}</b>
+    </div>
+  );
+}
+
+/** خلية تفصيل داخل بطاقة العقد. */
+function Detail({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string | undefined;
+}) {
+  return (
+    <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+      <p className="text-[11.5px] text-muted-foreground">{label}</p>
+      <p className="mt-1 text-[13.5px] font-bold text-foreground">{value}</p>
+      {hint ? <p className="mt-0.5 text-[11.5px] text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
 }

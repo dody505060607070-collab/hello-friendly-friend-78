@@ -1,9 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
-import { Bot, Loader2, Send, Trash2, X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import logoAsset from "@/assets/mithra-logo-transparent.png.asset.json";
 import { askAdminAi } from "@/lib/ai.functions";
 import { cn } from "@/lib/utils";
+import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
+import { Message as AiMessage, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
+import { Shimmer } from "@/components/ai-elements/shimmer";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -19,15 +24,10 @@ export function AiDock() {
   const [items, setItems] = useState<string[]>([]);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
-  const scroller = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const drag = useRef<{ x: number; y: number; ox: number; oy: number; moved: boolean } | null>(
     null,
   );
-
-  useEffect(() => {
-    scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
-  }, [messages, items, open]);
 
   // فتح المساعد تلقائيًا بمجرد بدء السحب داخل اللوحة
   useEffect(() => {
@@ -116,12 +116,11 @@ export function AiDock() {
         aria-label="المساعد الذكي"
         title="اسحب لتحريك المساعد • اضغط للفتح"
         className={cn(
-          "inline-flex touch-none select-none items-center gap-2 rounded-full bg-primary px-4 py-3 text-[13px] font-bold text-primary-foreground shadow-float transition-transform hover:scale-105",
-          dropping && "scale-110 ring-4 ring-primary/25",
+          "grid h-16 w-24 touch-none select-none place-items-center transition-transform hover:scale-105 md:h-20 md:w-28",
+          dropping && "scale-110",
         )}
       >
-        {open ? <X className="size-5" /> : <Bot className="size-5" />}
-        <span className="hidden sm:inline">المساعد الذكي</span>
+        <img src={logoAsset.url} alt="مثراء العقارية" className="size-full object-contain drop-shadow-lg" draggable={false} />
       </button>
 
       {open ? (
@@ -135,8 +134,8 @@ export function AiDock() {
         >
           <header className="flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
             <h2 className="flex items-center gap-2 text-[13.5px] font-bold">
-              <Bot className="size-4" />
-              مساعد مثراء
+              <img src={logoAsset.url} alt="" className="size-7 rounded-full object-cover" />
+              مساعد مثراء العقارية
             </h2>
             <button type="button" onClick={() => setOpen(false)} aria-label="إغلاق">
               <X className="size-4" />
@@ -172,50 +171,32 @@ export function AiDock() {
             </div>
           ) : null}
 
-          <div ref={scroller} className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
-            {messages.map((message, index) => (
-              <p
-                key={index}
-                className={cn(
-                  "max-w-[88%] whitespace-pre-wrap rounded-xl px-3 py-2 text-[12.5px] leading-6",
-                  message.role === "user"
-                    ? "ms-auto bg-primary text-primary-foreground"
-                    : "bg-muted text-foreground",
-                )}
-              >
-                {message.content}
-              </p>
-            ))}
-            {ask.isPending ? (
-              <p className="inline-flex items-center gap-2 rounded-xl bg-muted px-3 py-2 text-[12.5px]">
-                <Loader2 className="size-4 animate-spin text-primary" />
-                يحلّل…
-              </p>
-            ) : null}
-          </div>
+          <Conversation className="min-h-0">
+            <ConversationContent className="gap-3 px-3 py-3">
+              {messages.map((message, index) => (
+                <AiMessage key={index} from={message.role}>
+                  <MessageContent className={message.role === "user" ? "bg-primary text-primary-foreground" : undefined}>
+                    <MessageResponse>{message.content}</MessageResponse>
+                  </MessageContent>
+                </AiMessage>
+              ))}
+              {ask.isPending ? <Shimmer className="text-[12.5px]">جاري التحليل…</Shimmer> : null}
+            </ConversationContent>
+            <ConversationScrollButton />
+          </Conversation>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              send(input);
-            }}
-            className="flex items-center gap-2 border-t border-border px-3 py-2.5"
-          >
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={items.length ? "اسأل عن البيانات المسحوبة…" : "اكتب سؤالك…"}
-              className="h-10 flex-1 rounded-lg border border-border bg-card px-3 text-[12.5px] outline-none focus:border-primary/40"
-            />
-            <button
-              type="submit"
-              disabled={ask.isPending || !input.trim()}
-              aria-label="إرسال"
-              className="grid size-10 place-items-center rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
-            >
-              <Send className="size-4" />
-            </button>
-          </form>
+          <div className="border-t border-border p-3">
+            <PromptInput onSubmit={({ text }) => send(text)}>
+              <PromptInputTextarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={items.length ? "اسأل عن البيانات المسحوبة…" : "اكتب سؤالك…"}
+              />
+              <PromptInputFooter className="justify-end">
+                <PromptInputSubmit status={ask.isPending ? "submitted" : "ready"} disabled={!input.trim()} />
+              </PromptInputFooter>
+            </PromptInput>
+          </div>
         </section>
       ) : null}
     </div>

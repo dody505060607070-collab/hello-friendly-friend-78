@@ -1,21 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import heroImage from "@/assets/hero-sale.jpg";
 import heroVideo from "@/assets/video-sale.mp4.asset.json";
 import { InstallmentCalculator } from "@/components/site/InstallmentCalculator";
-import { AreaShowcase } from "@/components/site/AreaShowcase";
 import { PageHero } from "@/components/site/PageHero";
+import { BuildingCard } from "@/components/site/BuildingCard";
 import { PropertyGrid } from "@/components/site/PropertyCard";
+import { PropertyCard } from "@/components/site/PropertyCard";
 import { PropertyMapSection } from "@/components/site/PropertyMapSection";
 import { Reveal } from "@/components/site/Reveal";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { publicPropertiesQuery } from "@/lib/site-data";
+import { publicBuildingsQuery, publicPropertiesQuery } from "@/lib/site-data";
 
 export const Route = createFileRoute("/sale")({
-  validateSearch: (search: Record<string, unknown>): { city?: string } =>
-    typeof search["city"] === "string" && search["city"] ? { city: search["city"] } : {},
   head: () => ({
     meta: [
       { title: "عقارات للبيع في بريدة | مثراء العقارية" },
@@ -30,16 +29,16 @@ export const Route = createFileRoute("/sale")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:url", content: "https://friendly-fellow-kit.lovable.app/sale" },
+      { property: "og:url", content: "https://www.mithra.work/sale" },
     ],
-    links: [{ rel: "canonical", href: "https://friendly-fellow-kit.lovable.app/sale" }],
+    links: [{ rel: "canonical", href: "https://www.mithra.work/sale" }],
   }),
   component: SalePage,
 });
 
 function SalePage() {
-  const search = useSearch({ from: "/sale" });
   const { data, isLoading, error } = useQuery(publicPropertiesQuery("sale", 200));
+  const buildings = useQuery(publicBuildingsQuery("sale", 60));
   const [district, setDistrict] = useState("");
   const [type, setType] = useState("");
   const [term, setTerm] = useState("");
@@ -56,14 +55,18 @@ function SalePage() {
   );
 
   const filtered = useMemo(() => {
-    const q = term.trim();
+    const q = term.trim().toLowerCase();
     const cap = Number(maxPrice) || 0;
     const list = (data ?? []).filter(
       (p) =>
-        (!search.city || p.city === search.city) &&
         (!district || p.district === district) &&
         (!type || p.property_type === type) &&
-        (!q || `${p.name} ${p.code} ${p.district ?? ""}`.includes(q)) &&
+        (!q ||
+          `${p.name} ${p.code} ${p.district ?? ""} ${p.building_name ?? ""}`
+            .toLowerCase()
+            .includes(q)) &&
+        // وحدات العمارات تظهر داخل كرت العمارة، لكن البحث يعرضها مباشرة
+        (q ? true : !p.building_code) &&
         (!cap || (p.price_value ?? 0) <= cap),
     );
     const sorted = [...list];
@@ -71,7 +74,7 @@ function SalePage() {
     if (sort === "price-desc") sorted.sort((a, b) => (b.price_value ?? 0) - (a.price_value ?? 0));
     if (sort === "featured") sorted.sort((a, b) => Number(b.is_featured) - Number(a.is_featured));
     return sorted;
-  }, [data, district, type, term, maxPrice, sort, search.city]);
+  }, [data, district, type, term, maxPrice, sort]);
 
   const selectClass = "h-11 rounded-lg border border-input bg-card px-3 text-[13.5px]";
 
@@ -86,8 +89,6 @@ function SalePage() {
         height="lg"
       />
 
-      <AreaShowcase purpose="sale" currentCity={search.city} />
-
       <section className="mx-auto max-w-6xl px-4 py-10">
         <Reveal className="glass-panel mb-8 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
           <input
@@ -96,7 +97,12 @@ function SalePage() {
             placeholder="ابحث بالاسم أو رقم العقار"
             className={selectClass}
           />
-          <select value={type} onChange={(e) => setType(e.target.value)} aria-label="نوع العقار" className={selectClass}>
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            aria-label="نوع العقار"
+            className={selectClass}
+          >
             <option value="">كل أنواع العقارات</option>
             {types.map((t) => (
               <option key={t} value={t}>
@@ -104,7 +110,12 @@ function SalePage() {
               </option>
             ))}
           </select>
-          <select value={district} onChange={(e) => setDistrict(e.target.value)} aria-label="الحي" className={selectClass}>
+          <select
+            value={district}
+            onChange={(e) => setDistrict(e.target.value)}
+            aria-label="الحي"
+            className={selectClass}
+          >
             <option value="">كل الأحياء</option>
             {districts.map((d) => (
               <option key={d} value={d}>
@@ -119,7 +130,12 @@ function SalePage() {
             placeholder="أعلى سعر (ريال)"
             className={selectClass}
           />
-          <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="الترتيب" className={selectClass}>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            aria-label="الترتيب"
+            className={selectClass}
+          >
             <option value="featured">المميزة أولاً</option>
             <option value="price-asc">الأقل سعراً</option>
             <option value="price-desc">الأعلى سعراً</option>
@@ -127,15 +143,22 @@ function SalePage() {
         </Reveal>
 
         <p className="mb-4 text-[13px] text-muted-foreground">
-          النتائج: {filtered.length.toLocaleString("ar-SA")} عقار
+          النتائج: {(filtered.length + (buildings.data?.length ?? 0)).toLocaleString("ar-SA")} عقار
         </p>
-
-        <PropertyGrid
-          properties={filtered}
-          loading={isLoading}
-          error={error}
-          emptyText="لا توجد عقارات بيع مطابقة حالياً."
-        />
+        {isLoading || buildings.isLoading ? (
+          <PropertyGrid properties={undefined} loading />
+        ) : error || buildings.error ? (
+          <PropertyGrid properties={undefined} error={error ?? buildings.error} />
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {(buildings.data ?? []).map((building) => (
+              <BuildingCard key={`building-${building.id}`} building={building} />
+            ))}
+            {filtered.map((property) => (
+              <PropertyCard key={`property-${property.id}`} property={property} />
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pb-14">

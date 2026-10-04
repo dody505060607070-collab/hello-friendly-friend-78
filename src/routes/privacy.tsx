@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { SiteLayout } from "@/components/site/SiteLayout";
 
-const BASE = "https://friendly-fellow-kit.lovable.app";
+const BASE = "https://www.mithra.work";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -43,7 +43,7 @@ const sections = [
   },
   {
     title: "حماية البيانات",
-    body: "بياناتك محفوظة على خوادم آمنة مع صلاحيات وصول محدودة لموظفي مثراء المعنيين بطلبك.",
+    body: "بياناتك محفوظة على خوادم آمنة مع صلاحيات وصول محدودة لموظفي مثراء العقارية المعنيين بطلبك.",
   },
   {
     title: "حقوقك",

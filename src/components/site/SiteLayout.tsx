@@ -1,14 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Clock, Heart, Mail, MapPin, Menu, Phone, X } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import footerImage from "@/assets/bg-footer.jpg";
-import logoAsset from "@/assets/mithra-logo-transparent.png.asset.json";
+import logoWhiteAsset from "@/assets/mithra-logo-transparent.png.asset.json";
 import { FloatingActions, ScrollProgress } from "@/components/site/Chrome";
-import { AiWidget } from "@/components/site/AiWidget";
+import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/useAuth";
-import { LanguageToggle } from "@/lib/i18n";
-import { COMPANY_EMAIL, COMPANY_PHONE } from "@/lib/site-data";
+import { COMPANY_EMAIL, COMPANY_PHONE, publicSettingsQuery } from "@/lib/site-data";
+import { ThemeToggle } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -19,46 +20,36 @@ const navLinks = [
   { to: "/contact", label: "تواصل معنا" },
 ] as const;
 
+const AiWidget = lazy(() =>
+  import("@/components/site/AiWidget").then((module) => ({ default: module.AiWidget })),
+);
+
+function DeferredAiWidget() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setReady(true), 1_500);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  if (!ready) return null;
+  return (
+    <Suspense fallback={null}>
+      <AiWidget />
+    </Suspense>
+  );
+}
+
 function SiteHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { session } = useSession();
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-primary/85 text-primary-foreground shadow-md backdrop-blur-xl">
-      <div className="mx-auto flex h-[74px] max-w-6xl items-center justify-between gap-4 px-4">
-        <div className="flex items-center gap-2">
-          <LanguageToggle className="border-primary-foreground/35 bg-transparent text-primary-foreground hover:bg-primary-foreground/10" />
-          <Link
-            to="/list-property"
-            className="hidden rounded-lg border border-primary-foreground/35 px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-primary-foreground/10 md:inline-flex"
-          >
-            اعرض | اطلب عقارك
-          </Link>
-          <Link
-            to="/favorites"
-            aria-label="المفضلة"
-            className="grid size-9 place-items-center rounded-lg border border-primary-foreground/30 transition-colors hover:bg-primary-foreground/10"
-          >
-            <Heart className="size-4.5" />
-          </Link>
-          <Link
-            to={session ? "/dashboard" : "/auth"}
-            className="inline-flex shrink-0 whitespace-nowrap rounded-lg bg-gold px-3 py-2 text-[12px] font-bold text-gold-foreground transition-opacity hover:opacity-90 sm:px-4 sm:text-[13px]"
-          >
-            {session ? "لوحة التحكم" : "تسجيل الدخول"}
-          </Link>
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-label="القائمة"
-            className="grid size-9 place-items-center rounded-lg border border-primary-foreground/30 lg:hidden"
-          >
-            {open ? <X className="size-5" /> : <Menu className="size-5" />}
-          </button>
-        </div>
-
-        <nav className="hidden items-center gap-6 lg:flex">
+    <header className="sticky top-0 z-40 border-b border-primary-foreground/10 bg-primary text-primary-foreground shadow-md">
+      <div className="relative mx-auto grid h-[86px] max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 lg:flex lg:h-[74px] lg:justify-between lg:px-4">
+        {/* يمين الشريط: روابط الصفحات */}
+        <nav className="hidden items-center gap-7 lg:flex">
           {navLinks.map((item) => (
             <Link
               key={item.to}
@@ -75,26 +66,69 @@ function SiteHeader() {
           ))}
         </nav>
 
-        <Link to="/" aria-label="مثراء العقارية">
+        {/* منتصف الشريط: الشعار الأبيض */}
+        <Link
+          to="/"
+          aria-label="مثراء العقارية"
+          className="flex min-w-0 items-center justify-start lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:border-x lg:border-primary-foreground/20 lg:px-5"
+        >
           <img
-            src={logoAsset.url}
+            src={logoWhiteAsset.url}
             alt="مثراء العقارية"
-            width={680}
-            height={510}
-            className="h-12 w-auto brightness-0 invert transition-transform duration-300 hover:scale-105 md:h-14"
+            width={360}
+            height={112}
+            className="h-[54px] w-auto max-w-[245px] object-contain object-right transition-transform duration-300 hover:scale-105 sm:h-[60px] lg:h-14"
           />
         </Link>
+
+        {/* يسار الشريط: زر اعرض/اطلب + أدوات */}
+        <div className="flex shrink-0 items-center gap-2 lg:order-none">
+          <Link
+            to="/list-property"
+            className="hidden shrink-0 whitespace-nowrap rounded-full border border-primary-foreground/40 px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-primary-foreground/10 lg:inline-flex"
+          >
+            اعرض | اطلب عقارك
+          </Link>
+          <ThemeToggle className="hidden border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 sm:inline-flex" />
+          <Link
+            to="/favorites"
+            aria-label="المفضلة"
+            className="hidden size-9 place-items-center rounded-full border border-primary-foreground/30 transition-colors hover:bg-primary-foreground/10 sm:grid"
+          >
+            <Heart className="size-4.5" />
+          </Link>
+          <Link
+            to={session ? "/dashboard" : "/auth"}
+            className="hidden shrink-0 whitespace-nowrap rounded-full bg-gold px-4 py-2 text-[13px] font-bold text-gold-foreground transition-opacity hover:opacity-90 md:inline-flex"
+          >
+            {session ? "لوحة التحكم" : "تسجيل الدخول"}
+          </Link>
+          <Button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-label="القائمة"
+            aria-expanded={open}
+            variant="outline"
+            size="icon"
+            className="size-12 rounded-xl border-primary-foreground/35 bg-primary-foreground/5 text-primary-foreground shadow-none hover:bg-primary-foreground/10 hover:text-primary-foreground lg:hidden"
+          >
+            {open ? <X className="size-7" /> : <Menu className="size-7" />}
+          </Button>
+        </div>
       </div>
 
       {open ? (
-        <nav className="border-t border-primary-foreground/15 lg:hidden">
-          <ul className="mx-auto max-w-6xl px-4 py-3">
+        <nav className="absolute inset-x-0 top-[86px] z-50 border-t border-primary-foreground/15 bg-primary shadow-float lg:hidden">
+          <ul className="mx-auto grid max-w-6xl gap-1 px-5 py-5">
             {navLinks.map((item) => (
               <li key={item.to}>
                 <Link
                   to={item.to}
                   onClick={() => setOpen(false)}
-                  className="block rounded-lg px-2 py-2.5 text-[14px] hover:bg-primary-foreground/10"
+                  className={cn(
+                    "block rounded-lg px-4 py-3 text-right text-[15px] transition-colors hover:bg-primary-foreground/10",
+                    pathname === item.to && "bg-primary-foreground/10 font-bold",
+                  )}
                 >
                   {item.label}
                 </Link>
@@ -104,10 +138,22 @@ function SiteHeader() {
               <Link
                 to="/list-property"
                 onClick={() => setOpen(false)}
-                className="block rounded-lg px-2 py-2.5 text-[14px] hover:bg-primary-foreground/10"
+                className="block rounded-lg px-4 py-3 text-right text-[15px] hover:bg-primary-foreground/10"
               >
                 اعرض | اطلب عقارك
               </Link>
+            </li>
+            <li>
+              <Link
+                to={session ? "/dashboard" : "/auth"}
+                onClick={() => setOpen(false)}
+                className="mt-1 block rounded-lg bg-gold px-4 py-3 text-center text-[15px] font-bold text-gold-foreground transition-opacity hover:opacity-90"
+              >
+                {session ? "لوحة التحكم" : "تسجيل الدخول"}
+              </Link>
+            </li>
+            <li className="mt-2 border-t border-primary-foreground/15 pt-3">
+              <ThemeToggle showLabel className="w-full justify-center border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20" />
             </li>
           </ul>
         </nav>
@@ -117,6 +163,8 @@ function SiteHeader() {
 }
 
 function SiteFooter() {
+  const settings = useQuery(publicSettingsQuery);
+  const phone = settings.data?.whatsapp_number ?? COMPANY_PHONE;
   return (
     <footer className="relative isolate overflow-hidden text-white">
       <img
@@ -131,25 +179,14 @@ function SiteFooter() {
       <div aria-hidden className="absolute inset-0 -z-10 bg-primary/80" />
 
       <div className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <Link to="/" aria-label="مثراء العقارية" className="inline-block">
-          <img
-            src={logoAsset.url}
-            alt="مثراء العقارية"
-            width={680}
-            height={510}
-            loading="lazy"
-            className="mx-auto h-24 w-auto brightness-0 invert md:h-32"
-          />
-        </Link>
-
-        <p className="mt-5 text-[14px] leading-7 text-white/85">
+        <p className="text-[14px] leading-7 text-white/85">
           مثراء العقارية — إيجار وبيع وإدارة أملاك في بريدة، القصيم.
         </p>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-[13.5px] text-white/90">
-          <a href={`tel:${COMPANY_PHONE}`} dir="ltr" className="flex items-center gap-2 hover:text-gold">
+          <a href={`tel:${phone}`} dir="ltr" className="flex items-center gap-2 hover:text-gold">
             <Phone className="size-4 text-gold" />
-            {COMPANY_PHONE}
+            {phone}
           </a>
           <a href={`mailto:${COMPANY_EMAIL}`} dir="ltr" className="flex items-center gap-2 hover:text-gold">
             <Mail className="size-4 text-gold" />
@@ -182,7 +219,7 @@ function SiteFooter() {
         </nav>
 
         <p className="mt-8 text-[12px] text-white/60">
-          جميع الحقوق محفوظة © {new Date().getFullYear()} — مؤسسة مثراء
+          جميع الحقوق محفوظة © {new Date().getFullYear()} — مؤسسة مثراء العقارية
         </p>
       </div>
     </footer>
@@ -240,7 +277,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       <main className="flex-1">{children}</main>
       <SiteFooter />
       <FloatingActions />
-      <AiWidget />
+      <DeferredAiWidget />
       <CookieBanner />
     </div>
   );

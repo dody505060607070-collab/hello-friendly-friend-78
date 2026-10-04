@@ -1,155 +1,28 @@
 import { createServerFn } from "@tanstack/react-start";
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { Database, Json } from "@/integrations/supabase/types";
 
-type AuthedSupabase = SupabaseClient<Database>;
+const TABLES = ["activity_log", "activity_messages", "app_settings", "buildings", "cities", "client_accounts", "contacts", "contract_payments", "contract_signatures", "contracts", "crm_activities", "districts", "employee_activities", "invoice_items", "invoice_payments", "invoices", "listing_requests", "message_log", "message_templates", "notifications", "opportunities", "opportunity_properties", "opportunity_stage_history", "owner_delegates", "owner_requests", "partners", "payment_transactions", "profiles", "properties", "property_guarantees", "property_images", "property_types", "property_videos", "reminder_followups", "request_status_history", "reservations", "sale_guarantees", "services", "supply_requests", "task_assignees", "task_attachments", "task_history", "tasks", "unit_documents", "unit_expenses", "units", "user_permissions", "user_roles"] as const;
 
-/** إصدار مخطط النسخة الاحتياطية — زد الرقم عند تغيير بنية الجداول بشكل جوهري. */
-export const BACKUP_SCHEMA_VERSION = 1;
-
-/** كل الجداول التجارية التي تُصدَّر في النسخة الاحتياطية الشاملة. */
-export const BACKUP_TABLES = [
-  "properties",
-  "property_images",
-  "contacts",
-  "contracts",
-  "contract_payments",
-  "invoices",
-  "invoice_items",
-  "invoice_payments",
-  "units",
-  "buildings",
-  "tasks",
-  "reservations",
-  "supply_requests",
-  "listing_requests",
-  "cities",
-  "districts",
-  "services",
-  "partners",
-  "app_settings",
-  "user_roles",
-  "profiles",
-  "owner_requests",
-  "unit_expenses",
-  "owner_documents",
-  "owner_delegates",
-  "message_log",
-] as const;
-
-/** أعمدة تُستبعد دائمًا من النسخة الاحتياطية لأنها قد تحمل أسرارًا أو بيانات اعتماد حساسة. */
-const SENSITIVE_COLUMNS = new Set([
-  "password",
-  "password_hash",
-  "api_key",
-  "secret",
-  "token",
-  "access_token",
-  "refresh_token",
-]);
-
-function sanitizeRow(row: Record<string, unknown>): Record<string, Json> {
-  const out: Record<string, Json> = {};
-  for (const [key, value] of Object.entries(row)) {
-    const lower = key.toLowerCase();
-    if ([...SENSITIVE_COLUMNS].some((s) => lower.includes(s))) continue;
-    out[key] = (value ?? null) as Json;
-  }
-  return out;
-}
-
-async function assertSuperAdmin(supabase: AuthedSupabase, userId: string) {
-  const { data, error } = await supabase.rpc("has_role", {
-    _user_id: userId,
-    _role: "super_admin",
-  });
-  if (error) throw new Error(error.message);
-  if (data !== true) throw new Error("هذه العملية متاحة لمدير النظام فقط.");
-}
-
-const PAGE_SIZE = 1000;
-
-/** يجلب كل صفوف جدول معيّن صفحة صفحة، ويتجاهل الجدول لو لم يكن موجودًا. */
-async function fetchAllRows(
-  supabase: AuthedSupabase,
-  table: string,
-): Promise<{ rows: Record<string, Json>[]; skipped: boolean }> {
-  const rows: Record<string, Json>[] = [];
-  let from = 0;
-
-  for (;;) {
-    const { data, error } = await supabase
-      .from(table as never)
-      .select("*")
-      .range(from, from + PAGE_SIZE - 1);
-
-    if (error) {
-      // 42P01: undefined_table — الجدول غير موجود في هذه النسخة من القاعدة، تخطَّه بأمان.
-      if (error.code === "42P01" || /does not exist/i.test(error.message)) {
-        return { rows: [], skipped: true };
-      }
-      throw new Error(`فشل تصدير جدول ${table}: ${error.message}`);
-    }
-
-    const page = (data ?? []) as Record<string, unknown>[];
-    for (const row of page) rows.push(sanitizeRow(row));
-    if (page.length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
-  }
-
-  return { rows, skipped: false };
-}
-
-export type BackupManifest = {
-  schemaVersion: number;
-  generatedAt: string;
-  generatedBy: string;
-  tables: { table: string; rows: number; skipped: boolean }[];
-  totalRows: number;
-};
-
-export type FullBackupResult = {
-  manifest: BackupManifest;
-  data: Record<string, Record<string, Json>[]>;
-};
-
-/** تصدير نسخة احتياطية شاملة من كل الجداول التجارية (لمدير النظام فقط). */
-export const createFullBackup = createServerFn({ method: "POST" })
+export const createSystemBackup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<FullBackupResult> => {
-    await assertSuperAdmin(context.supabase, context.userId);
-
+  .handler(async ({ context }) => {
+    const role = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId).eq("role", "super_admin").maybeSingle();
+    if (!role.data) throw new Error("النسخ الاحتياطي متاح للمدير العام فقط");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const data: Record<string, Record<string, Json>[]> = {};
-    const manifestTables: BackupManifest["tables"] = [];
-    let totalRows = 0;
-
-    for (const table of BACKUP_TABLES) {
-      const { rows, skipped } = await fetchAllRows(supabaseAdmin as AuthedSupabase, table);
-      if (!skipped) {
-        data[table] = rows;
-        totalRows += rows.length;
-      }
-      manifestTables.push({ table, rows: rows.length, skipped });
+    const run = await supabaseAdmin.from("backup_runs").insert({ requested_by: context.userId, status: "processing" }).select("id").single();
+    if (run.error) throw new Error(run.error.message);
+    try {
+      const entries = await Promise.all(TABLES.map(async (table) => {
+        const result = await supabaseAdmin.from(table).select("*");
+        if (result.error) throw result.error;
+        return [table, result.data ?? []] as const;
+      }));
+      const payload = JSON.stringify({ version: 1, created_at: new Date().toISOString(), tables: Object.fromEntries(entries) });
+      await supabaseAdmin.from("backup_runs").update({ status: "completed", size_bytes: new TextEncoder().encode(payload).byteLength, tables_count: TABLES.length, completed_at: new Date().toISOString() }).eq("id", run.data.id);
+      return { fileName: `rashoudi-backup-${new Date().toISOString().slice(0, 10)}.json`, payload };
+    } catch (error) {
+      await supabaseAdmin.from("backup_runs").update({ status: "failed", error_message: error instanceof Error ? error.message : "خطأ غير معروف", completed_at: new Date().toISOString() }).eq("id", run.data.id);
+      throw error;
     }
-
-    const manifest: BackupManifest = {
-      schemaVersion: BACKUP_SCHEMA_VERSION,
-      generatedAt: new Date().toISOString(),
-      generatedBy: context.userId,
-      tables: manifestTables,
-      totalRows,
-    };
-
-    await supabaseAdmin.from("backup_runs").insert({
-      status: "success",
-      tables_count: manifestTables.filter((t) => !t.skipped).length,
-      rows_count: totalRows,
-      details: { schemaVersion: BACKUP_SCHEMA_VERSION, tables: manifestTables } as never,
-    });
-
-    return { manifest, data };
   });

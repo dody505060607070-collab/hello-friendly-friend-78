@@ -6,9 +6,9 @@ import { getPortalOverview } from "@/lib/portal.functions";
 export const Route = createFileRoute("/portal/contracts/")({
   head: () => ({
     meta: [
-      { title: "عقودي | بوابة عميل مثراء" },
+      { title: "عقودي | بوابة عميل مثراء العقارية" },
       { name: "description", content: "استعرض عقودك الإيجارية وجدول الأقساط الخاص بكل عقد." },
-      { property: "og:title", content: "عقودي | بوابة عميل مثراء" },
+      { property: "og:title", content: "عقودي | بوابة عميل مثراء العقارية" },
       { property: "og:description", content: "استعرض عقودك الإيجارية وجدول الأقساط الخاص بكل عقد." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

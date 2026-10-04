@@ -2,27 +2,24 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, MapPin, MessageCircle, Phone, Share2, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-
-import { Lightbox } from "@/components/kit/Lightbox";
 import { toast } from "sonner";
 
 import { FavoriteButton } from "@/components/site/FavoriteButton";
-import { AreaShowcase } from "@/components/site/AreaShowcase";
+import { Lightbox } from "@/components/kit/Lightbox";
 import { PropertyCard } from "@/components/site/PropertyCard";
+import { StatusRibbon } from "@/components/site/StatusRibbon";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { StaffReserveBox } from "@/components/site/StaffReserveBox";
 import { SOCIAL_PLATFORMS, SocialGlyph } from "@/components/site/SocialIcons";
 import { supabase } from "@/integrations/supabase/client";
 import { recordView } from "@/lib/favorites";
 
 import {
-  COMPANY_PHONE,
   galleryImages,
+  propertyEnquiryText,
   publicPropertiesQuery,
   publicPropertyQuery,
   purposeLabels,
   rentPeriodLabels,
-  siteSettingsQuery,
   whatsappLink,
 } from "@/lib/site-data";
 
@@ -40,7 +37,11 @@ export const Route = createFileRoute("/properties/$code")({
         content: "تفاصيل كاملة للعقار مع صور وموقع وتواصل مباشر عبر واتساب.",
       },
       { property: "og:type", content: "article" },
+      { property: "og:url", content: `https://www.mithra.work/properties/${encodeURIComponent(params.code)}` },
       { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [
+      { rel: "canonical", href: `https://www.mithra.work/properties/${encodeURIComponent(params.code)}` },
     ],
   }),
   component: PropertyPage,
@@ -66,10 +67,9 @@ export const Route = createFileRoute("/properties/$code")({
 function PropertyPage() {
   const { code } = Route.useParams();
   const { data: property, isLoading, error } = useQuery(publicPropertyQuery(code));
-  const { data: settings } = useQuery(siteSettingsQuery);
-  const related = useQuery(publicPropertiesQuery(property?.purpose as "rent" | "sale" | undefined, 12));
+  const related = useQuery(publicPropertiesQuery(undefined, 12));
   const [active, setActive] = useState(0);
-  const [zoom, setZoom] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const guarantees = useQuery({
     queryKey: ["public-property-guarantees", property?.id],
     enabled: Boolean(property?.id) && property?.purpose === "sale",
@@ -136,8 +136,6 @@ function PropertyPage() {
   const others = (related.data ?? [])
     .filter((p) => p.code !== property.code && p.purpose === property.purpose)
     .slice(0, 3);
-  const companyPhone = settings?.phone || COMPANY_PHONE;
-  const whatsappNumber = property.whatsapp_number || settings?.whatsapp_number;
   const mapHref =
     property.map_url ||
     (property.latitude && property.longitude
@@ -167,19 +165,16 @@ function PropertyPage() {
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <div>
             <div className="relative overflow-hidden rounded-2xl border border-border bg-muted">
+              <StatusRibbon status={property.status} />
               <FavoriteButton code={property.code} className="absolute end-4 top-4 z-10 size-11" />
               {images[active]?.url ? (
-                <button
-                  type="button"
-                  onClick={() => setZoom(true)}
-                  className="block w-full cursor-zoom-in"
-                  aria-label="عرض الصورة بملء الشاشة"
-                >
-                  <img
-                    src={images[active]!.url}
-                    alt={property.name}
-                    className="h-[360px] w-full object-cover transition-transform duration-500 hover:scale-[1.03] md:h-[440px]"
-                  />
+                <button type="button" className="block w-full cursor-zoom-in" onClick={() => setLightboxOpen(true)} aria-label="عرض الصورة بالحجم الكامل">
+                <img
+                  src={images[active]!.url}
+                  alt={property.name}
+                  className="h-[360px] w-full object-cover md:h-[440px]"
+                  style={{ objectPosition: `${images[active]?.focal_x ?? 50}% ${images[active]?.focal_y ?? 50}%` }}
+                />
                 </button>
               ) : (
                 <div className="grid h-[360px] place-items-center text-muted-foreground">
@@ -187,16 +182,6 @@ function PropertyPage() {
                 </div>
               )}
             </div>
-
-            {zoom ? (
-              <Lightbox
-                images={images.map((i) => i.url)}
-                index={active}
-                onIndexChange={setActive}
-                onClose={() => setZoom(false)}
-                alt={property.name}
-              />
-            ) : null}
 
             {images.length > 1 ? (
               <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
@@ -247,11 +232,13 @@ function PropertyPage() {
           </div>
 
           <aside className="space-y-4">
-            <StaffReserveBox propertyId={property.id} propertyName={property.name} />
             <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
               <div className="flex items-center justify-between">
                 <span className="rounded-lg bg-primary px-3 py-1 text-[12px] font-bold text-primary-foreground">
                   {purposeLabels[property.purpose] ?? property.purpose}
+                  {property.purpose === "rent" && property.rent_period
+                    ? ` · ${rentPeriodLabels[property.rent_period] ?? property.rent_period}`
+                    : ""}
                 </span>
                 <span className="text-[12px] text-muted-foreground" dir="ltr">
                   {property.code}
@@ -265,14 +252,7 @@ function PropertyPage() {
                 <MapPin className="size-4 text-primary/70" />
                 {[property.district, property.city].filter(Boolean).join(" — ") || "بريدة"}
               </p>
-              <p className="mt-4 text-[19px] font-extrabold text-primary">
-                {price}
-                {property.purpose === "rent" && property.rent_period ? (
-                  <span className="mr-1 text-[13px] font-medium text-muted-foreground">
-                    / {rentPeriodLabels[property.rent_period] ?? property.rent_period}
-                  </span>
-                ) : null}
-              </p>
+              <p className="mt-4 text-[19px] font-extrabold text-primary">{price}</p>
 
               {property.property_type ? (
                 <dl className="mt-5 grid grid-cols-2 gap-3 text-[13px]">
@@ -290,10 +270,7 @@ function PropertyPage() {
               <div className="mt-6 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <a
-                    href={whatsappLink(
-                      whatsappNumber,
-                      `استفسار عن العقار ${property.code} — ${property.name}`,
-                    )}
+                    href={whatsappLink(property.whatsapp_number, propertyEnquiryText(property))}
                     target="_blank"
                     rel="noreferrer"
                     className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-center text-[14px] font-bold text-primary-foreground"
@@ -302,7 +279,7 @@ function PropertyPage() {
                     تواصل عبر واتساب
                   </a>
                 <a
-                  href={`tel:${companyPhone}`}
+                  href={`tel:${property.whatsapp_number ?? "0550818020"}`}
                     className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-[14px] font-bold text-primary-foreground"
                 >
                     <Phone className="size-5" />
@@ -368,8 +345,16 @@ function PropertyPage() {
             </div>
           </section>
         ) : null}
+        {lightboxOpen ? (
+          <Lightbox
+            images={images.map((image) => image.url)}
+            index={active}
+            onIndexChange={setActive}
+            onClose={() => setLightboxOpen(false)}
+            alt={property.name}
+          />
+        ) : null}
       </div>
-      <AreaShowcase purpose={property.purpose === "sale" ? "sale" : "rent"} currentCity={property.city} />
     </SiteLayout>
   );
 }

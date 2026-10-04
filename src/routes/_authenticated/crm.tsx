@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Contact, PhoneCall, Target, TrendingUp, Users } from "lucide-react";
+import { Contact, PhoneCall, Users } from "lucide-react";
+import { lazy, Suspense } from "react";
 
 import { Chip } from "@/components/kit/Chip";
 import { DataTable } from "@/components/kit/DataTable";
@@ -9,6 +10,12 @@ import { PageHero } from "@/components/kit/PageHero";
 import { supabase } from "@/integrations/supabase/client";
 import { stageLabels } from "@/lib/labels";
 import { cn } from "@/lib/utils";
+
+const CrmIntelligence = lazy(() =>
+  import("@/components/crm/CrmIntelligence").then((module) => ({
+    default: module.CrmIntelligence,
+  })),
+);
 
 export const Route = createFileRoute("/_authenticated/crm")({
   head: () => ({
@@ -59,9 +66,8 @@ function CrmPage() {
   const totals = useQuery({
     queryKey: ["crm", "totals"],
     queryFn: async () => {
-      const [contacts, leads, activities, openDeals] = await Promise.all([
+      const [contacts, activities, openDeals] = await Promise.all([
         supabase.from("contacts").select("*", { count: "exact", head: true }),
-        supabase.from("contacts").select("*", { count: "exact", head: true }).contains("roles", ["lead"]),
         supabase.from("crm_activities").select("*", { count: "exact", head: true }),
         supabase
           .from("opportunities")
@@ -70,7 +76,6 @@ function CrmPage() {
       ]);
       return {
         contacts: contacts.count ?? 0,
-        leads: leads.count ?? 0,
         activities: activities.count ?? 0,
         openDeals: openDeals.count ?? 0,
       };
@@ -95,7 +100,7 @@ function CrmPage() {
     <>
       <PageHero
         title="نظام CRM"
-        subtitle="مركز إدارة العلاقات: العملاء، الفرص، المتابعات ومؤشرات الأداء."
+        subtitle="مركز موحّد لمتابعة العملاء والموقع والفريق والفرص والأرباح والخسائر."
         icon={Users}
         stats={[
           { value: String(totals.data?.contacts ?? 0), label: "عميل مسجّل" },
@@ -104,7 +109,11 @@ function CrmPage() {
         ]}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <Suspense fallback={<div className="surface-card p-10 text-center text-sm text-muted-foreground">جاري تحميل مركز التحليلات…</div>}>
+        <CrmIntelligence />
+      </Suspense>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <CrmCard
           to="/clients"
           icon={Contact}
@@ -113,25 +122,11 @@ function CrmPage() {
           hint="ملاك، مستأجرون، مشترون ووسطاء"
         />
         <CrmCard
-          to="/opportunities"
-          icon={Target}
-          label="الفرص"
-          value={totals.data?.openDeals ?? 0}
-          hint="فرص مفتوحة قيد المتابعة"
-        />
-        <CrmCard
           to="/activities"
           icon={PhoneCall}
           label="المتابعات والأنشطة"
           value={totals.data?.activities ?? 0}
           hint="مكالمات، زيارات وملاحظات"
-        />
-        <CrmCard
-          to="/reports"
-          icon={TrendingUp}
-          label="العملاء المحتملون"
-          value={totals.data?.leads ?? 0}
-          hint="عملاء بحاجة إلى تأهيل"
         />
       </div>
 

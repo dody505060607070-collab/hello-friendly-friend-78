@@ -10,6 +10,9 @@ import { PageHero } from "@/components/kit/PageHero";
 import { PrimaryButton, inputClass } from "@/components/kit/Modal";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { mithraa } from "@/integrations/mithraa/client";
+import { signInToMithraa, signOutMithraa, useMithraaSession } from "@/integrations/mithraa/useMithraaSession";
+import { clearMithraaLink, getMithraaLink, saveMithraaLink } from "@/lib/mithraa-link.functions";
 import { sendPushToUsers } from "@/lib/push.functions";
 import { cn } from "@/lib/utils";
 
@@ -39,29 +42,17 @@ type Msg = {
   deleted_at: string | null;
   created_at: string;
   channel: string;
-  sender: { full_name: string; job_title: string | null; avatar_url: string | null; org: string | null } | null;
+  sender: { full_name: string; job_title: string | null; avatar_url: string | null } | null;
 };
 
 const EMOJIS = ["👍", "🙏", "🔥", "✅", "❤️", "😀", "😅", "🎉", "📌", "📞", "🏠", "💰", "⏰", "📄"];
 
-const ORGS = [
-  { key: "mithraa", label: "مثراء" },
-  { key: "rashoudi", label: "الرشودي" },
-] as const;
-
-const CHANNELS = [
-  { key: "mithraa", label: "قناة مثراء" },
-  { key: "rashoudi", label: "قناة الرشودي" },
-  { key: "shared", label: "القناة المشتركة" },
-] as const;
-
-const orgLabel = (org: string | null | undefined) =>
-  ORGS.find((o) => o.key === org)?.label ?? "مثراء";
-
-function TeamChatPage() {
+export function TeamChatPage() {
   const qc = useQueryClient();
-  const { userId, isSuperAdmin } = useCurrentUser();
-  const [channel, setChannel] = useState<string>("shared");
+  const { userId, isSuperAdmin, profile } = useCurrentUser();
+  const { mithraaUser, ready } = useMithraaSession();
+  const chatUserId = mithraaUser?.id;
+  const [activeChannel, setActiveChannel] = useState<"rashoudi" | "shared">("rashoudi");
   const [body, setBody] = useState("");
   const [search, setSearch] = useState("");
   const [replyTo, setReplyTo] = useState<Msg | null>(null);
@@ -70,35 +61,34 @@ function TeamChatPage() {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
+  const [autoDone, setAutoDone] = useState(false);
+  const autoTried = useRef(false);
 
-  const myProfile = useQuery({
-    queryKey: ["my-profile-org", userId],
-    enabled: Boolean(userId),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, org")
-        .eq("id", userId!)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const myOrg = (myProfile.data as { org?: string } | null)?.org ?? "mithraa";
-  const visibleChannels = useMemo(
-    () => (isSuperAdmin ? CHANNELS : CHANNELS.filter((c) => c.key === "shared" || c.key === myOrg)),
-    [isSuperAdmin, myOrg],
-  );
+  // دخول تلقائي للشات المشترك ببيانات الربط المحفوظة (ربط مرة واحدة فقط)
+  useEffect(() => {
+    if (!ready || chatUserId || autoTried.current) return;
+    autoTried.current = true;
+    void (async () => {
+      try {
+        const link = await getMithraaLink();
+        if (link.linked) await signInToMithraa(link.email, link.password, profile?.full_name);
+      } catch {
+        /* لا شيء — تظهر بطاقة الربط */
+      } finally {
+        setAutoDone(true);
+      }
+    })();
+  }, [ready, chatUserId, profile?.full_name]);
 
   const messages = useQuery({
-    queryKey: ["group-messages", channel],
+    queryKey: ["group-messages", activeChannel, chatUserId],
+    enabled: Boolean(chatUserId),
     refetchInterval: 4000,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await mithraa
         .from("group_messages")
-        .select("id, sender_id, channel, body, reply_to, is_pinned, deleted_at, created_at, attachment_path, attachment_name, edited_at, sender:sender_id(full_name, job_title, avatar_url, org)")
-        .eq("channel", channel)
+        .select("id, sender_id, body, reply_to, is_pinned, deleted_at, created_at, channel, attachment_path, attachment_name, edited_at, sender:sender_id(full_name, job_title, avatar_url)")
+        .eq("channel", activeChannel)
         .order("created_at")
         .limit(500);
       if (error) throw error;
@@ -107,30 +97,33 @@ function TeamChatPage() {
   });
 
   const staff = useQuery({
-    queryKey: ["profiles", "team-chat"],
+    queryKey: ["profiles", "team-chat", activeChannel, chatUserId],
+    enabled: Boolean(chatUserId),
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await mithraa
         .from("profiles")
         .select("id, full_name, job_title, avatar_url, org")
         .eq("is_active", true)
+        .in("org", activeChannel === "shared" ? ["rashoudi", "mithraa"] : ["rashoudi"])
         .order("full_name");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as { id: string; full_name: string; job_title: string | null; avatar_url: string | null; org: string }[];
     },
   });
 
-  // بث لحظي لرسائل المجموعة
+  // بث لحظي لرسائل المجموعة من قاعدة مثراء
   useEffect(() => {
-    const live = supabase
+    if (!chatUserId) return;
+    const channel = mithraa
       .channel("group-messages-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "group_messages" }, () => {
-        qc.invalidateQueries({ queryKey: ["group-messages"] });
+        qc.invalidateQueries({ queryKey: ["group-messages", activeChannel, chatUserId] });
       })
       .subscribe();
     return () => {
-      void supabase.removeChannel(live);
+      void mithraa.removeChannel(channel);
     };
-  }, [qc]);
+  }, [qc, activeChannel, chatUserId]);
 
   const all = messages.data ?? [];
   const byId = useMemo(() => new Map(all.map((m) => [m.id, m])), [all]);
@@ -148,31 +141,32 @@ function TeamChatPage() {
     mutationFn: async () => {
       const text = body.trim();
       if (!text) return;
+      if (!chatUserId) throw new Error("سجّل الدخول إلى الشات المشترك أولًا");
       if (editing) {
-        const { error } = await supabase
+        const { error } = await mithraa
           .from("group_messages")
           .update({ body: text, edited_at: new Date().toISOString() })
           .eq("id", editing.id);
         if (error) throw error;
         return;
       }
-      const { error } = await supabase.from("group_messages").insert({
-        sender_id: userId!,
+      const { error } = await mithraa.from("group_messages").insert({
+        sender_id: chatUserId,
         body: text,
-        channel,
         reply_to: replyTo?.id ?? null,
+        channel: activeChannel,
       });
       if (error) throw error;
+
+      // الإشعارات المحلية للموظفين في قاعدة مثراء فقط
       const mentions = text.match(/@([\p{L}\d_]+)/gu) ?? [];
-      const { data: allStaff } = await supabase
+      const { data: local } = await supabase
         .from("profiles")
-        .select("id, full_name, org")
-        .eq("is_active", true);
-      const staff = (allStaff ?? []).filter(
-        (s) => channel === "shared" || (s as { org?: string }).org === channel,
-      );
+        .select("id, full_name")
+        .eq("is_active", true)
+        .eq("org", "rashoudi");
       if (mentions.length) {
-        const targets = (staff ?? []).filter(
+        const targets = (local ?? []).filter(
           (s) => s.id !== userId && mentions.some((m) => s.full_name.includes(m.slice(1))),
         );
         if (targets.length) {
@@ -186,7 +180,7 @@ function TeamChatPage() {
           );
         }
       }
-      const others = (staff ?? []).map((s) => s.id).filter((id) => id !== userId);
+      const others = (local ?? []).map((s) => s.id).filter((id) => id !== userId);
       if (others.length) {
         void sendPushToUsers({
           data: {
@@ -194,7 +188,7 @@ function TeamChatPage() {
             title: "رسالة جديدة في شات الموظفين",
             body: text.slice(0, 120),
             url: "/team-chat",
-            tag: "mithra-team-chat",
+            tag: `rashoudi-team-chat-${activeChannel}`,
           },
         }).catch(() => undefined);
       }
@@ -203,37 +197,41 @@ function TeamChatPage() {
       setBody("");
       setReplyTo(null);
       setEditing(null);
-      qc.invalidateQueries({ queryKey: ["group-messages"] });
+      qc.invalidateQueries({ queryKey: ["group-messages", activeChannel, chatUserId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const patch = useMutation({
     mutationFn: async ({ id, values }: { id: string; values: { is_pinned?: boolean; deleted_at?: string | null } }) => {
-      const { error } = await supabase.from("group_messages").update(values).eq("id", id);
+      const { error } = await mithraa.from("group_messages").update(values).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["group-messages"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["group-messages", activeChannel, chatUserId] }),
     onError: (e: Error) => toast.error(e.message),
   });
 
   const sendFile = async (file: File) => {
+    if (!chatUserId) {
+      toast.error("سجّل الدخول إلى الشات المشترك أولًا");
+      return;
+    }
     setUploading(true);
     try {
       const path = `team-chat/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
       await uploadMedia("internal-files", path, file);
-      const { error } = await supabase.from("group_messages").insert({
-        sender_id: userId!,
+      const { error } = await mithraa.from("group_messages").insert({
+        sender_id: chatUserId,
         body: body.trim() || null,
-        channel,
         attachment_path: path,
         attachment_name: file.name,
         reply_to: replyTo?.id ?? null,
+        channel: activeChannel,
       });
       if (error) throw error;
       setBody("");
       setReplyTo(null);
-      qc.invalidateQueries({ queryKey: ["group-messages"] });
+      qc.invalidateQueries({ queryKey: ["group-messages", activeChannel, chatUserId] });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -259,24 +257,29 @@ function TeamChatPage() {
         stats={[{ value: String(all.length), label: "رسالة" }]}
       />
 
-      <div className="surface-card overflow-hidden">
-        <div className="flex flex-wrap gap-1 border-b border-border bg-muted/40 px-3 py-2">
-          {visibleChannels.map((c) => (
-            <button
-              key={c.key}
-              type="button"
-              onClick={() => setChannel(c.key)}
-              className={cn(
-                "rounded-lg px-3 py-2 text-[12.5px] font-semibold transition-colors",
-                channel === c.key
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-card",
-              )}
-            >
-              {c.label}
-            </button>
+      {ready && autoDone && !chatUserId ? <MithraaSignIn fullName={profile?.full_name} /> : null}
+
+      <div className="surface-card flex h-[calc(100dvh-15rem)] min-h-[560px] flex-col overflow-hidden">
+        <nav className="flex items-center gap-2 overflow-x-auto border-b border-border p-3">
+          {([
+            ["rashoudi", "فريق مثراء"],
+            ["shared", "الشات المشترك"],
+          ] as ["rashoudi" | "shared", string][]).map(([value, label]) => (
+            <button key={value} type="button" onClick={() => setActiveChannel(value)} className={cn("shrink-0 rounded-full px-4 py-2 text-xs font-bold", activeChannel === value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{label}</button>
           ))}
-        </div>
+          {chatUserId ? (
+            <button
+              type="button"
+              onClick={() => {
+                void clearMithraaLink().catch(() => undefined);
+                void signOutMithraa();
+              }}
+              className="ms-auto shrink-0 rounded-full border border-border px-3 py-1.5 text-[11px] text-muted-foreground"
+            >
+              فصل حساب الشات
+            </button>
+          ) : null}
+        </nav>
 
         <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-accent/40 px-4 py-3">
           <div className="relative min-w-0">
@@ -293,23 +296,18 @@ function TeamChatPage() {
 
         <div className="flex items-center gap-2 overflow-x-auto border-b border-border px-4 py-2">
           <Users className="size-4 shrink-0 text-primary" />
-          {(staff.data ?? [])
-            .filter((p) => channel === "shared" || (p as { org?: string }).org === channel)
-            .map((p) => (
-              <span
-                key={p.id}
-                className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/50 px-2 py-1 text-[11.5px] text-muted-foreground"
-                title={p.job_title ?? ""}
-              >
-                <span className="grid size-5 place-items-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
-                  {p.full_name.slice(0, 1)}
-                </span>
-                {p.full_name}
-                <span className="rounded-full bg-primary/10 px-1.5 text-[10px] text-primary">
-                  {orgLabel((p as { org?: string }).org)}
-                </span>
+          {(staff.data ?? []).map((p) => (
+            <span
+              key={p.id}
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/50 px-2 py-1 text-[11.5px] text-muted-foreground"
+              title={p.job_title ?? ""}
+            >
+              <span className="grid size-5 place-items-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
+                {p.full_name.slice(0, 1)}
               </span>
-            ))}
+              {p.full_name}
+            </span>
+          ))}
         </div>
 
         {pinned.length ? (
@@ -322,9 +320,9 @@ function TeamChatPage() {
           </div>
         ) : null}
 
-        <div className="space-y-3 overflow-y-auto p-4" style={{ maxHeight: 520 }}>
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
           {rows.map((m) => {
-            const mine = m.sender_id === userId;
+            const mine = m.sender_id === chatUserId;
             const parent = m.reply_to ? byId.get(m.reply_to) : null;
             return (
               <div key={m.id} className={cn("flex gap-2", mine ? "justify-start" : "justify-end")}>
@@ -336,7 +334,6 @@ function TeamChatPage() {
                 >
                   <p className="mb-1 text-[11px] opacity-75">
                     {m.sender?.full_name ?? "—"}
-                    {` • ${orgLabel(m.sender?.org)}`}
                     {m.sender?.job_title ? ` • ${m.sender.job_title}` : ""}
                   </p>
                   {parent ? (
@@ -485,5 +482,41 @@ function TeamChatPage() {
 
       <DirectChats />
     </>
+  );
+}
+
+/** بطاقة ربط حساب الشات المشترك (قاعدة مثراء). */
+function MithraaSignIn({ fullName }: { fullName?: string | undefined }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    setBusy(true);
+    try {
+      await signInToMithraa(email.trim(), password, fullName);
+      await saveMithraaLink({ data: { email: email.trim(), password } });
+      toast.success("تم ربط حساب الشات المشترك — لن تحتاج الربط مرة أخرى");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="surface-card mb-4 space-y-3 p-4">
+      <h2 className="text-sm font-bold">ربط حساب الشات المشترك — مرة واحدة فقط</h2>
+      <p className="text-[12.5px] text-muted-foreground">
+        سجّل دخولك ببريدك وكلمة مرورك لدى منصة مثراء مرة واحدة فقط، ويُحفظ الربط بحسابك بشكل مشفّر، فتدخل بعدها مباشرة من أي جهاز وتعمل قناتا «فريق مثراء» و«الشات المشترك» تلقائيًا.
+      </p>
+      <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+        <input className={inputClass} type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input className={inputClass} type="password" placeholder="كلمة المرور" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <PrimaryButton onClick={() => void submit()} disabled={busy || !email || !password}>
+          {busy ? <Loader2 className="size-4 animate-spin" /> : "ربط"}
+        </PrimaryButton>
+      </div>
+    </div>
   );
 }

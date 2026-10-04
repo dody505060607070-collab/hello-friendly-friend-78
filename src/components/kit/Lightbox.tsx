@@ -1,34 +1,33 @@
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect } from "react";
 
-/** معرض صور بملء الشاشة مع التنقل بالكيبورد */
 export function Lightbox({
   images,
   index,
-  onClose,
   onIndexChange,
+  onClose,
   alt = "صورة العقار",
 }: {
   images: string[];
   index: number;
-  onClose: () => void;
   onIndexChange: (i: number) => void;
+  onClose: () => void;
   alt?: string;
 }) {
-  const next = useCallback(
-    () => onIndexChange((index + 1) % images.length),
-    [index, images.length, onIndexChange],
-  );
-  const prev = useCallback(
-    () => onIndexChange((index - 1 + images.length) % images.length),
-    [index, images.length, onIndexChange],
+  const count = images.length;
+  const go = useCallback(
+    (delta: number) => {
+      if (!count) return;
+      onIndexChange((index + delta + count) % count);
+    },
+    [count, index, onIndexChange],
   );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") prev();
-      if (e.key === "ArrowLeft") next();
+      if (e.key === "ArrowLeft") go(1);
+      if (e.key === "ArrowRight") go(-1);
     };
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -36,69 +35,61 @@ export function Lightbox({
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [next, prev, onClose]);
+  }, [go, onClose]);
 
-  if (!images.length) return null;
+  if (!count) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex flex-col bg-foreground/95 backdrop-blur-sm"
+      dir="rtl"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-foreground/85 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      dir="rtl"
     >
-      <div className="flex items-center justify-between px-4 py-3 text-background">
-        <span className="text-[13px] font-semibold">
-          {index + 1} / {images.length}
-        </span>
-        <button
-          type="button"
-          onClick={onClose}
-          className="grid size-10 place-items-center rounded-full bg-background/15 transition-colors hover:bg-background/25"
-          aria-label="إغلاق المعرض"
-        >
-          <X className="size-5" />
-        </button>
-      </div>
+      <button
+        type="button"
+        aria-label="إغلاق"
+        className="absolute inset-0 cursor-default"
+        onClick={onClose}
+      />
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="إغلاق"
+        className="absolute end-4 top-4 z-10 grid size-10 place-items-center rounded-full bg-card text-foreground shadow-float"
+      >
+        <X className="size-5" />
+      </button>
 
-      <div className="relative flex min-h-0 flex-1 items-center justify-center px-4 pb-4">
-        <button
-          type="button"
-          onClick={prev}
-          className="absolute end-4 grid size-11 place-items-center rounded-full bg-background/15 text-background transition-colors hover:bg-background/30"
-          aria-label="السابق"
-        >
-          <ChevronRight className="size-6" />
-        </button>
-        <img
-          src={images[index]}
-          alt={alt}
-          className="max-h-full max-w-full rounded-xl object-contain"
-        />
-        <button
-          type="button"
-          onClick={next}
-          className="absolute start-4 grid size-11 place-items-center rounded-full bg-background/15 text-background transition-colors hover:bg-background/30"
-          aria-label="التالي"
-        >
-          <ChevronLeft className="size-6" />
-        </button>
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto px-4 pb-5">
-        {images.map((src, i) => (
+      {count > 1 ? (
+        <>
           <button
-            key={src + i}
             type="button"
-            onClick={() => onIndexChange(i)}
-            className={`h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition-opacity ${
-              i === index ? "border-primary opacity-100" : "border-transparent opacity-60"
-            }`}
-            aria-label={`صورة ${i + 1}`}
+            onClick={() => go(-1)}
+            aria-label="السابق"
+            className="absolute end-4 z-10 grid size-11 place-items-center rounded-full bg-card/90 text-foreground shadow-float"
           >
-            <img src={src} alt="" className="size-full object-cover" />
+            <ChevronRight className="size-5" />
           </button>
-        ))}
+          <button
+            type="button"
+            onClick={() => go(1)}
+            aria-label="التالي"
+            className="absolute start-4 z-10 grid size-11 place-items-center rounded-full bg-card/90 text-foreground shadow-float"
+          >
+            <ChevronLeft className="size-5" />
+          </button>
+        </>
+      ) : null}
+
+      <img
+        src={images[index]}
+        alt={alt}
+        className="relative z-[5] max-h-[86vh] max-w-[92vw] rounded-xl object-contain shadow-float"
+      />
+
+      <div className="absolute bottom-5 z-10 rounded-full bg-card/90 px-3 py-1 text-[12px] font-bold text-foreground">
+        {index + 1} / {count}
       </div>
     </div>
   );

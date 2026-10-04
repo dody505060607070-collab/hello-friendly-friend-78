@@ -4,20 +4,19 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
-  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import type { ErrorComponentProps } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { KillSwitchGate } from "@/components/KillSwitchGate";
 import { AuthProvider } from "@/hooks/useAuth";
+import { useSiteAnalytics } from "@/hooks/useSiteAnalytics";
 import { LanguageProvider } from "@/lib/i18n";
-import { SITE_URL, SITE_NAME } from "@/lib/site-config";
+import { ThemeProvider } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
@@ -49,7 +48,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: ErrorComponentProps) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -92,24 +91,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: `${SITE_NAME} — لوحة الإدارة` },
+      { title: "مثراء العقارية" },
       {
         name: "description",
-        content: "نظام إدارة عقاري متكامل: العقارات، العقود، الفواتير، الملاك والمهام.",
+        content: "مثراء العقارية في بريدة — خبرة موثوقة في بيع وتأجير الفلل والشقق والأراضي والعمائر وإدارة الأملاك بالقصيم. عروض مختارة بعناية وخدمة راقية تليق بك.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:site_name", content: SITE_NAME },
-      { property: "og:title", content: SITE_NAME },
-      {
-        property: "og:description",
-        content: "نظام إدارة عقاري متكامل: العقارات، العقود، الفواتير، الملاك والمهام.",
-      },
-      { property: "og:url", content: SITE_URL },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "theme-color", content: "#8c1d18" },
+      { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-      { name: "apple-mobile-web-app-title", content: SITE_NAME },
-      { name: "theme-color", content: "#2d4a86" },
+      { name: "apple-mobile-web-app-title", content: "مثراء" },
     ],
     links: [
       {
@@ -120,12 +112,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@500;600;700&family=Tajawal:wght@400;500;700&display=swap",
       },
-      { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "icon", type: "image/png", sizes: "512x512", href: "/favicon.png" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/favicon.png" },
-      { rel: "canonical", href: SITE_URL },
     ],
   }),
   shellComponent: RootShell,
@@ -149,58 +140,30 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-function AppServiceWorkerRegistrar() {
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!import.meta.env.PROD) return;
-    if (!("serviceWorker" in navigator)) return;
-
-    navigator.serviceWorker.register("/app-sw.js", { scope: "/" }).catch((error) => {
-      console.error("app-sw registration failed", error);
-    });
-  }, []);
-
-  return null;
-}
-
-function HomeStructuredData() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  if (pathname !== "/") return null;
-
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "RealEstateAgent",
-    name: SITE_NAME,
-    url: SITE_URL,
-    image: `${SITE_URL}/favicon.png`,
-    logo: `${SITE_URL}/favicon.png`,
-    areaServed: "SA",
-    inLanguage: "ar",
-  };
-
-  return (
-    <script
-      type="application/ld+json"
-      // eslint-disable-next-line react/no-danger
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-    />
-  );
-}
-
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useSiteAnalytics();
+
+  // تسجيل عامل الخدمة لتفعيل العمل دون اتصال والتثبيت كأيقونة على الجهاز.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    const timer = window.setTimeout(() => {
+      navigator.serviceWorker.register("/push-sw.js", { scope: "/" }).catch(() => undefined);
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
+      <ThemeProvider>
+        <LanguageProvider>
         <AuthProvider>
-          <AppServiceWorkerRegistrar />
-          <HomeStructuredData />
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <Toaster richColors position="top-center" />
         </AuthProvider>
-      </LanguageProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

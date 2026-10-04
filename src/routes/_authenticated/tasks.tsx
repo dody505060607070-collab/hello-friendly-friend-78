@@ -17,8 +17,12 @@ import {
 } from "@/components/kit/Modal";
 import { PageHero } from "@/components/kit/PageHero";
 import { Pills } from "@/components/kit/Pills";
+import { StatusLegend } from "@/components/kit/StatusLegend";
 import { supabase } from "@/integrations/supabase/client";
 import { priorityLabels, taskStatusLabels } from "@/lib/labels";
+import { ActivitiesPage } from "./activities";
+import { TeamChatPage } from "./team-chat";
+import { rowTone, toneBadgeClass, toneRowClass } from "@/lib/status-tone";
 
 type Row = {
   id: string;
@@ -37,16 +41,6 @@ type Row = {
   created_at: string;
 };
 
-const STATUS_STYLE: Record<string, string> = {
-  new: "border-sky-300 bg-sky-50 text-sky-700",
-  in_progress: "border-amber-300 bg-amber-50 text-amber-800",
-  submitted: "border-violet-300 bg-violet-50 text-violet-700",
-  approved: "border-emerald-300 bg-emerald-50 text-emerald-700",
-  done: "border-emerald-300 bg-emerald-50 text-emerald-700",
-  rejected: "border-rose-300 bg-rose-50 text-rose-700",
-  cancelled: "border-slate-300 bg-slate-100 text-slate-600",
-};
-
 export const Route = createFileRoute("/_authenticated/tasks")({
   head: () => ({
     meta: [
@@ -61,7 +55,7 @@ export const Route = createFileRoute("/_authenticated/tasks")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: TasksPage,
+  component: TasksHub,
 });
 
 const SELECT =
@@ -120,6 +114,26 @@ function TasksPage() {
   });
 
   const rows = data ?? [];
+
+  const assigneeNames = useQuery({
+    queryKey: ["tasks", "assignee-names", rows.map((r) => r.id).join(",")],
+    enabled: rows.length > 0,
+    queryFn: async () => {
+      const { data: links, error } = await supabase
+        .from("task_assignees")
+        .select("task_id, user_id")
+        .in("task_id", rows.map((r) => r.id));
+      if (error) throw error;
+      const ids = [...new Set((links ?? []).map((l) => l.user_id))];
+      const { data: profs } = ids.length
+        ? await supabase.from("profiles").select("id, full_name").in("id", ids)
+        : { data: [] as { id: string; full_name: string | null }[] };
+      const nameOf = new Map((profs ?? []).map((p) => [p.id, p.full_name ?? "موظف"]));
+      const map: Record<string, string[]> = {};
+      for (const l of links ?? []) (map[l.task_id] ??= []).push(nameOf.get(l.user_id) ?? "موظف");
+      return map;
+    },
+  });
   const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
 
   const save = useMutation({
@@ -277,7 +291,9 @@ function TasksPage() {
           <p className="text-[13px] text-muted-foreground">جاري تحميل المهام…</p>
         </div>
       ) : (
-        <DataTable<Row>
+        <div className="space-y-3">
+          <StatusLegend />
+          <DataTable<Row>
           rows={filtered}
           onRowClick={(r) => navigate({ to: "/task-form", search: { id: r.id } })}
           selectable
@@ -285,13 +301,7 @@ function TasksPage() {
           draggableRows
           dragLabel="مهمة"
           searchPlaceholder="بحث بعنوان المهمة"
-          rowClassName={(r) =>
-            r.due_date != null &&
-            new Date(r.due_date) < new Date() &&
-            !["approved", "done", "cancelled"].includes(r.status)
-              ? "bg-destructive/5"
-              : undefined
-          }
+          rowClassName={(r) => toneRowClass[rowTone(r.status, r.due_date)]}
           emptyState={
             <EmptyState
               text="لا توجد مهام"
@@ -316,26 +326,14 @@ function TasksPage() {
                 </Chip>
               ),
             },
-            { header: "العقار", cell: (r) => r.property?.name ?? "—" },
+            {
+              header: "الموظف",
+              cell: (r) => assigneeNames.data?.[r.id]?.join("، ") || "—",
+            },
             {
               header: "الموقع",
-              cell: (r) => {
-                const locText = r.location_text ?? "";
-                const isUrl = /^https?:\/\//.test(locText);
-                if (isUrl) {
-                  return (
-                    <a
-                      href={locText}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-primary"
-                    >
-                      <MapPin className="size-3.5" />
-                      فتح الموقع
-                    </a>
-                  );
-                }
-                return r.location_lat != null && r.location_lng != null ? (
+              cell: (r) =>
+                r.location_lat != null && r.location_lng != null ? (
                   <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${r.location_lat},${r.location_lng}`}
                     target="_blank"
@@ -347,8 +345,7 @@ function TasksPage() {
                   </a>
                 ) : (
                   (r.location_text ?? "—")
-                );
-              },
+                ),
             },
             {
               header: "الموعد",
@@ -362,9 +359,7 @@ function TasksPage() {
                 <select
                   value={r.status}
                   onChange={(e) => changeStatus.mutate({ id: r.id, status: e.target.value })}
-                  className={`h-9 rounded-lg border px-2 text-[12.5px] font-semibold outline-none ${
-                    STATUS_STYLE[r.status] ?? "border-border bg-card text-foreground"
-                  }`}
+                  className={`h-9 rounded-lg border px-2 text-[12.5px] font-semibold outline-none ${toneBadgeClass[rowTone(r.status, r.due_date)]}`}
                   aria-label="حالة المهمة"
                 >
                   {statusOrder.map((s) => (
@@ -397,7 +392,8 @@ function TasksPage() {
               ),
             },
           ]}
-        />
+          />
+        </div>
       )}
 
       <Modal
@@ -488,5 +484,24 @@ function TasksPage() {
         </div>
       </Modal>
     </>
+  );
+}
+
+// The three sections are stacked one under the other on the same page (no tabs).
+function TasksHub() {
+  const sections = [
+    { key: "tasks", label: "المهام", node: <TasksPage /> },
+    { key: "activities", label: "المتابعات والأنشطة", node: <ActivitiesPage /> },
+    { key: "chat", label: "شات الموظفين", node: <TeamChatPage /> },
+  ];
+  return (
+    <div className="space-y-10">
+      {sections.map((s) => (
+        <section key={s.key} id={s.key} className="space-y-4">
+          <h2 className="border-b border-border pb-2 text-lg font-black text-foreground">{s.label}</h2>
+          {s.node}
+        </section>
+      ))}
+    </div>
   );
 }

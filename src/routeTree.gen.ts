@@ -13,15 +13,17 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as CompareRouteImport } from './routes/compare'
+import { Route as CompanyProfileRouteImport } from './routes/company-profile'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as ListPropertyRouteImport } from './routes/list-property'
-import { Route as OfflineRouteImport } from './routes/offline'
+import { Route as MaintenanceRequestRouteImport } from './routes/maintenance-request'
+import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RentRouteImport } from './routes/rent'
 import { Route as SaleRouteImport } from './routes/sale'
+import { Route as ShowcaseRouteImport } from './routes/showcase'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SysX9k2ControlRouteImport } from './routes/sys-x9k2-control'
 import { Route as TermsRouteImport } from './routes/terms'
@@ -29,54 +31,68 @@ import { Route as ThankYouRouteImport } from './routes/thank-you'
 import { Route as AuthenticatedActivitiesRouteImport } from './routes/_authenticated/activities'
 import { Route as AuthenticatedActivityLogRouteImport } from './routes/_authenticated/activity-log'
 import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated/ai'
-import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
-import { Route as AuthenticatedAutomationRouteImport } from './routes/_authenticated/automation'
-import { Route as AuthenticatedBackupsRouteImport } from './routes/_authenticated/backups'
+import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated/backup'
+import { Route as AuthenticatedBuildingsRouteImport } from './routes/_authenticated/buildings'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
-import { Route as AuthenticatedCollectionsRouteImport } from './routes/_authenticated/collections'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEmployeeFormRouteImport } from './routes/_authenticated/employee-form'
 import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
 import { Route as AuthenticatedErrorLogRouteImport } from './routes/_authenticated/error-log'
 import { Route as AuthenticatedInvoiceFormRouteImport } from './routes/_authenticated/invoice-form'
+import { Route as AuthenticatedMaintenanceRouteImport } from './routes/_authenticated/maintenance'
+import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
-import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated/opportunities'
 import { Route as AuthenticatedOwnerFormRouteImport } from './routes/_authenticated/owner-form'
 import { Route as AuthenticatedPartnersRouteImport } from './routes/_authenticated/partners'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
-import { Route as AuthenticatedPropertiesImportRouteImport } from './routes/_authenticated/properties-import'
 import { Route as AuthenticatedPropertyFormRouteImport } from './routes/_authenticated/property-form'
 import { Route as AuthenticatedRemindersRouteImport } from './routes/_authenticated/reminders'
-import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedRenewalsRouteImport } from './routes/_authenticated/renewals'
 import { Route as AuthenticatedReservationsRouteImport } from './routes/_authenticated/reservations'
 import { Route as AuthenticatedReserveRouteImport } from './routes/_authenticated/reserve'
 import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/roles'
+import { Route as AuthenticatedServicePartnersRouteImport } from './routes/_authenticated/service-partners'
 import { Route as AuthenticatedServicesRouteImport } from './routes/_authenticated/services'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTaskFormRouteImport } from './routes/_authenticated/task-form'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedTeamChatRouteImport } from './routes/_authenticated/team-chat'
 import { Route as AuthenticatedWhatsappLinkRouteImport } from './routes/_authenticated/whatsapp-link'
+import { Route as BuildingsCodeRouteImport } from './routes/buildings.$code'
+import { Route as OwnerReportTokenRouteImport } from './routes/owner-report.$token'
+import { Route as PartnerIndexRouteImport } from './routes/partner.index'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
-import { Route as PortalOwnerRouteImport } from './routes/portal.owner'
+import { Route as PortalCareRouteImport } from './routes/portal.care'
+import { Route as PortalDocumentsRouteImport } from './routes/portal.documents'
+import { Route as PortalFinanceRouteImport } from './routes/portal.finance'
+import { Route as PortalInsightsRouteImport } from './routes/portal.insights'
+import { Route as PortalMessagesRouteImport } from './routes/portal.messages'
+import { Route as PortalSettingsRouteImport } from './routes/portal.settings'
+import { Route as PortalUnitsRouteImport } from './routes/portal.units'
 import { Route as PropertiesCodeRouteImport } from './routes/properties.$code'
 import { Route as AuthenticatedContractsIndexRouteImport } from './routes/_authenticated/contracts.index'
 import { Route as AuthenticatedContractsContractIdRouteImport } from './routes/_authenticated/contracts.$contractId'
+import { Route as AuthenticatedGoalsIndexRouteImport } from './routes/_authenticated/goals.index'
+import { Route as AuthenticatedGoalsEmployeeIdRouteImport } from './routes/_authenticated/goals.$employeeId'
 import { Route as AuthenticatedInvoicesIndexRouteImport } from './routes/_authenticated/invoices.index'
 import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
 import { Route as AuthenticatedListingRequestsIndexRouteImport } from './routes/_authenticated/listing-requests.index'
-import { Route as AuthenticatedListingRequestsIdRouteImport } from './routes/_authenticated/listing-requests.$id'
+import { Route as AuthenticatedListingRequestsRequestIdRouteImport } from './routes/_authenticated/listing-requests.$requestId'
+import { Route as AuthenticatedMarketingMarketerIdRouteImport } from './routes/_authenticated/marketing.$marketerId'
+import { Route as AuthenticatedOwnerSectionSectionIdRouteImport } from './routes/_authenticated/owner-section.$sectionId'
 import { Route as AuthenticatedOwnersIndexRouteImport } from './routes/_authenticated/owners.index'
 import { Route as AuthenticatedOwnersOwnerIdRouteImport } from './routes/_authenticated/owners.$ownerId'
 import { Route as AuthenticatedPaymentReminderPaymentIdRouteImport } from './routes/_authenticated/payment-reminder.$paymentId'
 import { Route as AuthenticatedSupplyRequestsIndexRouteImport } from './routes/_authenticated/supply-requests.index'
-import { Route as AuthenticatedSupplyRequestsIdRouteImport } from './routes/_authenticated/supply-requests.$id'
+import { Route as AuthenticatedSupplyRequestsRequestIdRouteImport } from './routes/_authenticated/supply-requests.$requestId'
 import { Route as ApiPublicN8nRouteImport } from './routes/api/public/n8n'
 import { Route as PortalContractsIndexRouteImport } from './routes/portal.contracts.index'
 import { Route as PortalContractsContractIdRouteImport } from './routes/portal.contracts.$contractId'
 import { Route as PortalInvoicesIndexRouteImport } from './routes/portal.invoices.index'
 import { Route as PortalInvoicesInvoiceIdRouteImport } from './routes/portal.invoices.$invoiceId'
+import { Route as PortalServicesIndexRouteImport } from './routes/portal.services.index'
+import { Route as PortalServicesPartnerCodeRouteImport } from './routes/portal.services.$partnerCode'
 import { Route as ApiPublicFilesSplatRouteImport } from './routes/api/public/files/$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -98,9 +114,9 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CompareRoute = CompareRouteImport.update({
-  id: '/compare',
-  path: '/compare',
+const CompanyProfileRoute = CompanyProfileRouteImport.update({
+  id: '/company-profile',
+  path: '/company-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -118,9 +134,14 @@ const ListPropertyRoute = ListPropertyRouteImport.update({
   path: '/list-property',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OfflineRoute = OfflineRouteImport.update({
-  id: '/offline',
-  path: '/offline',
+const MaintenanceRequestRoute = MaintenanceRequestRouteImport.update({
+  id: '/maintenance-request',
+  path: '/maintenance-request',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnerRoute = PartnerRouteImport.update({
+  id: '/partner',
+  path: '/partner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalRoute = PortalRouteImport.update({
@@ -141,6 +162,11 @@ const RentRoute = RentRouteImport.update({
 const SaleRoute = SaleRouteImport.update({
   id: '/sale',
   path: '/sale',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShowcaseRoute = ShowcaseRouteImport.update({
+  id: '/showcase',
+  path: '/showcase',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -179,19 +205,14 @@ const AuthenticatedAiRoute = AuthenticatedAiRouteImport.update({
   path: '/ai',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAlertsRoute = AuthenticatedAlertsRouteImport.update({
-  id: '/alerts',
-  path: '/alerts',
+const AuthenticatedBackupRoute = AuthenticatedBackupRouteImport.update({
+  id: '/backup',
+  path: '/backup',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAutomationRoute = AuthenticatedAutomationRouteImport.update({
-  id: '/automation',
-  path: '/automation',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBackupsRoute = AuthenticatedBackupsRouteImport.update({
-  id: '/backups',
-  path: '/backups',
+const AuthenticatedBuildingsRoute = AuthenticatedBuildingsRouteImport.update({
+  id: '/buildings',
+  path: '/buildings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
@@ -199,12 +220,6 @@ const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedCollectionsRoute =
-  AuthenticatedCollectionsRouteImport.update({
-    id: '/collections',
-    path: '/collections',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   id: '/crm',
   path: '/crm',
@@ -237,16 +252,21 @@ const AuthenticatedInvoiceFormRoute =
     path: '/invoice-form',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMaintenanceRoute =
+  AuthenticatedMaintenanceRouteImport.update({
+    id: '/maintenance',
+    path: '/maintenance',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMarketingRoute = AuthenticatedMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedNotificationsRoute =
   AuthenticatedNotificationsRouteImport.update({
     id: '/notifications',
     path: '/notifications',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOpportunitiesRoute =
-  AuthenticatedOpportunitiesRouteImport.update({
-    id: '/opportunities',
-    path: '/opportunities',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedOwnerFormRoute = AuthenticatedOwnerFormRouteImport.update({
@@ -264,12 +284,6 @@ const AuthenticatedPropertiesRoute = AuthenticatedPropertiesRouteImport.update({
   path: '/properties',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedPropertiesImportRoute =
-  AuthenticatedPropertiesImportRouteImport.update({
-    id: '/properties-import',
-    path: '/properties-import',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedPropertyFormRoute =
   AuthenticatedPropertyFormRouteImport.update({
     id: '/property-form',
@@ -281,9 +295,9 @@ const AuthenticatedRemindersRoute = AuthenticatedRemindersRouteImport.update({
   path: '/reminders',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
+const AuthenticatedRenewalsRoute = AuthenticatedRenewalsRouteImport.update({
+  id: '/renewals',
+  path: '/renewals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedReservationsRoute =
@@ -302,6 +316,12 @@ const AuthenticatedRolesRoute = AuthenticatedRolesRouteImport.update({
   path: '/roles',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedServicePartnersRoute =
+  AuthenticatedServicePartnersRouteImport.update({
+    id: '/service-partners',
+    path: '/service-partners',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedServicesRoute = AuthenticatedServicesRouteImport.update({
   id: '/services',
   path: '/services',
@@ -333,14 +353,59 @@ const AuthenticatedWhatsappLinkRoute =
     path: '/whatsapp-link',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const BuildingsCodeRoute = BuildingsCodeRouteImport.update({
+  id: '/buildings/$code',
+  path: '/buildings/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerReportTokenRoute = OwnerReportTokenRouteImport.update({
+  id: '/owner-report/$token',
+  path: '/owner-report/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnerIndexRoute = PartnerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PartnerRoute,
+} as any)
 const PortalIndexRoute = PortalIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => PortalRoute,
 } as any)
-const PortalOwnerRoute = PortalOwnerRouteImport.update({
-  id: '/owner',
-  path: '/owner',
+const PortalCareRoute = PortalCareRouteImport.update({
+  id: '/care',
+  path: '/care',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalDocumentsRoute = PortalDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalFinanceRoute = PortalFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalInsightsRoute = PortalInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalMessagesRoute = PortalMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalSettingsRoute = PortalSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalUnitsRoute = PortalUnitsRouteImport.update({
+  id: '/units',
+  path: '/units',
   getParentRoute: () => PortalRoute,
 } as any)
 const PropertiesCodeRoute = PropertiesCodeRouteImport.update({
@@ -358,6 +423,17 @@ const AuthenticatedContractsContractIdRoute =
   AuthenticatedContractsContractIdRouteImport.update({
     id: '/contracts/$contractId',
     path: '/contracts/$contractId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedGoalsIndexRoute = AuthenticatedGoalsIndexRouteImport.update({
+  id: '/goals/',
+  path: '/goals/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGoalsEmployeeIdRoute =
+  AuthenticatedGoalsEmployeeIdRouteImport.update({
+    id: '/goals/$employeeId',
+    path: '/goals/$employeeId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedInvoicesIndexRoute =
@@ -378,10 +454,22 @@ const AuthenticatedListingRequestsIndexRoute =
     path: '/listing-requests/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedListingRequestsIdRoute =
-  AuthenticatedListingRequestsIdRouteImport.update({
-    id: '/listing-requests/$id',
-    path: '/listing-requests/$id',
+const AuthenticatedListingRequestsRequestIdRoute =
+  AuthenticatedListingRequestsRequestIdRouteImport.update({
+    id: '/listing-requests/$requestId',
+    path: '/listing-requests/$requestId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMarketingMarketerIdRoute =
+  AuthenticatedMarketingMarketerIdRouteImport.update({
+    id: '/$marketerId',
+    path: '/$marketerId',
+    getParentRoute: () => AuthenticatedMarketingRoute,
+  } as any)
+const AuthenticatedOwnerSectionSectionIdRoute =
+  AuthenticatedOwnerSectionSectionIdRouteImport.update({
+    id: '/owner-section/$sectionId',
+    path: '/owner-section/$sectionId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedOwnersIndexRoute =
@@ -408,10 +496,10 @@ const AuthenticatedSupplyRequestsIndexRoute =
     path: '/supply-requests/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedSupplyRequestsIdRoute =
-  AuthenticatedSupplyRequestsIdRouteImport.update({
-    id: '/supply-requests/$id',
-    path: '/supply-requests/$id',
+const AuthenticatedSupplyRequestsRequestIdRoute =
+  AuthenticatedSupplyRequestsRequestIdRouteImport.update({
+    id: '/supply-requests/$requestId',
+    path: '/supply-requests/$requestId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const ApiPublicN8nRoute = ApiPublicN8nRouteImport.update({
@@ -440,6 +528,17 @@ const PortalInvoicesInvoiceIdRoute = PortalInvoicesInvoiceIdRouteImport.update({
   path: '/invoices/$invoiceId',
   getParentRoute: () => PortalRoute,
 } as any)
+const PortalServicesIndexRoute = PortalServicesIndexRouteImport.update({
+  id: '/services/',
+  path: '/services/',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalServicesPartnerCodeRoute =
+  PortalServicesPartnerCodeRouteImport.update({
+    id: '/services/$partnerCode',
+    path: '/services/$partnerCode',
+    getParentRoute: () => PortalRoute,
+  } as any)
 const ApiPublicFilesSplatRoute = ApiPublicFilesSplatRouteImport.update({
   id: '/api/public/files/$',
   path: '/api/public/files/$',
@@ -450,15 +549,17 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
-  '/compare': typeof CompareRoute
+  '/company-profile': typeof CompanyProfileRoute
   '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
-  '/offline': typeof OfflineRoute
+  '/maintenance-request': typeof MaintenanceRequestRoute
+  '/partner': typeof PartnerRouteWithChildren
   '/portal': typeof PortalRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
+  '/showcase': typeof ShowcaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sys-x9k2-control': typeof SysX9k2ControlRoute
   '/terms': typeof TermsRoute
@@ -466,68 +567,83 @@ export interface FileRoutesByFullPath {
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/ai': typeof AuthenticatedAiRoute
-  '/alerts': typeof AuthenticatedAlertsRoute
-  '/automation': typeof AuthenticatedAutomationRoute
-  '/backups': typeof AuthenticatedBackupsRoute
+  '/backup': typeof AuthenticatedBackupRoute
+  '/buildings': typeof AuthenticatedBuildingsRoute
   '/clients': typeof AuthenticatedClientsRoute
-  '/collections': typeof AuthenticatedCollectionsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/employee-form': typeof AuthenticatedEmployeeFormRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/error-log': typeof AuthenticatedErrorLogRoute
   '/invoice-form': typeof AuthenticatedInvoiceFormRoute
+  '/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/marketing': typeof AuthenticatedMarketingRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRoute
-  '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/owner-form': typeof AuthenticatedOwnerFormRoute
   '/partners': typeof AuthenticatedPartnersRoute
   '/properties': typeof AuthenticatedPropertiesRoute
-  '/properties-import': typeof AuthenticatedPropertiesImportRoute
   '/property-form': typeof AuthenticatedPropertyFormRoute
   '/reminders': typeof AuthenticatedRemindersRoute
-  '/reports': typeof AuthenticatedReportsRoute
+  '/renewals': typeof AuthenticatedRenewalsRoute
   '/reservations': typeof AuthenticatedReservationsRoute
   '/reserve': typeof AuthenticatedReserveRoute
   '/roles': typeof AuthenticatedRolesRoute
+  '/service-partners': typeof AuthenticatedServicePartnersRoute
   '/services': typeof AuthenticatedServicesRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/task-form': typeof AuthenticatedTaskFormRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team-chat': typeof AuthenticatedTeamChatRoute
   '/whatsapp-link': typeof AuthenticatedWhatsappLinkRoute
-  '/portal/owner': typeof PortalOwnerRoute
+  '/buildings/$code': typeof BuildingsCodeRoute
+  '/owner-report/$token': typeof OwnerReportTokenRoute
+  '/portal/care': typeof PortalCareRoute
+  '/portal/documents': typeof PortalDocumentsRoute
+  '/portal/finance': typeof PortalFinanceRoute
+  '/portal/insights': typeof PortalInsightsRoute
+  '/portal/messages': typeof PortalMessagesRoute
+  '/portal/settings': typeof PortalSettingsRoute
+  '/portal/units': typeof PortalUnitsRoute
   '/properties/$code': typeof PropertiesCodeRoute
+  '/partner/': typeof PartnerIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
+  '/goals/$employeeId': typeof AuthenticatedGoalsEmployeeIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
-  '/listing-requests/$id': typeof AuthenticatedListingRequestsIdRoute
+  '/listing-requests/$requestId': typeof AuthenticatedListingRequestsRequestIdRoute
+  '/marketing/$marketerId': typeof AuthenticatedMarketingMarketerIdRoute
+  '/owner-section/$sectionId': typeof AuthenticatedOwnerSectionSectionIdRoute
   '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
   '/payment-reminder/$paymentId': typeof AuthenticatedPaymentReminderPaymentIdRoute
-  '/supply-requests/$id': typeof AuthenticatedSupplyRequestsIdRoute
+  '/supply-requests/$requestId': typeof AuthenticatedSupplyRequestsRequestIdRoute
   '/api/public/n8n': typeof ApiPublicN8nRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
+  '/portal/services/$partnerCode': typeof PortalServicesPartnerCodeRoute
   '/contracts/': typeof AuthenticatedContractsIndexRoute
+  '/goals/': typeof AuthenticatedGoalsIndexRoute
   '/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/listing-requests/': typeof AuthenticatedListingRequestsIndexRoute
   '/owners/': typeof AuthenticatedOwnersIndexRoute
   '/supply-requests/': typeof AuthenticatedSupplyRequestsIndexRoute
   '/portal/contracts/': typeof PortalContractsIndexRoute
   '/portal/invoices/': typeof PortalInvoicesIndexRoute
+  '/portal/services/': typeof PortalServicesIndexRoute
   '/api/public/files/$': typeof ApiPublicFilesSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
-  '/compare': typeof CompareRoute
+  '/company-profile': typeof CompanyProfileRoute
   '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
-  '/offline': typeof OfflineRoute
+  '/maintenance-request': typeof MaintenanceRequestRoute
   '/privacy': typeof PrivacyRoute
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
+  '/showcase': typeof ShowcaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sys-x9k2-control': typeof SysX9k2ControlRoute
   '/terms': typeof TermsRoute
@@ -535,54 +651,68 @@ export interface FileRoutesByTo {
   '/activities': typeof AuthenticatedActivitiesRoute
   '/activity-log': typeof AuthenticatedActivityLogRoute
   '/ai': typeof AuthenticatedAiRoute
-  '/alerts': typeof AuthenticatedAlertsRoute
-  '/automation': typeof AuthenticatedAutomationRoute
-  '/backups': typeof AuthenticatedBackupsRoute
+  '/backup': typeof AuthenticatedBackupRoute
+  '/buildings': typeof AuthenticatedBuildingsRoute
   '/clients': typeof AuthenticatedClientsRoute
-  '/collections': typeof AuthenticatedCollectionsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/employee-form': typeof AuthenticatedEmployeeFormRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/error-log': typeof AuthenticatedErrorLogRoute
   '/invoice-form': typeof AuthenticatedInvoiceFormRoute
+  '/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/marketing': typeof AuthenticatedMarketingRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRoute
-  '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/owner-form': typeof AuthenticatedOwnerFormRoute
   '/partners': typeof AuthenticatedPartnersRoute
   '/properties': typeof AuthenticatedPropertiesRoute
-  '/properties-import': typeof AuthenticatedPropertiesImportRoute
   '/property-form': typeof AuthenticatedPropertyFormRoute
   '/reminders': typeof AuthenticatedRemindersRoute
-  '/reports': typeof AuthenticatedReportsRoute
+  '/renewals': typeof AuthenticatedRenewalsRoute
   '/reservations': typeof AuthenticatedReservationsRoute
   '/reserve': typeof AuthenticatedReserveRoute
   '/roles': typeof AuthenticatedRolesRoute
+  '/service-partners': typeof AuthenticatedServicePartnersRoute
   '/services': typeof AuthenticatedServicesRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/task-form': typeof AuthenticatedTaskFormRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team-chat': typeof AuthenticatedTeamChatRoute
   '/whatsapp-link': typeof AuthenticatedWhatsappLinkRoute
-  '/portal/owner': typeof PortalOwnerRoute
+  '/buildings/$code': typeof BuildingsCodeRoute
+  '/owner-report/$token': typeof OwnerReportTokenRoute
+  '/portal/care': typeof PortalCareRoute
+  '/portal/documents': typeof PortalDocumentsRoute
+  '/portal/finance': typeof PortalFinanceRoute
+  '/portal/insights': typeof PortalInsightsRoute
+  '/portal/messages': typeof PortalMessagesRoute
+  '/portal/settings': typeof PortalSettingsRoute
+  '/portal/units': typeof PortalUnitsRoute
   '/properties/$code': typeof PropertiesCodeRoute
+  '/partner': typeof PartnerIndexRoute
   '/portal': typeof PortalIndexRoute
   '/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
+  '/goals/$employeeId': typeof AuthenticatedGoalsEmployeeIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
-  '/listing-requests/$id': typeof AuthenticatedListingRequestsIdRoute
+  '/listing-requests/$requestId': typeof AuthenticatedListingRequestsRequestIdRoute
+  '/marketing/$marketerId': typeof AuthenticatedMarketingMarketerIdRoute
+  '/owner-section/$sectionId': typeof AuthenticatedOwnerSectionSectionIdRoute
   '/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
   '/payment-reminder/$paymentId': typeof AuthenticatedPaymentReminderPaymentIdRoute
-  '/supply-requests/$id': typeof AuthenticatedSupplyRequestsIdRoute
+  '/supply-requests/$requestId': typeof AuthenticatedSupplyRequestsRequestIdRoute
   '/api/public/n8n': typeof ApiPublicN8nRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
+  '/portal/services/$partnerCode': typeof PortalServicesPartnerCodeRoute
   '/contracts': typeof AuthenticatedContractsIndexRoute
+  '/goals': typeof AuthenticatedGoalsIndexRoute
   '/invoices': typeof AuthenticatedInvoicesIndexRoute
   '/listing-requests': typeof AuthenticatedListingRequestsIndexRoute
   '/owners': typeof AuthenticatedOwnersIndexRoute
   '/supply-requests': typeof AuthenticatedSupplyRequestsIndexRoute
   '/portal/contracts': typeof PortalContractsIndexRoute
   '/portal/invoices': typeof PortalInvoicesIndexRoute
+  '/portal/services': typeof PortalServicesIndexRoute
   '/api/public/files/$': typeof ApiPublicFilesSplatRoute
 }
 export interface FileRoutesById {
@@ -591,15 +721,17 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
-  '/compare': typeof CompareRoute
+  '/company-profile': typeof CompanyProfileRoute
   '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/list-property': typeof ListPropertyRoute
-  '/offline': typeof OfflineRoute
+  '/maintenance-request': typeof MaintenanceRequestRoute
+  '/partner': typeof PartnerRouteWithChildren
   '/portal': typeof PortalRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/rent': typeof RentRoute
   '/sale': typeof SaleRoute
+  '/showcase': typeof ShowcaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sys-x9k2-control': typeof SysX9k2ControlRoute
   '/terms': typeof TermsRoute
@@ -607,54 +739,68 @@ export interface FileRoutesById {
   '/_authenticated/activities': typeof AuthenticatedActivitiesRoute
   '/_authenticated/activity-log': typeof AuthenticatedActivityLogRoute
   '/_authenticated/ai': typeof AuthenticatedAiRoute
-  '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
-  '/_authenticated/automation': typeof AuthenticatedAutomationRoute
-  '/_authenticated/backups': typeof AuthenticatedBackupsRoute
+  '/_authenticated/backup': typeof AuthenticatedBackupRoute
+  '/_authenticated/buildings': typeof AuthenticatedBuildingsRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
-  '/_authenticated/collections': typeof AuthenticatedCollectionsRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/employee-form': typeof AuthenticatedEmployeeFormRoute
   '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
   '/_authenticated/error-log': typeof AuthenticatedErrorLogRoute
   '/_authenticated/invoice-form': typeof AuthenticatedInvoiceFormRoute
+  '/_authenticated/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/_authenticated/marketing': typeof AuthenticatedMarketingRouteWithChildren
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
-  '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/_authenticated/owner-form': typeof AuthenticatedOwnerFormRoute
   '/_authenticated/partners': typeof AuthenticatedPartnersRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
-  '/_authenticated/properties-import': typeof AuthenticatedPropertiesImportRoute
   '/_authenticated/property-form': typeof AuthenticatedPropertyFormRoute
   '/_authenticated/reminders': typeof AuthenticatedRemindersRoute
-  '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/renewals': typeof AuthenticatedRenewalsRoute
   '/_authenticated/reservations': typeof AuthenticatedReservationsRoute
   '/_authenticated/reserve': typeof AuthenticatedReserveRoute
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
+  '/_authenticated/service-partners': typeof AuthenticatedServicePartnersRoute
   '/_authenticated/services': typeof AuthenticatedServicesRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/task-form': typeof AuthenticatedTaskFormRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/team-chat': typeof AuthenticatedTeamChatRoute
   '/_authenticated/whatsapp-link': typeof AuthenticatedWhatsappLinkRoute
-  '/portal/owner': typeof PortalOwnerRoute
+  '/buildings/$code': typeof BuildingsCodeRoute
+  '/owner-report/$token': typeof OwnerReportTokenRoute
+  '/portal/care': typeof PortalCareRoute
+  '/portal/documents': typeof PortalDocumentsRoute
+  '/portal/finance': typeof PortalFinanceRoute
+  '/portal/insights': typeof PortalInsightsRoute
+  '/portal/messages': typeof PortalMessagesRoute
+  '/portal/settings': typeof PortalSettingsRoute
+  '/portal/units': typeof PortalUnitsRoute
   '/properties/$code': typeof PropertiesCodeRoute
+  '/partner/': typeof PartnerIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/_authenticated/contracts/$contractId': typeof AuthenticatedContractsContractIdRoute
+  '/_authenticated/goals/$employeeId': typeof AuthenticatedGoalsEmployeeIdRoute
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
-  '/_authenticated/listing-requests/$id': typeof AuthenticatedListingRequestsIdRoute
+  '/_authenticated/listing-requests/$requestId': typeof AuthenticatedListingRequestsRequestIdRoute
+  '/_authenticated/marketing/$marketerId': typeof AuthenticatedMarketingMarketerIdRoute
+  '/_authenticated/owner-section/$sectionId': typeof AuthenticatedOwnerSectionSectionIdRoute
   '/_authenticated/owners/$ownerId': typeof AuthenticatedOwnersOwnerIdRoute
   '/_authenticated/payment-reminder/$paymentId': typeof AuthenticatedPaymentReminderPaymentIdRoute
-  '/_authenticated/supply-requests/$id': typeof AuthenticatedSupplyRequestsIdRoute
+  '/_authenticated/supply-requests/$requestId': typeof AuthenticatedSupplyRequestsRequestIdRoute
   '/api/public/n8n': typeof ApiPublicN8nRoute
   '/portal/contracts/$contractId': typeof PortalContractsContractIdRoute
   '/portal/invoices/$invoiceId': typeof PortalInvoicesInvoiceIdRoute
+  '/portal/services/$partnerCode': typeof PortalServicesPartnerCodeRoute
   '/_authenticated/contracts/': typeof AuthenticatedContractsIndexRoute
+  '/_authenticated/goals/': typeof AuthenticatedGoalsIndexRoute
   '/_authenticated/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/_authenticated/listing-requests/': typeof AuthenticatedListingRequestsIndexRoute
   '/_authenticated/owners/': typeof AuthenticatedOwnersIndexRoute
   '/_authenticated/supply-requests/': typeof AuthenticatedSupplyRequestsIndexRoute
   '/portal/contracts/': typeof PortalContractsIndexRoute
   '/portal/invoices/': typeof PortalInvoicesIndexRoute
+  '/portal/services/': typeof PortalServicesIndexRoute
   '/api/public/files/$': typeof ApiPublicFilesSplatRoute
 }
 export interface FileRouteTypes {
@@ -663,15 +809,17 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
-    | '/compare'
+    | '/company-profile'
     | '/contact'
     | '/favorites'
     | '/list-property'
-    | '/offline'
+    | '/maintenance-request'
+    | '/partner'
     | '/portal'
     | '/privacy'
     | '/rent'
     | '/sale'
+    | '/showcase'
     | '/sitemap.xml'
     | '/sys-x9k2-control'
     | '/terms'
@@ -679,68 +827,83 @@ export interface FileRouteTypes {
     | '/activities'
     | '/activity-log'
     | '/ai'
-    | '/alerts'
-    | '/automation'
-    | '/backups'
+    | '/backup'
+    | '/buildings'
     | '/clients'
-    | '/collections'
     | '/crm'
     | '/dashboard'
     | '/employee-form'
     | '/employees'
     | '/error-log'
     | '/invoice-form'
+    | '/maintenance'
+    | '/marketing'
     | '/notifications'
-    | '/opportunities'
     | '/owner-form'
     | '/partners'
     | '/properties'
-    | '/properties-import'
     | '/property-form'
     | '/reminders'
-    | '/reports'
+    | '/renewals'
     | '/reservations'
     | '/reserve'
     | '/roles'
+    | '/service-partners'
     | '/services'
     | '/settings'
     | '/task-form'
     | '/tasks'
     | '/team-chat'
     | '/whatsapp-link'
-    | '/portal/owner'
+    | '/buildings/$code'
+    | '/owner-report/$token'
+    | '/portal/care'
+    | '/portal/documents'
+    | '/portal/finance'
+    | '/portal/insights'
+    | '/portal/messages'
+    | '/portal/settings'
+    | '/portal/units'
     | '/properties/$code'
+    | '/partner/'
     | '/portal/'
     | '/contracts/$contractId'
+    | '/goals/$employeeId'
     | '/invoices/$invoiceId'
-    | '/listing-requests/$id'
+    | '/listing-requests/$requestId'
+    | '/marketing/$marketerId'
+    | '/owner-section/$sectionId'
     | '/owners/$ownerId'
     | '/payment-reminder/$paymentId'
-    | '/supply-requests/$id'
+    | '/supply-requests/$requestId'
     | '/api/public/n8n'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
+    | '/portal/services/$partnerCode'
     | '/contracts/'
+    | '/goals/'
     | '/invoices/'
     | '/listing-requests/'
     | '/owners/'
     | '/supply-requests/'
     | '/portal/contracts/'
     | '/portal/invoices/'
+    | '/portal/services/'
     | '/api/public/files/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/auth'
-    | '/compare'
+    | '/company-profile'
     | '/contact'
     | '/favorites'
     | '/list-property'
-    | '/offline'
+    | '/maintenance-request'
     | '/privacy'
     | '/rent'
     | '/sale'
+    | '/showcase'
     | '/sitemap.xml'
     | '/sys-x9k2-control'
     | '/terms'
@@ -748,54 +911,68 @@ export interface FileRouteTypes {
     | '/activities'
     | '/activity-log'
     | '/ai'
-    | '/alerts'
-    | '/automation'
-    | '/backups'
+    | '/backup'
+    | '/buildings'
     | '/clients'
-    | '/collections'
     | '/crm'
     | '/dashboard'
     | '/employee-form'
     | '/employees'
     | '/error-log'
     | '/invoice-form'
+    | '/maintenance'
+    | '/marketing'
     | '/notifications'
-    | '/opportunities'
     | '/owner-form'
     | '/partners'
     | '/properties'
-    | '/properties-import'
     | '/property-form'
     | '/reminders'
-    | '/reports'
+    | '/renewals'
     | '/reservations'
     | '/reserve'
     | '/roles'
+    | '/service-partners'
     | '/services'
     | '/settings'
     | '/task-form'
     | '/tasks'
     | '/team-chat'
     | '/whatsapp-link'
-    | '/portal/owner'
+    | '/buildings/$code'
+    | '/owner-report/$token'
+    | '/portal/care'
+    | '/portal/documents'
+    | '/portal/finance'
+    | '/portal/insights'
+    | '/portal/messages'
+    | '/portal/settings'
+    | '/portal/units'
     | '/properties/$code'
+    | '/partner'
     | '/portal'
     | '/contracts/$contractId'
+    | '/goals/$employeeId'
     | '/invoices/$invoiceId'
-    | '/listing-requests/$id'
+    | '/listing-requests/$requestId'
+    | '/marketing/$marketerId'
+    | '/owner-section/$sectionId'
     | '/owners/$ownerId'
     | '/payment-reminder/$paymentId'
-    | '/supply-requests/$id'
+    | '/supply-requests/$requestId'
     | '/api/public/n8n'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
+    | '/portal/services/$partnerCode'
     | '/contracts'
+    | '/goals'
     | '/invoices'
     | '/listing-requests'
     | '/owners'
     | '/supply-requests'
     | '/portal/contracts'
     | '/portal/invoices'
+    | '/portal/services'
     | '/api/public/files/$'
   id:
     | '__root__'
@@ -803,15 +980,17 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/about'
     | '/auth'
-    | '/compare'
+    | '/company-profile'
     | '/contact'
     | '/favorites'
     | '/list-property'
-    | '/offline'
+    | '/maintenance-request'
+    | '/partner'
     | '/portal'
     | '/privacy'
     | '/rent'
     | '/sale'
+    | '/showcase'
     | '/sitemap.xml'
     | '/sys-x9k2-control'
     | '/terms'
@@ -819,54 +998,68 @@ export interface FileRouteTypes {
     | '/_authenticated/activities'
     | '/_authenticated/activity-log'
     | '/_authenticated/ai'
-    | '/_authenticated/alerts'
-    | '/_authenticated/automation'
-    | '/_authenticated/backups'
+    | '/_authenticated/backup'
+    | '/_authenticated/buildings'
     | '/_authenticated/clients'
-    | '/_authenticated/collections'
     | '/_authenticated/crm'
     | '/_authenticated/dashboard'
     | '/_authenticated/employee-form'
     | '/_authenticated/employees'
     | '/_authenticated/error-log'
     | '/_authenticated/invoice-form'
+    | '/_authenticated/maintenance'
+    | '/_authenticated/marketing'
     | '/_authenticated/notifications'
-    | '/_authenticated/opportunities'
     | '/_authenticated/owner-form'
     | '/_authenticated/partners'
     | '/_authenticated/properties'
-    | '/_authenticated/properties-import'
     | '/_authenticated/property-form'
     | '/_authenticated/reminders'
-    | '/_authenticated/reports'
+    | '/_authenticated/renewals'
     | '/_authenticated/reservations'
     | '/_authenticated/reserve'
     | '/_authenticated/roles'
+    | '/_authenticated/service-partners'
     | '/_authenticated/services'
     | '/_authenticated/settings'
     | '/_authenticated/task-form'
     | '/_authenticated/tasks'
     | '/_authenticated/team-chat'
     | '/_authenticated/whatsapp-link'
-    | '/portal/owner'
+    | '/buildings/$code'
+    | '/owner-report/$token'
+    | '/portal/care'
+    | '/portal/documents'
+    | '/portal/finance'
+    | '/portal/insights'
+    | '/portal/messages'
+    | '/portal/settings'
+    | '/portal/units'
     | '/properties/$code'
+    | '/partner/'
     | '/portal/'
     | '/_authenticated/contracts/$contractId'
+    | '/_authenticated/goals/$employeeId'
     | '/_authenticated/invoices/$invoiceId'
-    | '/_authenticated/listing-requests/$id'
+    | '/_authenticated/listing-requests/$requestId'
+    | '/_authenticated/marketing/$marketerId'
+    | '/_authenticated/owner-section/$sectionId'
     | '/_authenticated/owners/$ownerId'
     | '/_authenticated/payment-reminder/$paymentId'
-    | '/_authenticated/supply-requests/$id'
+    | '/_authenticated/supply-requests/$requestId'
     | '/api/public/n8n'
     | '/portal/contracts/$contractId'
     | '/portal/invoices/$invoiceId'
+    | '/portal/services/$partnerCode'
     | '/_authenticated/contracts/'
+    | '/_authenticated/goals/'
     | '/_authenticated/invoices/'
     | '/_authenticated/listing-requests/'
     | '/_authenticated/owners/'
     | '/_authenticated/supply-requests/'
     | '/portal/contracts/'
     | '/portal/invoices/'
+    | '/portal/services/'
     | '/api/public/files/$'
   fileRoutesById: FileRoutesById
 }
@@ -875,19 +1068,23 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
-  CompareRoute: typeof CompareRoute
+  CompanyProfileRoute: typeof CompanyProfileRoute
   ContactRoute: typeof ContactRoute
   FavoritesRoute: typeof FavoritesRoute
   ListPropertyRoute: typeof ListPropertyRoute
-  OfflineRoute: typeof OfflineRoute
+  MaintenanceRequestRoute: typeof MaintenanceRequestRoute
+  PartnerRoute: typeof PartnerRouteWithChildren
   PortalRoute: typeof PortalRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   RentRoute: typeof RentRoute
   SaleRoute: typeof SaleRoute
+  ShowcaseRoute: typeof ShowcaseRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SysX9k2ControlRoute: typeof SysX9k2ControlRoute
   TermsRoute: typeof TermsRoute
   ThankYouRoute: typeof ThankYouRoute
+  BuildingsCodeRoute: typeof BuildingsCodeRoute
+  OwnerReportTokenRoute: typeof OwnerReportTokenRoute
   PropertiesCodeRoute: typeof PropertiesCodeRoute
   ApiPublicN8nRoute: typeof ApiPublicN8nRoute
   ApiPublicFilesSplatRoute: typeof ApiPublicFilesSplatRoute
@@ -923,11 +1120,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/compare': {
-      id: '/compare'
-      path: '/compare'
-      fullPath: '/compare'
-      preLoaderRoute: typeof CompareRouteImport
+    '/company-profile': {
+      id: '/company-profile'
+      path: '/company-profile'
+      fullPath: '/company-profile'
+      preLoaderRoute: typeof CompanyProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -951,11 +1148,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListPropertyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/offline': {
-      id: '/offline'
-      path: '/offline'
-      fullPath: '/offline'
-      preLoaderRoute: typeof OfflineRouteImport
+    '/maintenance-request': {
+      id: '/maintenance-request'
+      path: '/maintenance-request'
+      fullPath: '/maintenance-request'
+      preLoaderRoute: typeof MaintenanceRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partner': {
+      id: '/partner'
+      path: '/partner'
+      fullPath: '/partner'
+      preLoaderRoute: typeof PartnerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal': {
@@ -984,6 +1188,13 @@ declare module '@tanstack/react-router' {
       path: '/sale'
       fullPath: '/sale'
       preLoaderRoute: typeof SaleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/showcase': {
+      id: '/showcase'
+      path: '/showcase'
+      fullPath: '/showcase'
+      preLoaderRoute: typeof ShowcaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -1035,25 +1246,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/alerts': {
-      id: '/_authenticated/alerts'
-      path: '/alerts'
-      fullPath: '/alerts'
-      preLoaderRoute: typeof AuthenticatedAlertsRouteImport
+    '/_authenticated/backup': {
+      id: '/_authenticated/backup'
+      path: '/backup'
+      fullPath: '/backup'
+      preLoaderRoute: typeof AuthenticatedBackupRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/automation': {
-      id: '/_authenticated/automation'
-      path: '/automation'
-      fullPath: '/automation'
-      preLoaderRoute: typeof AuthenticatedAutomationRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/backups': {
-      id: '/_authenticated/backups'
-      path: '/backups'
-      fullPath: '/backups'
-      preLoaderRoute: typeof AuthenticatedBackupsRouteImport
+    '/_authenticated/buildings': {
+      id: '/_authenticated/buildings'
+      path: '/buildings'
+      fullPath: '/buildings'
+      preLoaderRoute: typeof AuthenticatedBuildingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/clients': {
@@ -1061,13 +1265,6 @@ declare module '@tanstack/react-router' {
       path: '/clients'
       fullPath: '/clients'
       preLoaderRoute: typeof AuthenticatedClientsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/collections': {
-      id: '/_authenticated/collections'
-      path: '/collections'
-      fullPath: '/collections'
-      preLoaderRoute: typeof AuthenticatedCollectionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/crm': {
@@ -1112,18 +1309,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInvoiceFormRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/maintenance': {
+      id: '/_authenticated/maintenance'
+      path: '/maintenance'
+      fullPath: '/maintenance'
+      preLoaderRoute: typeof AuthenticatedMaintenanceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marketing': {
+      id: '/_authenticated/marketing'
+      path: '/marketing'
+      fullPath: '/marketing'
+      preLoaderRoute: typeof AuthenticatedMarketingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/notifications': {
       id: '/_authenticated/notifications'
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/opportunities': {
-      id: '/_authenticated/opportunities'
-      path: '/opportunities'
-      fullPath: '/opportunities'
-      preLoaderRoute: typeof AuthenticatedOpportunitiesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/owner-form': {
@@ -1147,13 +1351,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPropertiesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/properties-import': {
-      id: '/_authenticated/properties-import'
-      path: '/properties-import'
-      fullPath: '/properties-import'
-      preLoaderRoute: typeof AuthenticatedPropertiesImportRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/property-form': {
       id: '/_authenticated/property-form'
       path: '/property-form'
@@ -1168,11 +1365,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRemindersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/reports': {
-      id: '/_authenticated/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof AuthenticatedReportsRouteImport
+    '/_authenticated/renewals': {
+      id: '/_authenticated/renewals'
+      path: '/renewals'
+      fullPath: '/renewals'
+      preLoaderRoute: typeof AuthenticatedRenewalsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reservations': {
@@ -1194,6 +1391,13 @@ declare module '@tanstack/react-router' {
       path: '/roles'
       fullPath: '/roles'
       preLoaderRoute: typeof AuthenticatedRolesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/service-partners': {
+      id: '/_authenticated/service-partners'
+      path: '/service-partners'
+      fullPath: '/service-partners'
+      preLoaderRoute: typeof AuthenticatedServicePartnersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/services': {
@@ -1238,6 +1442,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWhatsappLinkRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/buildings/$code': {
+      id: '/buildings/$code'
+      path: '/buildings/$code'
+      fullPath: '/buildings/$code'
+      preLoaderRoute: typeof BuildingsCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner-report/$token': {
+      id: '/owner-report/$token'
+      path: '/owner-report/$token'
+      fullPath: '/owner-report/$token'
+      preLoaderRoute: typeof OwnerReportTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partner/': {
+      id: '/partner/'
+      path: '/'
+      fullPath: '/partner/'
+      preLoaderRoute: typeof PartnerIndexRouteImport
+      parentRoute: typeof PartnerRoute
+    }
     '/portal/': {
       id: '/portal/'
       path: '/'
@@ -1245,11 +1470,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalIndexRouteImport
       parentRoute: typeof PortalRoute
     }
-    '/portal/owner': {
-      id: '/portal/owner'
-      path: '/owner'
-      fullPath: '/portal/owner'
-      preLoaderRoute: typeof PortalOwnerRouteImport
+    '/portal/care': {
+      id: '/portal/care'
+      path: '/care'
+      fullPath: '/portal/care'
+      preLoaderRoute: typeof PortalCareRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/documents': {
+      id: '/portal/documents'
+      path: '/documents'
+      fullPath: '/portal/documents'
+      preLoaderRoute: typeof PortalDocumentsRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/finance': {
+      id: '/portal/finance'
+      path: '/finance'
+      fullPath: '/portal/finance'
+      preLoaderRoute: typeof PortalFinanceRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/insights': {
+      id: '/portal/insights'
+      path: '/insights'
+      fullPath: '/portal/insights'
+      preLoaderRoute: typeof PortalInsightsRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/messages': {
+      id: '/portal/messages'
+      path: '/messages'
+      fullPath: '/portal/messages'
+      preLoaderRoute: typeof PortalMessagesRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/settings': {
+      id: '/portal/settings'
+      path: '/settings'
+      fullPath: '/portal/settings'
+      preLoaderRoute: typeof PortalSettingsRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/units': {
+      id: '/portal/units'
+      path: '/units'
+      fullPath: '/portal/units'
+      preLoaderRoute: typeof PortalUnitsRouteImport
       parentRoute: typeof PortalRoute
     }
     '/properties/$code': {
@@ -1273,6 +1540,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContractsContractIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/goals/': {
+      id: '/_authenticated/goals/'
+      path: '/goals'
+      fullPath: '/goals/'
+      preLoaderRoute: typeof AuthenticatedGoalsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/goals/$employeeId': {
+      id: '/_authenticated/goals/$employeeId'
+      path: '/goals/$employeeId'
+      fullPath: '/goals/$employeeId'
+      preLoaderRoute: typeof AuthenticatedGoalsEmployeeIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/invoices/': {
       id: '/_authenticated/invoices/'
       path: '/invoices'
@@ -1294,11 +1575,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedListingRequestsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/listing-requests/$id': {
-      id: '/_authenticated/listing-requests/$id'
-      path: '/listing-requests/$id'
-      fullPath: '/listing-requests/$id'
-      preLoaderRoute: typeof AuthenticatedListingRequestsIdRouteImport
+    '/_authenticated/listing-requests/$requestId': {
+      id: '/_authenticated/listing-requests/$requestId'
+      path: '/listing-requests/$requestId'
+      fullPath: '/listing-requests/$requestId'
+      preLoaderRoute: typeof AuthenticatedListingRequestsRequestIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marketing/$marketerId': {
+      id: '/_authenticated/marketing/$marketerId'
+      path: '/$marketerId'
+      fullPath: '/marketing/$marketerId'
+      preLoaderRoute: typeof AuthenticatedMarketingMarketerIdRouteImport
+      parentRoute: typeof AuthenticatedMarketingRoute
+    }
+    '/_authenticated/owner-section/$sectionId': {
+      id: '/_authenticated/owner-section/$sectionId'
+      path: '/owner-section/$sectionId'
+      fullPath: '/owner-section/$sectionId'
+      preLoaderRoute: typeof AuthenticatedOwnerSectionSectionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/owners/': {
@@ -1329,11 +1624,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSupplyRequestsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/supply-requests/$id': {
-      id: '/_authenticated/supply-requests/$id'
-      path: '/supply-requests/$id'
-      fullPath: '/supply-requests/$id'
-      preLoaderRoute: typeof AuthenticatedSupplyRequestsIdRouteImport
+    '/_authenticated/supply-requests/$requestId': {
+      id: '/_authenticated/supply-requests/$requestId'
+      path: '/supply-requests/$requestId'
+      fullPath: '/supply-requests/$requestId'
+      preLoaderRoute: typeof AuthenticatedSupplyRequestsRequestIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/n8n': {
@@ -1371,6 +1666,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalInvoicesInvoiceIdRouteImport
       parentRoute: typeof PortalRoute
     }
+    '/portal/services/': {
+      id: '/portal/services/'
+      path: '/services'
+      fullPath: '/portal/services/'
+      preLoaderRoute: typeof PortalServicesIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/services/$partnerCode': {
+      id: '/portal/services/$partnerCode'
+      path: '/services/$partnerCode'
+      fullPath: '/portal/services/$partnerCode'
+      preLoaderRoute: typeof PortalServicesPartnerCodeRouteImport
+      parentRoute: typeof PortalRoute
+    }
     '/api/public/files/$': {
       id: '/api/public/files/$'
       path: '/api/public/files/$'
@@ -1381,33 +1690,47 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedMarketingRouteChildren {
+  AuthenticatedMarketingMarketerIdRoute: typeof AuthenticatedMarketingMarketerIdRoute
+}
+
+const AuthenticatedMarketingRouteChildren: AuthenticatedMarketingRouteChildren =
+  {
+    AuthenticatedMarketingMarketerIdRoute:
+      AuthenticatedMarketingMarketerIdRoute,
+  }
+
+const AuthenticatedMarketingRouteWithChildren =
+  AuthenticatedMarketingRoute._addFileChildren(
+    AuthenticatedMarketingRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivitiesRoute: typeof AuthenticatedActivitiesRoute
   AuthenticatedActivityLogRoute: typeof AuthenticatedActivityLogRoute
   AuthenticatedAiRoute: typeof AuthenticatedAiRoute
-  AuthenticatedAlertsRoute: typeof AuthenticatedAlertsRoute
-  AuthenticatedAutomationRoute: typeof AuthenticatedAutomationRoute
-  AuthenticatedBackupsRoute: typeof AuthenticatedBackupsRoute
+  AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
+  AuthenticatedBuildingsRoute: typeof AuthenticatedBuildingsRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
-  AuthenticatedCollectionsRoute: typeof AuthenticatedCollectionsRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmployeeFormRoute: typeof AuthenticatedEmployeeFormRoute
   AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
   AuthenticatedErrorLogRoute: typeof AuthenticatedErrorLogRoute
   AuthenticatedInvoiceFormRoute: typeof AuthenticatedInvoiceFormRoute
+  AuthenticatedMaintenanceRoute: typeof AuthenticatedMaintenanceRoute
+  AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRouteWithChildren
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
-  AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
   AuthenticatedOwnerFormRoute: typeof AuthenticatedOwnerFormRoute
   AuthenticatedPartnersRoute: typeof AuthenticatedPartnersRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
-  AuthenticatedPropertiesImportRoute: typeof AuthenticatedPropertiesImportRoute
   AuthenticatedPropertyFormRoute: typeof AuthenticatedPropertyFormRoute
   AuthenticatedRemindersRoute: typeof AuthenticatedRemindersRoute
-  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedRenewalsRoute: typeof AuthenticatedRenewalsRoute
   AuthenticatedReservationsRoute: typeof AuthenticatedReservationsRoute
   AuthenticatedReserveRoute: typeof AuthenticatedReserveRoute
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
+  AuthenticatedServicePartnersRoute: typeof AuthenticatedServicePartnersRoute
   AuthenticatedServicesRoute: typeof AuthenticatedServicesRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedTaskFormRoute: typeof AuthenticatedTaskFormRoute
@@ -1415,12 +1738,15 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamChatRoute: typeof AuthenticatedTeamChatRoute
   AuthenticatedWhatsappLinkRoute: typeof AuthenticatedWhatsappLinkRoute
   AuthenticatedContractsContractIdRoute: typeof AuthenticatedContractsContractIdRoute
+  AuthenticatedGoalsEmployeeIdRoute: typeof AuthenticatedGoalsEmployeeIdRoute
   AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
-  AuthenticatedListingRequestsIdRoute: typeof AuthenticatedListingRequestsIdRoute
+  AuthenticatedListingRequestsRequestIdRoute: typeof AuthenticatedListingRequestsRequestIdRoute
+  AuthenticatedOwnerSectionSectionIdRoute: typeof AuthenticatedOwnerSectionSectionIdRoute
   AuthenticatedOwnersOwnerIdRoute: typeof AuthenticatedOwnersOwnerIdRoute
   AuthenticatedPaymentReminderPaymentIdRoute: typeof AuthenticatedPaymentReminderPaymentIdRoute
-  AuthenticatedSupplyRequestsIdRoute: typeof AuthenticatedSupplyRequestsIdRoute
+  AuthenticatedSupplyRequestsRequestIdRoute: typeof AuthenticatedSupplyRequestsRequestIdRoute
   AuthenticatedContractsIndexRoute: typeof AuthenticatedContractsIndexRoute
+  AuthenticatedGoalsIndexRoute: typeof AuthenticatedGoalsIndexRoute
   AuthenticatedInvoicesIndexRoute: typeof AuthenticatedInvoicesIndexRoute
   AuthenticatedListingRequestsIndexRoute: typeof AuthenticatedListingRequestsIndexRoute
   AuthenticatedOwnersIndexRoute: typeof AuthenticatedOwnersIndexRoute
@@ -1431,29 +1757,28 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivitiesRoute: AuthenticatedActivitiesRoute,
   AuthenticatedActivityLogRoute: AuthenticatedActivityLogRoute,
   AuthenticatedAiRoute: AuthenticatedAiRoute,
-  AuthenticatedAlertsRoute: AuthenticatedAlertsRoute,
-  AuthenticatedAutomationRoute: AuthenticatedAutomationRoute,
-  AuthenticatedBackupsRoute: AuthenticatedBackupsRoute,
+  AuthenticatedBackupRoute: AuthenticatedBackupRoute,
+  AuthenticatedBuildingsRoute: AuthenticatedBuildingsRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
-  AuthenticatedCollectionsRoute: AuthenticatedCollectionsRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmployeeFormRoute: AuthenticatedEmployeeFormRoute,
   AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
   AuthenticatedErrorLogRoute: AuthenticatedErrorLogRoute,
   AuthenticatedInvoiceFormRoute: AuthenticatedInvoiceFormRoute,
+  AuthenticatedMaintenanceRoute: AuthenticatedMaintenanceRoute,
+  AuthenticatedMarketingRoute: AuthenticatedMarketingRouteWithChildren,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
-  AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
   AuthenticatedOwnerFormRoute: AuthenticatedOwnerFormRoute,
   AuthenticatedPartnersRoute: AuthenticatedPartnersRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
-  AuthenticatedPropertiesImportRoute: AuthenticatedPropertiesImportRoute,
   AuthenticatedPropertyFormRoute: AuthenticatedPropertyFormRoute,
   AuthenticatedRemindersRoute: AuthenticatedRemindersRoute,
-  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedRenewalsRoute: AuthenticatedRenewalsRoute,
   AuthenticatedReservationsRoute: AuthenticatedReservationsRoute,
   AuthenticatedReserveRoute: AuthenticatedReserveRoute,
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
+  AuthenticatedServicePartnersRoute: AuthenticatedServicePartnersRoute,
   AuthenticatedServicesRoute: AuthenticatedServicesRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedTaskFormRoute: AuthenticatedTaskFormRoute,
@@ -1461,13 +1786,19 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamChatRoute: AuthenticatedTeamChatRoute,
   AuthenticatedWhatsappLinkRoute: AuthenticatedWhatsappLinkRoute,
   AuthenticatedContractsContractIdRoute: AuthenticatedContractsContractIdRoute,
+  AuthenticatedGoalsEmployeeIdRoute: AuthenticatedGoalsEmployeeIdRoute,
   AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
-  AuthenticatedListingRequestsIdRoute: AuthenticatedListingRequestsIdRoute,
+  AuthenticatedListingRequestsRequestIdRoute:
+    AuthenticatedListingRequestsRequestIdRoute,
+  AuthenticatedOwnerSectionSectionIdRoute:
+    AuthenticatedOwnerSectionSectionIdRoute,
   AuthenticatedOwnersOwnerIdRoute: AuthenticatedOwnersOwnerIdRoute,
   AuthenticatedPaymentReminderPaymentIdRoute:
     AuthenticatedPaymentReminderPaymentIdRoute,
-  AuthenticatedSupplyRequestsIdRoute: AuthenticatedSupplyRequestsIdRoute,
+  AuthenticatedSupplyRequestsRequestIdRoute:
+    AuthenticatedSupplyRequestsRequestIdRoute,
   AuthenticatedContractsIndexRoute: AuthenticatedContractsIndexRoute,
+  AuthenticatedGoalsIndexRoute: AuthenticatedGoalsIndexRoute,
   AuthenticatedInvoicesIndexRoute: AuthenticatedInvoicesIndexRoute,
   AuthenticatedListingRequestsIndexRoute:
     AuthenticatedListingRequestsIndexRoute,
@@ -1478,22 +1809,49 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface PartnerRouteChildren {
+  PartnerIndexRoute: typeof PartnerIndexRoute
+}
+
+const PartnerRouteChildren: PartnerRouteChildren = {
+  PartnerIndexRoute: PartnerIndexRoute,
+}
+
+const PartnerRouteWithChildren =
+  PartnerRoute._addFileChildren(PartnerRouteChildren)
+
 interface PortalRouteChildren {
-  PortalOwnerRoute: typeof PortalOwnerRoute
+  PortalCareRoute: typeof PortalCareRoute
+  PortalDocumentsRoute: typeof PortalDocumentsRoute
+  PortalFinanceRoute: typeof PortalFinanceRoute
+  PortalInsightsRoute: typeof PortalInsightsRoute
+  PortalMessagesRoute: typeof PortalMessagesRoute
+  PortalSettingsRoute: typeof PortalSettingsRoute
+  PortalUnitsRoute: typeof PortalUnitsRoute
   PortalIndexRoute: typeof PortalIndexRoute
   PortalContractsContractIdRoute: typeof PortalContractsContractIdRoute
   PortalInvoicesInvoiceIdRoute: typeof PortalInvoicesInvoiceIdRoute
+  PortalServicesPartnerCodeRoute: typeof PortalServicesPartnerCodeRoute
   PortalContractsIndexRoute: typeof PortalContractsIndexRoute
   PortalInvoicesIndexRoute: typeof PortalInvoicesIndexRoute
+  PortalServicesIndexRoute: typeof PortalServicesIndexRoute
 }
 
 const PortalRouteChildren: PortalRouteChildren = {
-  PortalOwnerRoute: PortalOwnerRoute,
+  PortalCareRoute: PortalCareRoute,
+  PortalDocumentsRoute: PortalDocumentsRoute,
+  PortalFinanceRoute: PortalFinanceRoute,
+  PortalInsightsRoute: PortalInsightsRoute,
+  PortalMessagesRoute: PortalMessagesRoute,
+  PortalSettingsRoute: PortalSettingsRoute,
+  PortalUnitsRoute: PortalUnitsRoute,
   PortalIndexRoute: PortalIndexRoute,
   PortalContractsContractIdRoute: PortalContractsContractIdRoute,
   PortalInvoicesInvoiceIdRoute: PortalInvoicesInvoiceIdRoute,
+  PortalServicesPartnerCodeRoute: PortalServicesPartnerCodeRoute,
   PortalContractsIndexRoute: PortalContractsIndexRoute,
   PortalInvoicesIndexRoute: PortalInvoicesIndexRoute,
+  PortalServicesIndexRoute: PortalServicesIndexRoute,
 }
 
 const PortalRouteWithChildren =
@@ -1504,19 +1862,23 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
-  CompareRoute: CompareRoute,
+  CompanyProfileRoute: CompanyProfileRoute,
   ContactRoute: ContactRoute,
   FavoritesRoute: FavoritesRoute,
   ListPropertyRoute: ListPropertyRoute,
-  OfflineRoute: OfflineRoute,
+  MaintenanceRequestRoute: MaintenanceRequestRoute,
+  PartnerRoute: PartnerRouteWithChildren,
   PortalRoute: PortalRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   RentRoute: RentRoute,
   SaleRoute: SaleRoute,
+  ShowcaseRoute: ShowcaseRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SysX9k2ControlRoute: SysX9k2ControlRoute,
   TermsRoute: TermsRoute,
   ThankYouRoute: ThankYouRoute,
+  BuildingsCodeRoute: BuildingsCodeRoute,
+  OwnerReportTokenRoute: OwnerReportTokenRoute,
   PropertiesCodeRoute: PropertiesCodeRoute,
   ApiPublicN8nRoute: ApiPublicN8nRoute,
   ApiPublicFilesSplatRoute: ApiPublicFilesSplatRoute,
