@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-
 import { LogOut, Receipt, Rows3 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
-import logoAsset from "@/assets/mithra-logo-white.png";
+import logoAsset from "@/assets/mithra-logo-transparent.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -21,5 +21,5 @@ export const Route = createFileRoute("/partner")({
 
 function PartnerLayout() {
   const navigate = useNavigate();
-  return <div dir="rtl" className="min-h-screen bg-muted/30"><header className="bg-primary text-primary-foreground"><div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3"><img src={logoAsset} alt="مثراء العقارية" className="h-12 w-12 object-contain" /><div className="me-auto"><p className="font-bold">بوابة شريك الخدمات</p><p className="text-xs text-primary-foreground/70">الطلبات والفواتير فقط</p></div><nav className="flex gap-2"><Link to="/partner" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-primary-foreground/10"><Rows3 className="size-4" /> الطلبات</Link><Link to="/partner" hash="invoices" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-primary-foreground/10"><Receipt className="size-4" /> الفواتير</Link></nav><Button variant="outline" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); }}><LogOut className="size-4" /> خروج</Button></div></header><main className="mx-auto max-w-6xl px-4 py-8"><Outlet /></main></div>;
+  return <div dir="rtl" className="min-h-screen bg-muted/30"><header className="bg-primary text-primary-foreground"><div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3"><img src={logoAsset.url} alt="مثراء العقارية" className="h-12 w-12 object-contain" /><div className="me-auto"><p className="font-bold">بوابة شريك الخدمات</p><p className="text-xs text-primary-foreground/70">الطلبات والفواتير فقط</p></div><nav className="flex gap-2"><Link to="/partner" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-primary-foreground/10"><Rows3 className="size-4" /> الطلبات</Link><Link to="/partner" hash="invoices" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-primary-foreground/10"><Receipt className="size-4" /> الفواتير</Link></nav><Button variant="outline" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); }}><LogOut className="size-4" /> خروج</Button></div></header><main className="mx-auto max-w-6xl px-4 py-8"><Outlet /></main></div>;
 }

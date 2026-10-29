@@ -49,9 +49,11 @@ import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authentic
 import { Route as AuthenticatedPropertyFormRouteImport } from './routes/_authenticated/property-form'
 import { Route as AuthenticatedRemindersRouteImport } from './routes/_authenticated/reminders'
 import { Route as AuthenticatedRenewalsRouteImport } from './routes/_authenticated/renewals'
+import { Route as AuthenticatedRentOwnersRouteImport } from './routes/_authenticated/rent-owners'
 import { Route as AuthenticatedReservationsRouteImport } from './routes/_authenticated/reservations'
 import { Route as AuthenticatedReserveRouteImport } from './routes/_authenticated/reserve'
 import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/roles'
+import { Route as AuthenticatedSaleOwnersRouteImport } from './routes/_authenticated/sale-owners'
 import { Route as AuthenticatedServicePartnersRouteImport } from './routes/_authenticated/service-partners'
 import { Route as AuthenticatedServicesRouteImport } from './routes/_authenticated/services'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -94,6 +96,7 @@ import { Route as PortalInvoicesInvoiceIdRouteImport } from './routes/portal.inv
 import { Route as PortalServicesIndexRouteImport } from './routes/portal.services.index'
 import { Route as PortalServicesPartnerCodeRouteImport } from './routes/portal.services.$partnerCode'
 import { Route as ApiPublicFilesSplatRouteImport } from './routes/api/public/files/$'
+import { Route as ApiPublicJobsOwnerFollowupBatchRouteImport } from './routes/api/public/jobs/owner-followup-batch'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -300,6 +303,11 @@ const AuthenticatedRenewalsRoute = AuthenticatedRenewalsRouteImport.update({
   path: '/renewals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRentOwnersRoute = AuthenticatedRentOwnersRouteImport.update({
+  id: '/rent-owners',
+  path: '/rent-owners',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedReservationsRoute =
   AuthenticatedReservationsRouteImport.update({
     id: '/reservations',
@@ -314,6 +322,11 @@ const AuthenticatedReserveRoute = AuthenticatedReserveRouteImport.update({
 const AuthenticatedRolesRoute = AuthenticatedRolesRouteImport.update({
   id: '/roles',
   path: '/roles',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSaleOwnersRoute = AuthenticatedSaleOwnersRouteImport.update({
+  id: '/sale-owners',
+  path: '/sale-owners',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedServicePartnersRoute =
@@ -544,6 +557,12 @@ const ApiPublicFilesSplatRoute = ApiPublicFilesSplatRouteImport.update({
   path: '/api/public/files/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicJobsOwnerFollowupBatchRoute =
+  ApiPublicJobsOwnerFollowupBatchRouteImport.update({
+    id: '/api/public/jobs/owner-followup-batch',
+    path: '/api/public/jobs/owner-followup-batch',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -585,9 +604,11 @@ export interface FileRoutesByFullPath {
   '/property-form': typeof AuthenticatedPropertyFormRoute
   '/reminders': typeof AuthenticatedRemindersRoute
   '/renewals': typeof AuthenticatedRenewalsRoute
+  '/rent-owners': typeof AuthenticatedRentOwnersRoute
   '/reservations': typeof AuthenticatedReservationsRoute
   '/reserve': typeof AuthenticatedReserveRoute
   '/roles': typeof AuthenticatedRolesRoute
+  '/sale-owners': typeof AuthenticatedSaleOwnersRoute
   '/service-partners': typeof AuthenticatedServicePartnersRoute
   '/services': typeof AuthenticatedServicesRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -630,6 +651,7 @@ export interface FileRoutesByFullPath {
   '/portal/invoices/': typeof PortalInvoicesIndexRoute
   '/portal/services/': typeof PortalServicesIndexRoute
   '/api/public/files/$': typeof ApiPublicFilesSplatRoute
+  '/api/public/jobs/owner-followup-batch': typeof ApiPublicJobsOwnerFollowupBatchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -669,9 +691,11 @@ export interface FileRoutesByTo {
   '/property-form': typeof AuthenticatedPropertyFormRoute
   '/reminders': typeof AuthenticatedRemindersRoute
   '/renewals': typeof AuthenticatedRenewalsRoute
+  '/rent-owners': typeof AuthenticatedRentOwnersRoute
   '/reservations': typeof AuthenticatedReservationsRoute
   '/reserve': typeof AuthenticatedReserveRoute
   '/roles': typeof AuthenticatedRolesRoute
+  '/sale-owners': typeof AuthenticatedSaleOwnersRoute
   '/service-partners': typeof AuthenticatedServicePartnersRoute
   '/services': typeof AuthenticatedServicesRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -714,6 +738,7 @@ export interface FileRoutesByTo {
   '/portal/invoices': typeof PortalInvoicesIndexRoute
   '/portal/services': typeof PortalServicesIndexRoute
   '/api/public/files/$': typeof ApiPublicFilesSplatRoute
+  '/api/public/jobs/owner-followup-batch': typeof ApiPublicJobsOwnerFollowupBatchRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -757,9 +782,11 @@ export interface FileRoutesById {
   '/_authenticated/property-form': typeof AuthenticatedPropertyFormRoute
   '/_authenticated/reminders': typeof AuthenticatedRemindersRoute
   '/_authenticated/renewals': typeof AuthenticatedRenewalsRoute
+  '/_authenticated/rent-owners': typeof AuthenticatedRentOwnersRoute
   '/_authenticated/reservations': typeof AuthenticatedReservationsRoute
   '/_authenticated/reserve': typeof AuthenticatedReserveRoute
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
+  '/_authenticated/sale-owners': typeof AuthenticatedSaleOwnersRoute
   '/_authenticated/service-partners': typeof AuthenticatedServicePartnersRoute
   '/_authenticated/services': typeof AuthenticatedServicesRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -802,6 +829,7 @@ export interface FileRoutesById {
   '/portal/invoices/': typeof PortalInvoicesIndexRoute
   '/portal/services/': typeof PortalServicesIndexRoute
   '/api/public/files/$': typeof ApiPublicFilesSplatRoute
+  '/api/public/jobs/owner-followup-batch': typeof ApiPublicJobsOwnerFollowupBatchRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -845,9 +873,11 @@ export interface FileRouteTypes {
     | '/property-form'
     | '/reminders'
     | '/renewals'
+    | '/rent-owners'
     | '/reservations'
     | '/reserve'
     | '/roles'
+    | '/sale-owners'
     | '/service-partners'
     | '/services'
     | '/settings'
@@ -890,6 +920,7 @@ export interface FileRouteTypes {
     | '/portal/invoices/'
     | '/portal/services/'
     | '/api/public/files/$'
+    | '/api/public/jobs/owner-followup-batch'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -929,9 +960,11 @@ export interface FileRouteTypes {
     | '/property-form'
     | '/reminders'
     | '/renewals'
+    | '/rent-owners'
     | '/reservations'
     | '/reserve'
     | '/roles'
+    | '/sale-owners'
     | '/service-partners'
     | '/services'
     | '/settings'
@@ -974,6 +1007,7 @@ export interface FileRouteTypes {
     | '/portal/invoices'
     | '/portal/services'
     | '/api/public/files/$'
+    | '/api/public/jobs/owner-followup-batch'
   id:
     | '__root__'
     | '/'
@@ -1016,9 +1050,11 @@ export interface FileRouteTypes {
     | '/_authenticated/property-form'
     | '/_authenticated/reminders'
     | '/_authenticated/renewals'
+    | '/_authenticated/rent-owners'
     | '/_authenticated/reservations'
     | '/_authenticated/reserve'
     | '/_authenticated/roles'
+    | '/_authenticated/sale-owners'
     | '/_authenticated/service-partners'
     | '/_authenticated/services'
     | '/_authenticated/settings'
@@ -1061,6 +1097,7 @@ export interface FileRouteTypes {
     | '/portal/invoices/'
     | '/portal/services/'
     | '/api/public/files/$'
+    | '/api/public/jobs/owner-followup-batch'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1088,6 +1125,7 @@ export interface RootRouteChildren {
   PropertiesCodeRoute: typeof PropertiesCodeRoute
   ApiPublicN8nRoute: typeof ApiPublicN8nRoute
   ApiPublicFilesSplatRoute: typeof ApiPublicFilesSplatRoute
+  ApiPublicJobsOwnerFollowupBatchRoute: typeof ApiPublicJobsOwnerFollowupBatchRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1372,6 +1410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRenewalsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/rent-owners': {
+      id: '/_authenticated/rent-owners'
+      path: '/rent-owners'
+      fullPath: '/rent-owners'
+      preLoaderRoute: typeof AuthenticatedRentOwnersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reservations': {
       id: '/_authenticated/reservations'
       path: '/reservations'
@@ -1391,6 +1436,13 @@ declare module '@tanstack/react-router' {
       path: '/roles'
       fullPath: '/roles'
       preLoaderRoute: typeof AuthenticatedRolesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sale-owners': {
+      id: '/_authenticated/sale-owners'
+      path: '/sale-owners'
+      fullPath: '/sale-owners'
+      preLoaderRoute: typeof AuthenticatedSaleOwnersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/service-partners': {
@@ -1687,6 +1739,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFilesSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/owner-followup-batch': {
+      id: '/api/public/jobs/owner-followup-batch'
+      path: '/api/public/jobs/owner-followup-batch'
+      fullPath: '/api/public/jobs/owner-followup-batch'
+      preLoaderRoute: typeof ApiPublicJobsOwnerFollowupBatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1727,9 +1786,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPropertyFormRoute: typeof AuthenticatedPropertyFormRoute
   AuthenticatedRemindersRoute: typeof AuthenticatedRemindersRoute
   AuthenticatedRenewalsRoute: typeof AuthenticatedRenewalsRoute
+  AuthenticatedRentOwnersRoute: typeof AuthenticatedRentOwnersRoute
   AuthenticatedReservationsRoute: typeof AuthenticatedReservationsRoute
   AuthenticatedReserveRoute: typeof AuthenticatedReserveRoute
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
+  AuthenticatedSaleOwnersRoute: typeof AuthenticatedSaleOwnersRoute
   AuthenticatedServicePartnersRoute: typeof AuthenticatedServicePartnersRoute
   AuthenticatedServicesRoute: typeof AuthenticatedServicesRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -1775,9 +1836,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPropertyFormRoute: AuthenticatedPropertyFormRoute,
   AuthenticatedRemindersRoute: AuthenticatedRemindersRoute,
   AuthenticatedRenewalsRoute: AuthenticatedRenewalsRoute,
+  AuthenticatedRentOwnersRoute: AuthenticatedRentOwnersRoute,
   AuthenticatedReservationsRoute: AuthenticatedReservationsRoute,
   AuthenticatedReserveRoute: AuthenticatedReserveRoute,
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
+  AuthenticatedSaleOwnersRoute: AuthenticatedSaleOwnersRoute,
   AuthenticatedServicePartnersRoute: AuthenticatedServicePartnersRoute,
   AuthenticatedServicesRoute: AuthenticatedServicesRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
@@ -1882,6 +1945,7 @@ const rootRouteChildren: RootRouteChildren = {
   PropertiesCodeRoute: PropertiesCodeRoute,
   ApiPublicN8nRoute: ApiPublicN8nRoute,
   ApiPublicFilesSplatRoute: ApiPublicFilesSplatRoute,
+  ApiPublicJobsOwnerFollowupBatchRoute: ApiPublicJobsOwnerFollowupBatchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import logoAsset from "@/assets/mithra-logo-transparent.png.asset.json";
+import logoAsset from "@/assets/mithra-logo.png.asset.json";
 import { askAdminAi } from "@/lib/ai.functions";
 import { cn } from "@/lib/utils";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -1468,6 +1468,7 @@ export type Database = {
           attachment_name: string | null
           attachment_path: string | null
           attachments: Json
+          building_id: string | null
           contact_id: string | null
           contract_id: string | null
           created_at: string
@@ -1477,9 +1478,11 @@ export type Database = {
           invoice_number: string
           issue_date: string
           notes: string | null
+          property_id: string | null
           status: string
           subtotal: number
           total: number
+          unit_id: string | null
           updated_at: string
           vat_amount: number
         }
@@ -1487,6 +1490,7 @@ export type Database = {
           attachment_name?: string | null
           attachment_path?: string | null
           attachments?: Json
+          building_id?: string | null
           contact_id?: string | null
           contract_id?: string | null
           created_at?: string
@@ -1496,9 +1500,11 @@ export type Database = {
           invoice_number: string
           issue_date?: string
           notes?: string | null
+          property_id?: string | null
           status?: string
           subtotal?: number
           total?: number
+          unit_id?: string | null
           updated_at?: string
           vat_amount?: number
         }
@@ -1506,6 +1512,7 @@ export type Database = {
           attachment_name?: string | null
           attachment_path?: string | null
           attachments?: Json
+          building_id?: string | null
           contact_id?: string | null
           contract_id?: string | null
           created_at?: string
@@ -1515,13 +1522,22 @@ export type Database = {
           invoice_number?: string
           issue_date?: string
           notes?: string | null
+          property_id?: string | null
           status?: string
           subtotal?: number
           total?: number
+          unit_id?: string | null
           updated_at?: string
           vat_amount?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoices_contact_id_fkey"
             columns: ["contact_id"]
@@ -1534,6 +1550,20 @@ export type Database = {
             columns: ["contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
             referencedColumns: ["id"]
           },
         ]
@@ -2103,12 +2133,14 @@ export type Database = {
         Row: {
           body: string
           channel: string
+          contact_id: string | null
           contract_id: string | null
           created_at: string
           failure_reason: string | null
           followup_id: string | null
           id: string
           idempotency_key: string | null
+          kind: string | null
           payment_id: string | null
           provider_message_id: string | null
           recipient_name: string | null
@@ -2123,12 +2155,14 @@ export type Database = {
         Insert: {
           body: string
           channel?: string
+          contact_id?: string | null
           contract_id?: string | null
           created_at?: string
           failure_reason?: string | null
           followup_id?: string | null
           id?: string
           idempotency_key?: string | null
+          kind?: string | null
           payment_id?: string | null
           provider_message_id?: string | null
           recipient_name?: string | null
@@ -2143,12 +2177,14 @@ export type Database = {
         Update: {
           body?: string
           channel?: string
+          contact_id?: string | null
           contract_id?: string | null
           created_at?: string
           failure_reason?: string | null
           followup_id?: string | null
           id?: string
           idempotency_key?: string | null
+          kind?: string | null
           payment_id?: string | null
           provider_message_id?: string | null
           recipient_name?: string | null
@@ -2161,6 +2197,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "message_log_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "message_log_contract_id_fkey"
             columns: ["contract_id"]
@@ -2698,6 +2741,77 @@ export type Database = {
             columns: ["unit_id"]
             isOneToOne: false
             referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_followup_config: {
+        Row: {
+          enabled: boolean
+          id: boolean
+          template: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          id?: boolean
+          template?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          id?: boolean
+          template?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      owner_followup_queue: {
+        Row: {
+          body: string
+          contact_id: string
+          created_at: string
+          failure_reason: string | null
+          id: string
+          recipient_name: string | null
+          recipient_phone: string
+          run_id: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          body: string
+          contact_id: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          recipient_name?: string | null
+          recipient_phone: string
+          run_id: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          body?: string
+          contact_id?: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          recipient_name?: string | null
+          recipient_phone?: string
+          run_id?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_followup_queue_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
         ]
@@ -3600,6 +3714,7 @@ export type Database = {
       property_images: {
         Row: {
           created_at: string
+          display_url: string | null
           focal_x: number | null
           focal_y: number | null
           id: string
@@ -3610,6 +3725,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          display_url?: string | null
           focal_x?: number | null
           focal_y?: number | null
           id?: string
@@ -3620,6 +3736,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          display_url?: string | null
           focal_x?: number | null
           focal_y?: number | null
           id?: string

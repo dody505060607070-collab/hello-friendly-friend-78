@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Camera, MapPin, CircleCheck, ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
+import { Camera, MapPin, CircleCheck, ClipboardList, LayoutGrid, List, Loader2, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -20,8 +20,6 @@ import { Pills } from "@/components/kit/Pills";
 import { StatusLegend } from "@/components/kit/StatusLegend";
 import { supabase } from "@/integrations/supabase/client";
 import { priorityLabels, taskStatusLabels } from "@/lib/labels";
-import { ActivitiesPage } from "./activities";
-import { TeamChatPage } from "./team-chat";
 import { rowTone, toneBadgeClass, toneRowClass } from "@/lib/status-tone";
 
 type Row = {
@@ -59,7 +57,7 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 });
 
 const SELECT =
-  "id, title, details, task_type, priority, status, due_date, due_time, property_id, created_at, location_text, location_lat, location_lng, property:property_id(name)";
+  "id, title, details, task_type, priority, status, due_date, due_time, property_id, created_at, location_text, location_lat, location_lng, assigned_by, property:property_id(name)";
 
 const statusOrder = ["new", "in_progress", "submitted", "approved", "rejected", "done", "cancelled"];
 
@@ -89,7 +87,10 @@ function TasksPage() {
   const navigate = useNavigate();
   const [type, setType] = useState("all");
   const [status, setStatus] = useState("all");
+  const [propertyFilter, setPropertyFilter] = useState("all");
+  const [employeeFilter, setEmployeeFilter] = useState("all");
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<"board" | "table">("board");
   const [form, setForm] = useState<FormState>(emptyForm);
   const queryClient = useQueryClient();
 
@@ -113,6 +114,19 @@ function TasksPage() {
     },
   });
 
+  const employeesPicker = useQuery({
+    queryKey: ["profiles", "picker"],
+    queryFn: async () => {
+      const { data: rows, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .order("full_name")
+        .limit(500);
+      if (error) throw error;
+      return rows ?? [];
+    },
+  });
+
   const rows = data ?? [];
 
   const assigneeNames = useQuery({
@@ -124,14 +138,23 @@ function TasksPage() {
         .select("task_id, user_id")
         .in("task_id", rows.map((r) => r.id));
       if (error) throw error;
-      const ids = [...new Set((links ?? []).map((l) => l.user_id))];
+      const ids = [...new Set([...(links ?? []).map((l) => l.user_id), ...rows.map((r) => (r as { assigned_by?: string | null }).assigned_by).filter((v): v is string => Boolean(v))])];
       const { data: profs } = ids.length
         ? await supabase.from("profiles").select("id, full_name").in("id", ids)
         : { data: [] as { id: string; full_name: string | null }[] };
       const nameOf = new Map((profs ?? []).map((p) => [p.id, p.full_name ?? "موظف"]));
       const map: Record<string, string[]> = {};
-      for (const l of links ?? []) (map[l.task_id] ??= []).push(nameOf.get(l.user_id) ?? "موظف");
-      return map;
+      const idsByTask: Record<string, string[]> = {};
+      for (const l of links ?? []) {
+        (map[l.task_id] ??= []).push(nameOf.get(l.user_id) ?? "موظف");
+        (idsByTask[l.task_id] ??= []).push(l.user_id);
+      }
+      const by: Record<string, string> = {};
+      for (const r of rows) {
+        const a = (r as { assigned_by?: string | null }).assigned_by;
+        if (a) by[r.id] = nameOf.get(a) ?? "موظف";
+      }
+      return { map, by, idsByTask };
     },
   });
   const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
@@ -213,17 +236,20 @@ function TasksPage() {
     };
   }, [rows, byType]);
 
-  const filtered = byType.filter((r) => {
-    if (status === "all") return true;
-    if (status === "in_progress") return r.status === "in_progress";
-    if (status === "submitted") return r.status === "submitted";
-    if (status === "done") return r.status === "approved" || r.status === "done";
-    return (
-      r.due_date != null &&
-      new Date(r.due_date) < new Date() &&
-      !["approved", "done", "cancelled"].includes(r.status)
-    );
-  });
+  const filtered = byType
+    .filter((r) => {
+      if (status === "all") return true;
+      if (status === "in_progress") return r.status === "in_progress";
+      if (status === "submitted") return r.status === "submitted";
+      if (status === "done") return r.status === "approved" || r.status === "done";
+      return (
+        r.due_date != null &&
+        new Date(r.due_date) < new Date() &&
+        !["approved", "done", "cancelled"].includes(r.status)
+      );
+    })
+    .filter((r) => propertyFilter === "all" || r.property_id === propertyFilter)
+    .filter((r) => employeeFilter === "all" || (assigneeNames.data?.idsByTask[r.id] ?? []).includes(employeeFilter));
 
   return (
     <>
@@ -285,10 +311,85 @@ function TasksPage() {
         ]}
       />
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={propertyFilter}
+            onChange={(e) => setPropertyFilter(e.target.value)}
+            aria-label="تصفية حسب العقار"
+            className="h-10 rounded-lg border border-border bg-card px-3 text-[12.5px] font-semibold text-foreground"
+          >
+            <option value="all">جميع العقارات</option>
+            {(properties.data ?? []).map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <select
+            value={employeeFilter}
+            onChange={(e) => setEmployeeFilter(e.target.value)}
+            aria-label="تصفية حسب المسؤول"
+            className="h-10 rounded-lg border border-border bg-card px-3 text-[12.5px] font-semibold text-foreground"
+          >
+            <option value="all">جميع المسؤولين</option>
+            {(employeesPicker.data ?? []).map((p) => (
+              <option key={p.id} value={p.id}>{p.full_name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex gap-1">
+          {([["board", "لوحة", LayoutGrid], ["table", "جدول", List]] as const).map(([k, l, I]) => (
+            <button key={k} type="button" onClick={() => setView(k)} className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-[12.5px] font-semibold ${view === k ? "bg-primary text-primary-foreground" : "border border-border bg-card text-muted-foreground"}`}>
+              <I className="size-4" />{l}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {isLoading ? (
         <div className="surface-card grid place-items-center gap-2 px-6 py-16 text-center">
           <Loader2 className="size-6 animate-spin text-primary" />
           <p className="text-[13px] text-muted-foreground">جاري تحميل المهام…</p>
+        </div>
+      ) : view === "board" ? (
+        <div className="grid gap-4 lg:grid-cols-3">
+          {([
+            ["قيد التنفيذ", "المهام التي يتم العمل عليها حاليًا", ["new", "in_progress", "rejected"], "text-accent-2 bg-accent-2/10"],
+            ["تنتظر الموافقة", "المهام بانتظار مراجعة واعتماد الإدارة", ["submitted"], "text-warning bg-warning/10"],
+            ["مكتملة", "المهام المنجزة والمغلقة", ["approved", "done"], "text-success bg-success/10"],
+          ] as const).map(([title, sub, sts, tone]) => {
+            const list = filtered.filter((r) => (sts as readonly string[]).includes(r.status));
+            return (
+              <section key={title} className="surface-card space-y-3 bg-muted/30 p-3">
+                <header className="flex items-start justify-between gap-2 px-1">
+                  <div>
+                    <h3 className={`text-[15px] font-bold ${tone.split(" ")[0]}`}>{title}</h3>
+                    <p className="text-[11.5px] text-muted-foreground">{sub}</p>
+                  </div>
+                  <span className={`grid size-8 place-items-center rounded-full text-[13px] font-bold ${tone}`}>{list.length}</span>
+                </header>
+                {list.length === 0 ? <p className="py-8 text-center text-[12px] text-muted-foreground">لا توجد مهام</p> : null}
+                {list.map((r) => (
+                  <article key={r.id} onClick={() => navigate({ to: "/task-form", search: { id: r.id } })} className="cursor-pointer space-y-2 rounded-xl border border-border bg-card p-3 transition-shadow hover:shadow-md">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="text-[14px] font-bold">{r.title}</h4>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); if (window.confirm(`حذف المهمة "${r.title}"؟`)) remove.mutate(r.id); }} className="shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold text-destructive hover:bg-destructive/10">حذف</button>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${toneBadgeClass[rowTone(r.status, r.due_date)]}`}>{taskStatusLabels[r.status] ?? r.status}</span>
+                    </div>
+                    {r.property?.name ? <p className="text-[12px] text-muted-foreground">🏠 {r.property.name}</p> : null}
+                    {r.details ? <p className="line-clamp-2 text-[12px] text-muted-foreground">{r.details}</p> : null}
+                    <div className="flex items-center justify-between gap-2 border-t border-border pt-2 text-[11.5px]">
+                      <span className="flex items-center gap-1.5">
+                        <span className="grid size-7 place-items-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">{(assigneeNames.data?.map[r.id]?.[0] ?? "—").slice(0, 1)}</span>
+                        {assigneeNames.data?.map[r.id]?.join("، ") || "غير مسندة"}
+                      </span>
+                      <Chip tone={r.task_type === "photography" ? "gold" : "neutral"}>{r.task_type === "photography" ? "تصوير" : "عادية"}</Chip>
+                    </div>
+                    {r.due_date ? <p className="text-[11.5px] font-semibold text-warning">📅 {formatDate(r.due_date)}{r.due_time ? ` · ${r.due_time}` : ""}</p> : null}
+                  </article>
+                ))}
+              </section>
+            );
+          })}
         </div>
       ) : (
         <div className="space-y-3">
@@ -328,7 +429,11 @@ function TasksPage() {
             },
             {
               header: "الموظف",
-              cell: (r) => assigneeNames.data?.[r.id]?.join("، ") || "—",
+              cell: (r) => assigneeNames.data?.map[r.id]?.join("، ") || "—",
+            },
+            {
+              header: "أسندها",
+              cell: (r) => assigneeNames.data?.by[r.id] ?? "—",
             },
             {
               header: "الموقع",
@@ -487,21 +592,7 @@ function TasksPage() {
   );
 }
 
-// The three sections are stacked one under the other on the same page (no tabs).
+// Tasks, follow-ups and team chat each have their own page, linked under "المهام" in the side menu.
 function TasksHub() {
-  const sections = [
-    { key: "tasks", label: "المهام", node: <TasksPage /> },
-    { key: "activities", label: "المتابعات والأنشطة", node: <ActivitiesPage /> },
-    { key: "chat", label: "شات الموظفين", node: <TeamChatPage /> },
-  ];
-  return (
-    <div className="space-y-10">
-      {sections.map((s) => (
-        <section key={s.key} id={s.key} className="space-y-4">
-          <h2 className="border-b border-border pb-2 text-lg font-black text-foreground">{s.label}</h2>
-          {s.node}
-        </section>
-      ))}
-    </div>
-  );
+  return <TasksPage />;
 }

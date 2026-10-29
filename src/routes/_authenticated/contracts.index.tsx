@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Eye, FileText, FileUp, Loader2, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Bell, Clock, Eye, FileText, FileUp, Loader2, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -234,12 +234,17 @@ function ContractsPage() {
         owner_id: form.owner_id || null,
         tenant_id: form.tenant_id || null,
         property_id: form.property_id || null,
+        // عند تعديل عقد بدون تغيير العقار نحافظ على ربطه بالوحدة والعمارة حتى لا تنفصل الوحدة عن عقدها.
         unit_id:
-          unitProperties.data?.find((property) => property.id === form.property_id)?.unit_id ??
-          null,
+          editing && (form.property_id || null) === (editing.property_id ?? null)
+            ? (editing.unit_id ?? null)
+            : (unitProperties.data?.find((property) => property.id === form.property_id)?.unit_id ??
+              null),
         building_id:
-          unitProperties.data?.find((property) => property.id === form.property_id)?.building_id ??
-          null,
+          editing && (form.property_id || null) === (editing.property_id ?? null)
+            ? (editing.building_id ?? null)
+            : (unitProperties.data?.find((property) => property.id === form.property_id)
+                ?.building_id ?? null),
         start_date: form.start_date || null,
         end_date: form.end_date || null,
         annual_rent: form.annual_rent ? Number(form.annual_rent) : null,
@@ -365,6 +370,42 @@ function ContractsPage() {
           استيراد عقد PDF
         </button>
       </div>
+
+      {(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const soon = rows
+          .filter((r) => r.status === "active" && r.end_date)
+          .map((r) => ({
+            r,
+            days: Math.ceil((new Date(r.end_date as string).getTime() - today.getTime()) / 86400000),
+          }))
+          .filter((x) => x.days >= 0 && x.days <= 30)
+          .sort((a, b) => a.days - b.days);
+        if (!soon.length) return null;
+        return (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-warning/40 bg-warning/10 px-5 py-4">
+            <div className="flex items-center gap-3">
+              <Bell className="size-5 text-warning" />
+              <div>
+                <p className="text-[14px] font-bold text-foreground">
+                  {soon.length} عقود سوف تنتهي خلال 30 يوم
+                </p>
+                <p className="text-[12px] text-muted-foreground">
+                  ننصح بمراجعة العقود التالية وتجهيز إجراءات التجديد في الوقت المناسب.
+                </p>
+              </div>
+            </div>
+            <a
+              href="#upcoming-renewals"
+              className="inline-flex h-9 items-center rounded-full border border-primary/40 bg-card px-4 text-[12px] font-semibold text-primary hover:bg-primary/5"
+            >
+              عرض العقود
+            </a>
+          </div>
+        );
+      })()}
+
 
       <Pills
         variant="card"
@@ -502,7 +543,7 @@ function ContractsPage() {
                       {r.owner?.full_name ?? "تعديل المالك"}
                     </Link>
                   ) : (
-                    "—"
+                    <AddOwnerButton contractId={r.id} />
                   ),
               },
               {
@@ -596,6 +637,69 @@ function ContractsPage() {
           />
         </div>
       )}
+
+      {(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const upcoming = rows
+          .filter((r) => r.status === "active" && r.end_date)
+          .map((r) => ({
+            r,
+            days: Math.ceil((new Date(r.end_date as string).getTime() - today.getTime()) / 86400000),
+          }))
+          .filter((x) => x.days >= 0 && x.days <= 120)
+          .sort((a, b) => a.days - b.days)
+          .slice(0, 8);
+        if (!upcoming.length) return null;
+        return (
+          <div id="upcoming-renewals" className="surface-card space-y-3 p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-[15px] font-bold">
+                <Clock className="size-5 text-primary" />
+                العقود القادمة للتجديد
+              </h3>
+              <Link
+                to="/renewals"
+                className="inline-flex h-8 items-center rounded-full border border-primary/40 px-4 text-[12px] font-semibold text-primary hover:bg-primary/5"
+              >
+                عرض الكل
+              </Link>
+            </div>
+            <div className="overflow-x-auto rounded-xl border border-border">
+              <table className="w-full text-[13px]">
+                <thead className="bg-muted/60 text-muted-foreground">
+                  <tr>
+                    {["رقم العقد", "المالك", "المستأجر", "تاريخ الانتهاء", "الأيام المتبقية", "القيمة", "إجراء"].map((h) => (
+                      <th key={h} className="px-3 py-2 text-start font-semibold">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {upcoming.map(({ r, days }) => (
+                    <tr key={r.id} className="border-t border-border">
+                      <td className="px-3 py-2 font-bold text-primary">{r.contract_number ?? "—"}</td>
+                      <td className="px-3 py-2">{r.owner?.full_name ?? "—"}</td>
+                      <td className="px-3 py-2">{r.tenant?.full_name ?? "—"}</td>
+                      <td className="px-3 py-2">{formatDate(r.end_date)}</td>
+                      <td className="px-3 py-2">
+                        <span className={`rounded-md px-2 py-0.5 text-[12px] font-semibold ${days <= 15 ? "bg-destructive/10 text-destructive" : days <= 45 ? "bg-warning/15 text-warning" : "bg-muted text-muted-foreground"}`}>
+                          {days} يوم
+                        </span>
+                      </td>
+                      <td className="px-3 py-2">{formatCurrency(r.annual_rent ?? r.total_value ?? 0)}</td>
+                      <td className="px-3 py-2">
+                        <Link to="/contracts/$contractId" params={{ contractId: r.id }} className="inline-flex items-center gap-1 font-semibold text-primary">
+                          <Eye className="size-4" /> عرض
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
 
       <Modal
         open={formOpen}
@@ -1125,5 +1229,47 @@ export function ImportDialog({
         </button>
       )}
     </Modal>
+  );
+}
+
+/** Adds an owner by hand to a contract that came without one (e.g. imported from the platform). */
+function AddOwnerButton({ contractId }: { contractId: string }) {
+  const qc = useQueryClient();
+  const add = useMutation({
+    mutationFn: async () => {
+      const name = window.prompt("اسم المالك")?.trim();
+      if (!name) return false;
+      const phone = window.prompt("جوال المالك (اختياري)")?.trim() || null;
+      const { data: contact, error } = await supabase
+        .from("contacts")
+        .insert({ full_name: name, phone, whatsapp: phone, roles: ["owner"] })
+        .select("id")
+        .single();
+      if (error) throw new Error(describeDbError(error));
+      const { data: updated, error: e2 } = await supabase
+        .from("contracts")
+        .update({ owner_id: contact.id })
+        .eq("id", contractId)
+        .select("id");
+      if (e2) throw new Error(describeDbError(e2));
+      if (!updated?.length) throw new Error("لم يتم ربط المالك بالعقد");
+      return true;
+    },
+    onSuccess: (done) => {
+      if (!done) return;
+      toast.success("تمت إضافة المالك للعقد");
+      qc.invalidateQueries({ queryKey: ["contracts"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <button
+      type="button"
+      onClick={() => add.mutate()}
+      disabled={add.isPending}
+      className="inline-flex items-center gap-1 rounded-md border border-dashed border-primary/40 px-2 py-1 text-[12px] font-semibold text-primary hover:bg-primary/5"
+    >
+      <Plus className="size-3.5" /> إضافة مالك
+    </button>
   );
 }

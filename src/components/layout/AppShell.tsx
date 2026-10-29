@@ -1,6 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, LogOut, Menu, X } from "lucide-react";
+import { Archive, Bell, Bot, Building, Building2, CalendarCheck, CalendarClock, ChevronDown, ClipboardCheck, FileText, FileWarning, Handshake, History, Home, KeyRound, LayoutGrid, ListChecks, LogOut, Megaphone, Menu, MessageCircle, MessagesSquare, Receipt, Settings, ShieldCheck, Target, UserCog, UserRound, Users, Wrench, X, type LucideIcon } from "lucide-react";
+
+const itemIcons: Record<string, LucideIcon> = {
+  "/dashboard": Home, "/ai": Bot, "/properties": Building, "/sale-owners": KeyRound, "/rent-owners": KeyRound, "/buildings": Building2,
+  "/supply-requests": FileText, "/listing-requests": ClipboardCheck, "/reservations": CalendarCheck,
+  "/owners": Users, "/contracts": FileText, "/renewals": Bell, "/invoices": Receipt, "/reminders": CalendarClock,
+  "/maintenance": Wrench, "/service-partners": Handshake, "/tasks": ListChecks, "/activities": History,
+  "/team-chat": MessagesSquare, "/goals": Target, "/clients": UserRound, "/marketing": Megaphone,
+  "/settings": Settings, "/partners": Handshake, "/services": LayoutGrid, "/whatsapp-link": MessageCircle,
+  "/employees": UserCog, "/roles": ShieldCheck, "/activity-log": History, "/error-log": FileWarning, "/backup": Archive,
+};
 import { useState, type ReactNode } from "react";
 
 import logoAsset from "@/assets/mithra-logo-transparent.png.asset.json";
@@ -63,29 +73,24 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                         to={item.to}
                         onClick={onNavigate}
                         className={cn(
-                          "group flex items-center justify-between rounded-lg py-2 pe-2 ps-3 text-[13.5px] transition-colors",
+                          "group relative flex items-center justify-between rounded-xl py-2.5 pe-2 ps-3 text-[13.5px] transition-colors",
                           active
-                            ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
+                            ? "bg-primary/[0.07] font-bold text-primary before:absolute before:inset-y-2 before:-start-1 before:w-1 before:rounded-full before:bg-primary"
                             : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60",
                         )}
                       >
                         <span className="flex min-w-0 items-center gap-2.5 text-right">
-                          {group.label ? (
-                            <span
-                              className={cn(
-                                "size-1.5 shrink-0 rounded-full",
-                                active ? "bg-primary" : "bg-border",
-                              )}
-                            />
-                          ) : null}
-                          {!group.label && Icon ? (
-                            <Icon className="size-[18px] shrink-0 text-primary/70" />
-                          ) : null}
+                          {(() => {
+                            const ItemIcon = itemIcons[item.to] ?? (!group.label ? Icon : undefined);
+                            return ItemIcon ? (
+                              <ItemIcon className={cn("size-[18px] shrink-0", active ? "text-primary" : "text-primary/60")} />
+                            ) : null;
+                          })()}
                           <span>{t(item.label)}</span>
                         </span>
                         <span className="flex shrink-0 items-center gap-2">
                           {badge ? (
-                            <span className="rounded-md bg-warning/15 px-1.5 py-0.5 text-[11px] font-bold text-warning-foreground">
+                            <span className="grid min-w-7 place-items-center rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-bold text-warning-foreground">
                               {badge}
                             </span>
                           ) : null}
@@ -105,6 +110,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 
 import { AiDock } from "./AiDock";
 import { NotificationsBell } from "./NotificationsBell";
+import { StaffCall } from "@/components/chat/StaffCall";
 import { PushToggle } from "./PushToggle";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -119,12 +125,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-primary-foreground/15 bg-primary px-3 text-primary-foreground shadow-sm md:h-24 md:px-6">
+    <div className="min-h-screen bg-background md:p-3">
+      <header className="brand-tile sticky top-0 z-30 flex h-16 items-center justify-between rounded-none px-3 md:top-3 md:h-20 md:rounded-3xl md:px-6">
         <div className="relative z-10 flex items-center gap-1 md:gap-2">
           <button
             type="button"
-            className="grid size-9 place-items-center rounded-full bg-primary-foreground/15 text-[13px] font-bold text-primary-foreground"
+            className="hidden size-9 place-items-center rounded-full bg-primary-foreground/15 text-[13px] font-bold text-primary-foreground lg:grid"
             aria-label="الحساب"
             title={profile?.full_name ?? ""}
           >
@@ -133,16 +139,21 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={handleSignOut}
-            className="grid size-9 place-items-center rounded-full text-primary-foreground/80 transition-colors hover:bg-primary-foreground/15 hover:text-primary-foreground"
+            className="hidden size-9 place-items-center rounded-full text-primary-foreground/80 transition-colors hover:bg-primary-foreground/15 hover:text-primary-foreground lg:grid"
             aria-label="تسجيل الخروج"
             title="تسجيل الخروج"
           >
             <LogOut className="size-[18px]" />
           </button>
-          <LanguageToggle className="border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20" />
-          <ThemeToggle showLabel className="hidden border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 sm:inline-flex" />
+          <span className="hidden lg:contents">
+            <LanguageToggle className="border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20" />
+            <ThemeToggle showLabel className="border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20" />
+          </span>
+          <StaffCall />
           <NotificationsBell />
-          <PushToggle />
+          <span className="hidden lg:contents">
+            <PushToggle />
+          </span>
         </div>
 
         <Link
@@ -154,7 +165,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             alt="مثراء العقارية"
             width={360}
             height={112}
-            className="h-10 w-auto max-w-[180px] object-contain md:h-16 md:max-w-[270px]"
+            className="h-9 w-auto max-w-[140px] object-contain sm:h-11 sm:max-w-[190px] md:h-16 md:max-w-[240px]"
           />
         </Link>
 
@@ -178,8 +189,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="flex">
-        <aside className="sticky top-24 hidden h-[calc(100vh-6rem)] w-[268px] shrink-0 overflow-y-auto border-s border-sidebar-border bg-sidebar lg:block">
+      <div className="flex gap-3 md:pt-3">
+        <aside className="surface-card sticky top-[6.5rem] hidden h-[calc(100vh-7.5rem)] w-[268px] shrink-0 overflow-y-auto bg-sidebar lg:block">
           <SidebarNav />
         </aside>
 
@@ -192,12 +203,22 @@ export function AppShell({ children }: { children: ReactNode }) {
               onClick={() => setOpen(false)}
             />
             <div className="absolute inset-y-0 end-0 w-[280px] overflow-y-auto bg-sidebar shadow-xl">
+              <div dir="rtl" className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-4">
+                <span className="grid size-9 place-items-center rounded-full bg-primary/10 text-[13px] font-bold text-primary">{initial}</span>
+                <span className="min-w-0 flex-1 truncate text-[13px] font-bold">{profile?.full_name ?? "—"}</span>
+                <LanguageToggle />
+                <ThemeToggle />
+                <PushToggle />
+                <button type="button" onClick={handleSignOut} className="flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[12px] font-semibold text-destructive">
+                  <LogOut className="size-4" /> خروج
+                </button>
+              </div>
               <SidebarNav onNavigate={() => setOpen(false)} />
             </div>
           </div>
         ) : null}
 
-        <main className="min-w-0 flex-1 px-4 py-6 md:px-8">
+        <main className="min-w-0 flex-1 px-4 py-6 md:surface-card md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl space-y-6">{children}</div>
         </main>
 
