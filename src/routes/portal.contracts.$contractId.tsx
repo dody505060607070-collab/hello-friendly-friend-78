@@ -184,7 +184,7 @@ function ContractDetail() {
         <h2 className="flex items-center gap-2 text-sm font-bold"><PenLine className="size-4 text-primary" />التوقيع الإلكتروني</h2>
         <div className="mt-4 grid gap-5 lg:grid-cols-2">
           <div className="space-y-3"><label className="grid gap-1 text-xs font-semibold">اسم الموقّع<input className="h-10 rounded-lg border border-input bg-background px-3" value={signerName} onChange={(event) => setSignerName(event.target.value)} /></label><SignaturePad onChange={setSignature} /><Button onClick={() => sign.mutate()} disabled={sign.isPending || !signature}>توقيع العقد</Button></div>
-          <div className="space-y-2">{(signatures.data ?? []).map((row) => <article key={row.id} className="rounded-lg border border-border p-3"><img src={row.image_data} alt={`توقيع ${row.signer_name}`} className="h-20 w-full object-contain" /><p className="mt-1 text-xs font-bold">{row.signer_name}</p><p className="text-[11px] text-muted-foreground">{new Date(row.signed_at).toLocaleString("ar-SA")}</p></article>)}{!signatures.data?.length ? <p className="text-xs text-muted-foreground">لم يُوقّع هذا العقد بعد.</p> : null}</div>
+          <div className="space-y-2">{(signatures.data ?? []).map((row) => <article key={row.id} className="rounded-lg border border-border p-3"><img src={row.image_data ?? undefined} alt={`توقيع ${row.signer_name}`} className="h-20 w-full object-contain" /><p className="mt-1 text-xs font-bold">{row.signer_name}</p><p className="text-[11px] text-muted-foreground">{new Date(row.signed_at).toLocaleString("ar-SA")}</p></article>)}{!signatures.data?.length ? <p className="text-xs text-muted-foreground">لم يُوقّع هذا العقد بعد.</p> : null}</div>
         </div>
       </section>
     </div>

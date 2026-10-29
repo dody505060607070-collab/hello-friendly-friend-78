@@ -750,7 +750,7 @@ function ContractViewPage() {
               {(signatures.data ?? []).map((row) => (
                 <article key={row.id} className="rounded-xl border border-border p-3">
                   <img
-                    src={row.image_data}
+                    src={row.image_data ?? undefined}
                     alt={`توقيع ${row.signer_name}`}
                     className="h-24 w-full rounded-lg bg-card object-contain"
                   />
