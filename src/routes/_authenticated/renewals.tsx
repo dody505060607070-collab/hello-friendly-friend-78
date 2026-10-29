@@ -36,7 +36,25 @@ type Row = {
   tenant: { full_name: string; phone: string | null } | null;
   owner: { full_name: string } | null;
   property: { name: string; code: string } | null;
+  unit: { unit_number: string | null; building: { name: string | null; code: string | null } | null } | null;
 };
+
+function propertyLabel(row: Row) {
+  if (row.property?.name) return row.property.name;
+  const b = row.unit?.building?.name;
+  const u = row.unit?.unit_number;
+  if (b && u) return `${b} – وحدة ${u}`;
+  return b ?? (u ? `وحدة ${u}` : null);
+}
+
+function renewalWaLink(row: Row) {
+  let phone = (row.tenant?.phone ?? "").replace(/\D/g, "");
+  if (phone.startsWith("00")) phone = phone.slice(2);
+  if (phone.startsWith("05")) phone = "966" + phone.slice(1);
+  else if (phone.startsWith("5") && phone.length === 9) phone = "966" + phone;
+  const text = `السلام عليكم ${row.tenant?.full_name ?? ""}،\nنود إبلاغكم بأن عقد الإيجار رقم ${row.contract_number}${propertyLabel(row) ? ` (${propertyLabel(row)})` : ""} ينتهي بتاريخ ${formatDate(row.end_date)}.\nنرجو إفادتنا هل ترغبون في تجديد العقد أم لا؟\nشكرًا لكم — مثراء العقارية`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+}
 
 function daysLeft(end: string | null) {
   if (!end) return null;
@@ -73,7 +91,7 @@ function RenewalsPage() {
       const { data, error } = await supabase
         .from("contracts")
         .select(
-          "id, contract_number, end_date, annual_rent, total_value, status, tenant:tenant_id(full_name, phone), owner:owner_id(full_name), property:property_id(name, code)",
+          "id, contract_number, end_date, annual_rent, total_value, status, tenant:tenant_id(full_name, phone), owner:owner_id(full_name), property:property_id(name, code), unit:unit_id(unit_number, building:building_id(name, code))",
         )
         .not("end_date", "is", null)
         .order("end_date");
@@ -162,82 +180,102 @@ function RenewalsPage() {
       ) : visible.length === 0 ? (
         <EmptyState text="لا توجد عقود في هذه الفترة" hint="جرّب تبويبًا آخر." />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {visible.map(({ row, days, bucket }) => {
-            const info = buckets[bucket] ?? buckets["later"]!;
-            const reminderId = nextPayments.get(row.id) ?? null;
-
-            return (
-              <article
-                key={row.id}
-                className="rounded-2xl border border-border bg-card p-5 shadow-card"
-              >
-                <header className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-base font-bold text-foreground">
-                      عقد {row.contract_number}
-                    </h2>
-                    <p className="mt-1 text-[12.5px] text-muted-foreground">
-                      {row.property?.name ?? "بدون عقار"} — المستأجر:{" "}
-                      {row.tenant?.full_name ?? "غير محدد"}
-                    </p>
-                  </div>
-                  <Chip tone={info.tone}>
-                    {days != null && days >= 0 ? `متبقٍ ${days} يوم` : info.label}
-                  </Chip>
-                </header>
-
-                <dl className="mt-4 grid grid-cols-2 gap-3 text-[12.5px] sm:grid-cols-3">
-                  <div className="rounded-lg border border-border bg-muted/40 p-3">
-                    <dt className="text-muted-foreground">تاريخ الانتهاء</dt>
-                    <dd className="mt-1 font-semibold text-foreground">
-                      {formatDate(row.end_date)}
-                    </dd>
-                  </div>
-                  <div className="rounded-lg border border-border bg-muted/40 p-3">
-                    <dt className="text-muted-foreground">الإيجار السنوي</dt>
-                    <dd className="mt-1 font-semibold text-foreground">
-                      {formatCurrency(row.annual_rent)}
-                    </dd>
-                  </div>
-                  <div className="rounded-lg border border-border bg-muted/40 p-3">
-                    <dt className="text-muted-foreground">المالك</dt>
-                    <dd className="mt-1 font-semibold text-foreground">
-                      {row.owner?.full_name ?? "—"}
-                    </dd>
-                  </div>
-                </dl>
-
-                <div className="mt-4 rounded-lg border border-border bg-background p-3 text-[12.5px] leading-6 text-muted-foreground">
-                  <span className="font-semibold text-foreground">خطة التفاوض المقترحة: </span>
-                  {bucket === "d90"
-                    ? "تواصل تمهيدي لقياس رغبة المستأجر في الاستمرار، وجمع ملاحظاته على الوحدة."
-                    : bucket === "d60"
-                      ? "عرض شروط التجديد والزيادة المقترحة، وتثبيت موعد للرد."
-                      : "تفاوض نهائي وإصدار عقد التجديد، أو بدء تسويق الوحدة فورًا."}
-                </div>
-
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <Link
-                    to="/contracts/$contractId"
-                    params={{ contractId: row.id }}
-                    className="inline-flex h-9 items-center rounded-lg border border-border bg-card px-3 text-[12.5px] font-semibold text-foreground transition-colors hover:bg-muted"
-                  >
-                    فتح العقد
-                  </Link>
-                  {reminderId ? (
-                    <Link
-                      to="/payment-reminder/$paymentId"
-                      params={{ paymentId: reminderId }}
-                      className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-[12.5px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-                    >
-                      <MessageCircle className="size-4" /> قالب مراسلة المستأجر
-                    </Link>
-                  ) : null}
-                </div>
-              </article>
-            );
-          })}
+        <div className="grid items-start gap-4 lg:grid-cols-3">
+          {(["expired", "d30", "d60", "d90", "later"] as const)
+            .filter((b) => visible.some((v) => v.bucket === b))
+            .map((b) => {
+              const list = visible.filter((v) => v.bucket === b);
+              const info = buckets[b]!;
+              const head =
+                b === "d60"
+                  ? "bg-warning/10 text-warning"
+                  : b === "d90"
+                    ? "bg-success/10 text-success"
+                    : b === "later"
+                      ? "bg-muted text-muted-foreground"
+                      : "bg-primary/10 text-primary";
+              const btn = b === "d60" ? "bg-warning text-warning-foreground" : "bg-primary text-primary-foreground";
+              return (
+                <section key={b} className="surface-card space-y-3 p-3">
+                  <header className={`flex items-center justify-between rounded-xl px-4 py-3 ${head}`}>
+                    <div>
+                      <h2 className="text-[17px] font-bold">{info.label}</h2>
+                      <p className="text-[11.5px] opacity-80">
+                        {b === "d90"
+                          ? "تواصل تمهيدي لقياس رغبة المستأجر في الاستمرار"
+                          : b === "d60"
+                            ? "عرض شروط التجديد والزيادة المقترحة"
+                            : "تفاوض نهائي أو بدء تسويق الوحدة فورًا"}
+                      </p>
+                    </div>
+                    <span className="grid size-10 place-items-center rounded-full bg-card text-[15px] font-bold">{list.length}</span>
+                  </header>
+                  {list.map(({ row, days }) => {
+                    const reminderId = nextPayments.get(row.id) ?? null;
+                    return (
+                      <article key={row.id} className="space-y-3 rounded-xl border border-border bg-card p-3">
+                        <div className="flex items-start gap-3">
+                          <div className={`grid min-w-14 place-items-center rounded-xl px-2 py-1.5 ${head}`}>
+                            <b className="text-[20px] leading-6">{days != null ? Math.abs(days) : "—"}</b>
+                            <span className="text-[10.5px]">{days != null && days < 0 ? "يوم مضى" : "يوم"}</span>
+                          </div>
+                          <div className="min-w-0 flex-1 text-[12.5px]">
+                            <p className="font-bold" dir="auto">عقد {row.contract_number}</p>
+                            <p className="truncate text-muted-foreground">المالك: {row.owner?.full_name ?? "—"}</p>
+                            <p className="truncate text-muted-foreground">المستأجر: {row.tenant?.full_name ?? "غير محدد"}</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-[12px]">
+                          <div className="rounded-lg bg-muted/50 px-2 py-1.5">
+                            <p className="text-muted-foreground">قيمة العقد</p>
+                            <b>{formatCurrency(row.annual_rent ?? row.total_value)}</b>
+                          </div>
+                          <div className="rounded-lg bg-muted/50 px-2 py-1.5">
+                            <p className="text-muted-foreground">العقار</p>
+                            <b className="block truncate">{propertyLabel(row) ?? "—"}</b>
+                          </div>
+                        </div>
+                        <p className="text-[11.5px] text-muted-foreground">ينتهي: {formatDate(row.end_date)}</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Link
+                            to="/contracts/$contractId"
+                            params={{ contractId: row.id }}
+                            className={`inline-flex h-9 items-center justify-center rounded-lg text-[12.5px] font-semibold ${btn}`}
+                          >
+                            بدء المتابعة
+                          </Link>
+                          {reminderId ? (
+                            <Link
+                              to="/payment-reminder/$paymentId"
+                              params={{ paymentId: reminderId }}
+                              className="inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-border text-[12px] font-semibold hover:bg-muted"
+                            >
+                              <MessageCircle className="size-4" /> مراسلة المستأجر
+                            </Link>
+                          ) : (
+                            <a
+                              href={renewalWaLink(row)}
+                              target="_blank"
+                              rel="noreferrer"
+                              aria-disabled={!row.tenant?.phone}
+                              onClick={(e) => {
+                                if (!row.tenant?.phone) {
+                                  e.preventDefault();
+                                  alert("لا يوجد رقم جوال للمستأجر في هذا العقد.");
+                                }
+                              }}
+                              className="inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-border text-[12px] font-semibold hover:bg-muted"
+                            >
+                              <MessageCircle className="size-4" /> مراسلة المستأجر
+                            </a>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </section>
+              );
+            })}
         </div>
       )}
     </div>

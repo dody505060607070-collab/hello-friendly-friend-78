@@ -64,13 +64,6 @@ function AuthPage() {
     try {
       const res = await requestPhoneCode({ data: { country, phone } });
       if (!res.ok) throw new Error(res.error);
-      if ("noCode" in res && res.noCode) {
-        const { error } = await supabase.auth.verifyOtp({ token_hash: res.tokenHash, type: "magiclink" });
-        if (error) throw new Error("تعذّر فتح الجلسة، حاول مرة أخرى.");
-        markSessionPersistence(remember);
-        navigate({ to: res.destination as "/dashboard" });
-        return;
-      }
       toast.success("أرسلنا رمز الدخول على واتساب");
       setStep("code");
     } catch (err) {
@@ -88,6 +81,8 @@ function AuthPage() {
       if (!res.ok) throw new Error(res.error);
       const { error } = await supabase.auth.verifyOtp({ token_hash: res.tokenHash, type: "magiclink" });
       if (error) throw new Error("تعذّر فتح الجلسة، اطلب رمزًا جديدًا.");
+      // جهاز واحد فقط: إخراج الحساب من أي جهاز آخر
+      await supabase.auth.signOut({ scope: "others" }).catch(() => undefined);
       markSessionPersistence(remember);
       navigate({ to: res.destination as "/dashboard" });
     } catch (err) {

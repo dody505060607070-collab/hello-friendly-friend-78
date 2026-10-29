@@ -44,11 +44,7 @@ function ContractDetail() {
     queryFn: () => getPortalContract({ data: { contractId } }),
   });
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">جاري التحميل…</p>;
-  if (error) return <p className="text-sm text-destructive">{(error as Error).message}</p>;
-  if (!data) return null;
-
-  const c = data.contract as unknown as {
+  const c = data?.contract as unknown as {
     contract_number: string;
     status: string;
     start_date: string | null;
@@ -60,10 +56,14 @@ function ContractDetail() {
     property: { name: string; city: string | null; district: string | null } | null;
     unit: { unit_number: string | null; unit_type: string | null } | null;
   };
+  const signatures = useQuery({ queryKey: ["portal-contract-signatures", contractId], enabled: Boolean(data), queryFn: async () => { const { data: rows, error: signatureError } = await supabase.from("contract_signatures").select("id,signer_name,image_data,signed_at").eq("contract_id", contractId).order("signed_at", { ascending: false }); if (signatureError) throw signatureError; return rows ?? []; } });
+  const sign = useMutation({ mutationFn: async () => { if (!signerName.trim() || !signature) throw new Error("اكتب اسمك وأضف توقيعك"); const { data: auth } = await supabase.auth.getUser(); if (!auth.user) throw new Error("يجب تسجيل الدخول"); const { error: signError } = await supabase.from("contract_signatures").insert({ contract_id: contractId, signer_name: signerName.trim(), signer_role: "tenant", image_data: signature, created_by: auth.user.id }); if (signError) throw signError; }, onSuccess: () => { setSignature(""); setSignerName(""); void queryClient.invalidateQueries({ queryKey: ["portal-contract-signatures", contractId] }); toast.success("تم توقيع العقد بنجاح"); }, onError: (signError) => toast.error(signError instanceof Error ? signError.message : "تعذّر التوقيع") });
+
+  if (isLoading) return <p className="text-sm text-muted-foreground">جاري التحميل…</p>;
+  if (error) return <p className="text-sm text-destructive">{(error as Error).message}</p>;
+  if (!data) return null;
   const totalDue = data.payments.reduce((s, p) => s + Number(p.amount_due), 0);
   const totalPaid = data.payments.reduce((s, p) => s + Number(p.amount_paid), 0);
-  const signatures = useQuery({ queryKey: ["portal-contract-signatures", contractId], queryFn: async () => { const { data: rows, error: signatureError } = await supabase.from("contract_signatures").select("id,signer_name,image_data,signed_at").eq("contract_id", contractId).order("signed_at", { ascending: false }); if (signatureError) throw signatureError; return rows ?? []; } });
-  const sign = useMutation({ mutationFn: async () => { if (!signerName.trim() || !signature) throw new Error("اكتب اسمك وأضف توقيعك"); const { data: auth } = await supabase.auth.getUser(); if (!auth.user) throw new Error("يجب تسجيل الدخول"); const { error: signError } = await supabase.from("contract_signatures").insert({ contract_id: contractId, signer_name: signerName.trim(), signer_role: "tenant", image_data: signature, created_by: auth.user.id }); if (signError) throw signError; }, onSuccess: () => { setSignature(""); setSignerName(""); void queryClient.invalidateQueries({ queryKey: ["portal-contract-signatures", contractId] }); toast.success("تم توقيع العقد بنجاح"); }, onError: (signError) => toast.error(signError instanceof Error ? signError.message : "تعذّر التوقيع") });
 
   return (
     <div className="space-y-5">
@@ -155,7 +155,7 @@ function ContractDetail() {
             </thead>
             <tbody className="divide-y divide-border">
               {data.payments.map((p) => {
-                const chip = statusChip[p.status] ?? statusChip["pending"]!;
+                const chip = statusChip[p.status] ?? { label: "قادمة", cls: "bg-muted text-muted-foreground" };
                 const rest = Number(p.amount_due) - Number(p.amount_paid);
                 return (
                   <tr key={p.id} className={p.status === "paid" ? "bg-success/5" : rest > 0 && p.due_date < new Date().toISOString().slice(0, 10) ? "bg-destructive/5" : ""}>
@@ -184,7 +184,7 @@ function ContractDetail() {
         <h2 className="flex items-center gap-2 text-sm font-bold"><PenLine className="size-4 text-primary" />التوقيع الإلكتروني</h2>
         <div className="mt-4 grid gap-5 lg:grid-cols-2">
           <div className="space-y-3"><label className="grid gap-1 text-xs font-semibold">اسم الموقّع<input className="h-10 rounded-lg border border-input bg-background px-3" value={signerName} onChange={(event) => setSignerName(event.target.value)} /></label><SignaturePad onChange={setSignature} /><Button onClick={() => sign.mutate()} disabled={sign.isPending || !signature}>توقيع العقد</Button></div>
-          <div className="space-y-2">{(signatures.data ?? []).map((row) => <article key={row.id} className="rounded-lg border border-border p-3"><img src={row.image_data ?? undefined} alt={`توقيع ${row.signer_name}`} className="h-20 w-full object-contain" /><p className="mt-1 text-xs font-bold">{row.signer_name}</p><p className="text-[11px] text-muted-foreground">{new Date(row.signed_at).toLocaleString("ar-SA")}</p></article>)}{!signatures.data?.length ? <p className="text-xs text-muted-foreground">لم يُوقّع هذا العقد بعد.</p> : null}</div>
+          <div className="space-y-2">{(signatures.data ?? []).map((row) => <article key={row.id} className="rounded-lg border border-border p-3"><img src={row.image_data} alt={`توقيع ${row.signer_name}`} className="h-20 w-full object-contain" /><p className="mt-1 text-xs font-bold">{row.signer_name}</p><p className="text-[11px] text-muted-foreground">{new Date(row.signed_at).toLocaleString("ar-SA")}</p></article>)}{!signatures.data?.length ? <p className="text-xs text-muted-foreground">لم يُوقّع هذا العقد بعد.</p> : null}</div>
         </div>
       </section>
     </div>

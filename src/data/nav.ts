@@ -29,7 +29,7 @@ export const navGroups: NavGroup[] = [
   {
     icon: Home,
     items: [
-      { label: "لوحة التحكم", to: "/dashboard" },
+      { label: "CRM — لوحة التحكم", to: "/dashboard" },
       { label: "المساعد الذكي", to: "/ai" },
     ],
   },
@@ -38,6 +38,8 @@ export const navGroups: NavGroup[] = [
     icon: Factory,
     items: [
       { label: "العقارات", to: "/properties", countKey: "properties", module: "properties" },
+      { label: "ملاك البيع", to: "/sale-owners", module: "owners" },
+      { label: "ملاك الإيجار", to: "/rent-owners", module: "owners" },
       { label: "العمارات", to: "/buildings", module: "properties" },
       { label: "طلبات توفير العقار", to: "/supply-requests", countKey: "supplyRequests", module: "requests" },
       { label: "طلبات عرض العقار", to: "/listing-requests", countKey: "listingRequests", module: "requests" },
@@ -61,7 +63,9 @@ export const navGroups: NavGroup[] = [
     label: "المهام",
     icon: CircleCheck,
     items: [
-      { label: "المهام والمتابعات والشات", to: "/tasks", countKey: "tasks", module: "tasks" },
+      { label: "المهام", to: "/tasks", countKey: "tasks", module: "tasks" },
+      { label: "المتابعات والأنشطة", to: "/activities", module: "tasks" },
+      { label: "شات الموظفين", to: "/team-chat", module: "tasks" },
       { label: "أهداف الموظفين", to: "/goals", module: "employees" },
     ],
   },
@@ -69,7 +73,6 @@ export const navGroups: NavGroup[] = [
     label: "CRM",
     icon: Users,
     items: [
-      { label: "نظام CRM", to: "/crm", module: "crm" },
       { label: "العملاء", to: "/clients", countKey: "contacts", module: "contacts" },
     ],
   },

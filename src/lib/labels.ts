@@ -19,7 +19,8 @@ export const reservationStatusLabels: Record<string, string> = {
 export const contractStatusLabels: Record<string, string> = {
   draft: "مسودة",
   active: "ساري",
-  expired: "منتهي",
+  expired: "منتهي – خرج المستأجر (شاغر)",
+  holdover: "منتهي – ما زال ساكنًا (بدون عقد)",
   terminated: "منهي",
   renewed: "مُجدّد",
 };
@@ -91,4 +92,6 @@ export const contactRoleLabels: Record<string, string> = {
   buyer: "مشتري",
   broker: "وسيط عقد",
   lead: "عميل",
+  sale_owner: "مالك بيع",
+  rent_owner: "مالك إيجار",
 };

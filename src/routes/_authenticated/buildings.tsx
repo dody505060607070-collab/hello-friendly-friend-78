@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
@@ -30,6 +31,7 @@ import {
   textareaClass,
 } from "@/components/kit/Modal";
 import { PageHero } from "@/components/kit/PageHero";
+import { SortOrderDialog } from "@/components/kit/SortOrderDialog";
 import { Toggle } from "@/components/kit/Toggle";
 import { supabase } from "@/integrations/supabase/client";
 import { describeDbError } from "@/lib/db-errors";
@@ -174,7 +176,7 @@ function BuildingsPage() {
           "id, contract_number, property_id, tenant_id, status, tenant:tenant_id(full_name, phone)",
         )
         .not("property_id", "is", null)
-        .in("status", ["active", "draft"])
+        .in("status", ["active", "draft", "holdover"])
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as UnitContract[];
@@ -376,6 +378,7 @@ function BuildingsPage() {
   });
 
   const rows = buildings.data ?? [];
+  const [sortOpen, setSortOpen] = useState(false);
 
   return (
     <>
@@ -396,7 +399,25 @@ function BuildingsPage() {
         <Link to="/properties" className="text-[13px] font-semibold text-primary hover:underline">
           الانتقال لإدارة العقارات
         </Link>
+        <button
+          type="button"
+          onClick={() => setSortOpen(true)}
+          className="rounded-md border border-primary px-4 py-2 text-[13px] font-semibold text-primary hover:bg-primary/5"
+        >
+          ترتيب العمارات في الموقع
+        </button>
       </div>
+      <SortOrderDialog
+        open={sortOpen}
+        onClose={() => setSortOpen(false)}
+        table="buildings"
+        title="ترتيب ظهور العمارات"
+        items={rows.map((r) => ({ id: r.id, title: r.name, subtitle: [r.code, r.city, r.district].filter(Boolean).join(" · "), sort_order: r.sort_order }))}
+        onSaved={() => {
+          void qc.invalidateQueries({ queryKey: ["buildings", "admin"] });
+          void qc.invalidateQueries({ queryKey: ["public-buildings"] });
+        }}
+      />
 
       {buildings.isLoading ? (
         <div className="grid gap-4">
@@ -592,18 +613,18 @@ function BuildingsPage() {
                     [...floors.entries()]
                       .sort((a, b2) => a[0].localeCompare(b2[0], "ar", { numeric: true }))
                       .map(([floor, items]) => (
-                        <div key={floor} className="space-y-2">
-                          <p className="flex items-center gap-2 text-[13px] font-bold text-foreground">
-                            <Layers className="size-4 text-primary" /> {floor}
+                        <div key={floor} className="grid gap-2 rounded-xl border border-border p-2 md:grid-cols-[140px_minmax(0,1fr)]">
+                          <p className="flex flex-col justify-center rounded-lg bg-warning/10 px-3 py-2 text-[13.5px] font-bold text-foreground">
+                            <span className="flex items-center gap-2"><Layers className="size-4 text-primary" /> {floor}</span>
                             <span className="text-[11.5px] font-normal text-muted-foreground">
                               {items.length.toLocaleString("ar-SA")} شقة
                             </span>
                           </p>
-                          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                             {items.map((u) => {
                               const contract = contractByProperty.get(u.id);
                               return (
-                                <div key={u.id} className="rounded-lg border border-border p-3">
+                                <div key={u.id} className={cn("rounded-lg border p-3", u.status === "available" ? "border-success/20 bg-success/10" : u.status === "reserved" ? "border-warning/20 bg-warning/10" : "border-destructive/20 bg-destructive/10")}>
                                   <div className="flex items-center justify-between gap-2">
                                     <Link
                                       to="/property-form"
@@ -701,7 +722,11 @@ function BuildingsPage() {
                                 العقد {contract.contract_number}
                               </Link>
                               <Chip tone={contract.status === "active" ? "success" : "warning"}>
-                                {contract.status === "active" ? "ساري" : "مسودة"}
+                                {contract.status === "active"
+                                  ? "ساري"
+                                  : contract.status === "holdover"
+                                    ? "منتهي – بدون عقد"
+                                    : "مسودة"}
                               </Chip>
                             </div>
                             <p className="mt-2 text-[12px] text-muted-foreground">

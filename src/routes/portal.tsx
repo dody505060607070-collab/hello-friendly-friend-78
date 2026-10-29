@@ -19,9 +19,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import brandImage from "@/assets/mithra-logo-dark.png";
+import brandImage from "@/assets/portal-brand.jpg";
 
-import logoAsset from "@/assets/mithra-logo-white.png";
+import logoAsset from "@/assets/mithra-logo-transparent.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { getOwnerWorkspace, recordOwnerLogin } from "@/lib/owner-portal.functions";
 
@@ -126,7 +126,7 @@ function PortalLayout() {
     <div className="flex h-full flex-col gap-5 overflow-y-auto p-4">
       <div className="flex items-center gap-3">
         <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary-foreground/15 p-1.5">
-          <img src={logoAsset} alt="مثراء العقارية" className="h-full w-full object-contain" />
+          <img src={logoAsset.url} alt="مثراء العقارية" className="h-full w-full object-contain" />
         </span>
         <div className="min-w-0 leading-tight">
           <p className="truncate text-[15px] font-bold">مثراء العقارية</p>
@@ -194,7 +194,7 @@ function PortalLayout() {
       {/* الجوال: شريط علوي بسيط وزر القائمة */}
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-primary px-4 py-3 text-primary-foreground shadow-card lg:hidden">
         <div className="flex min-w-0 items-center gap-2">
-          <img src={logoAsset} alt="مثراء العقارية" className="h-9 w-9 shrink-0 object-contain" />
+          <img src={logoAsset.url} alt="مثراء العقارية" className="h-9 w-9 shrink-0 object-contain" />
           <p className="truncate text-[14px] font-bold">{isOwner ? "بوابة المالك" : "بوابة العميل"}</p>
         </div>
         <button

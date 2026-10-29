@@ -8,6 +8,8 @@ import { EmptyState, formatCurrency, formatDate, useTableRows } from "@/componen
 import { PageHero } from "@/components/kit/PageHero";
 import { Pills } from "@/components/kit/Pills";
 import { requestStatusLabels } from "@/lib/labels";
+import { DeleteRequestButton, useStaffList, useStaffName } from "@/components/requests/RequestStaff";
+import { RequestBoard, ViewToggle } from "@/components/requests/RequestBoard";
 
 type SupplyRow = {
   id: string;
@@ -20,6 +22,7 @@ type SupplyRow = {
   budget_min: number | null;
   budget_max: number | null;
   requester_type: string | null;
+  assigned_to: string | null;
   broker_name: string | null;
   admin_notes: string | null;
   status: string;
@@ -45,12 +48,14 @@ export const Route = createFileRoute("/_authenticated/supply-requests/")({
 
 function SupplyRequestsPage() {
   const [tab, setTab] = useState("all");
+  const [view, setView] = useState<"board" | "table">("board");
   const navigate = useNavigate();
+  const staffName = useStaffName();
 
   const supply = useTableRows<SupplyRow>({
     table: "supply_requests",
     select:
-      "id, full_name, phone, request_type, city, districts, property_type, budget_min, budget_max, requester_type, broker_name, admin_notes, status, created_at",
+      "id, full_name, phone, request_type, city, districts, property_type, budget_min, budget_max, requester_type, broker_name, admin_notes, status, assigned_to, created_at",
     orderBy: { column: "created_at" },
     queryKey: ["supply_requests"],
   });
@@ -89,17 +94,20 @@ function SupplyRequestsPage() {
         ]}
       />
 
-      <Pills
-        defaultKey="all"
-        onChange={setTab}
-        items={[
-          { key: "all", label: "الكل", count: counts.all },
-          { key: "open", label: "قيد المراجعة", count: counts.open },
-          { key: "contacted", label: "تم التواصل", count: counts.contacted },
-          { key: "done", label: "منجزة", count: counts.done },
-          { key: "closed", label: "مغلقة", count: counts.closed },
-        ]}
-      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Pills
+          defaultKey="all"
+          onChange={setTab}
+          items={[
+            { key: "all", label: "الكل", count: counts.all },
+            { key: "open", label: "قيد المراجعة", count: counts.open },
+            { key: "contacted", label: "تم التواصل", count: counts.contacted },
+            { key: "done", label: "منجزة", count: counts.done },
+            { key: "closed", label: "مغلقة", count: counts.closed },
+          ]}
+        />
+        <ViewToggle view={view} onChange={setView} />
+      </div>
 
       {supply.isLoading ? (
         <div className="surface-card grid place-items-center gap-2 px-6 py-16 text-center">
@@ -114,6 +122,23 @@ function SupplyRequestsPage() {
             {supply.error instanceof Error ? supply.error.message : "خطأ غير معروف"}
           </p>
         </div>
+      ) : view === "board" ? (
+        <RequestBoard
+          codePrefix="TP"
+          onOpen={(id) => navigate({ to: "/supply-requests/$requestId", params: { requestId: id } })}
+          items={filtered.map((r) => ({
+            id: r.id,
+            status: r.status,
+            title: r.full_name,
+            kind: `${r.request_type === "buy" || r.request_type === "sale" ? "شراء" : "إيجار"}${r.property_type ? ` • ${r.property_type}` : ""}`,
+            location: [r.city, r.districts].filter(Boolean).join(" - "),
+            money: r.budget_min || r.budget_max ? `${formatCurrency(r.budget_min)} — ${formatCurrency(r.budget_max)}` : null,
+            staff: staffName(r.assigned_to),
+            tag: r.requester_type === "broker" ? (r.broker_name ?? "وسيط") : "عميل",
+            created_at: r.created_at,
+            extra: <DeleteRequestButton table="supply_requests" id={r.id} queryKey={["supply_requests"]} />,
+          }))}
+        />
       ) : (
         <DataTable<SupplyRow>
           rows={filtered}
@@ -149,8 +174,10 @@ function SupplyRequestsPage() {
                 </Chip>
               ),
             },
+            { header: "الموظف", cell: (r) => staffName(r.assigned_to) },
             { header: "الحالة", cell: (r) => <Chip>{requestStatusLabels[r.status] ?? r.status}</Chip> },
             { header: "التاريخ", sortable: true, value: (r) => r.created_at, cell: (r) => formatDate(r.created_at) },
+            { header: "", cell: (r) => <DeleteRequestButton table="supply_requests" id={r.id} queryKey={["supply_requests"]} /> },
           ]}
         />
       )}
