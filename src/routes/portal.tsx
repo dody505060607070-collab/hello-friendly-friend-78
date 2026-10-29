@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import brandImage from "@/assets/portal-brand.jpg";
+import brandImage from "@/assets/site-hero.jpg";
 
 import logoAsset from "@/assets/mithra-logo-transparent.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";

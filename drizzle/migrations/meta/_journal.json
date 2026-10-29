@@ -148,6 +148,13 @@
       "when": 1793317101767,
       "tag": "0020_rushudy_sync_b9_0047_0055",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793317189127,
+      "tag": "0021_rushudy_sync_b10_owner_followup_queue",
+      "breakpoints": true
     }
   ]
 }
