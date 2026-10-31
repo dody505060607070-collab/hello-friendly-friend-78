@@ -4680,6 +4680,17 @@ export type Database = {
           location_lat: number | null
           location_lng: number | null
           location_text: string | null
+          meeting_agent_name: string | null
+          meeting_agent_phone: string | null
+          meeting_enabled: boolean
+          meeting_interval_hours: number
+          meeting_last_sent_at: string | null
+          meeting_notes: string | null
+          meeting_owner_name: string | null
+          meeting_owner_phone: string | null
+          meeting_place: string | null
+          meeting_visitor_name: string | null
+          meeting_visitor_phone: string | null
           priority: string
           property_id: string | null
           rejection_note: string | null
@@ -4704,6 +4715,17 @@ export type Database = {
           location_lat?: number | null
           location_lng?: number | null
           location_text?: string | null
+          meeting_agent_name?: string | null
+          meeting_agent_phone?: string | null
+          meeting_enabled?: boolean
+          meeting_interval_hours?: number
+          meeting_last_sent_at?: string | null
+          meeting_notes?: string | null
+          meeting_owner_name?: string | null
+          meeting_owner_phone?: string | null
+          meeting_place?: string | null
+          meeting_visitor_name?: string | null
+          meeting_visitor_phone?: string | null
           priority?: string
           property_id?: string | null
           rejection_note?: string | null
@@ -4728,6 +4750,17 @@ export type Database = {
           location_lat?: number | null
           location_lng?: number | null
           location_text?: string | null
+          meeting_agent_name?: string | null
+          meeting_agent_phone?: string | null
+          meeting_enabled?: boolean
+          meeting_interval_hours?: number
+          meeting_last_sent_at?: string | null
+          meeting_notes?: string | null
+          meeting_owner_name?: string | null
+          meeting_owner_phone?: string | null
+          meeting_place?: string | null
+          meeting_visitor_name?: string | null
+          meeting_visitor_phone?: string | null
           priority?: string
           property_id?: string | null
           rejection_note?: string | null

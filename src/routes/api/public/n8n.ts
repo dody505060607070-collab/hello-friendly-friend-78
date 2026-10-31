@@ -28,7 +28,14 @@ export const Route = createFileRoute("/api/public/n8n")({
           } catch (err) {
             ownerBiweekly = { error: (err as Error).message };
           }
-          Object.assign(result as object, { ownerBiweekly });
+          let meetingReminders: unknown = null;
+          try {
+            const { runMeetingReminders } = await import("@/lib/meeting-reminders.server");
+            meetingReminders = await runMeetingReminders();
+          } catch (err) {
+            meetingReminders = { error: (err as Error).message };
+          }
+          Object.assign(result as object, { ownerBiweekly, meetingReminders });
           return new Response(JSON.stringify(result), {
             status: 200,
             headers: { "Content-Type": "application/json" },
