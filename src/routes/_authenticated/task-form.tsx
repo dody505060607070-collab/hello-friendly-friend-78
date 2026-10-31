@@ -6,6 +6,7 @@ import {
   Camera,
   Check,
   ClipboardList,
+  CalendarClock,
   Loader2,
   Paperclip,
   Trash2,
@@ -22,7 +23,7 @@ import { PageHero } from "@/components/kit/PageHero";
 import { supabase } from "@/integrations/supabase/client";
 import { priorityLabels, taskStatusLabels } from "@/lib/labels";
 import { parseCoordsFromMapLink, resolveMapLink } from "@/lib/maps.functions";
-import { finishTask, notifyTaskNow } from "@/lib/tasks.functions";
+import { finishTask, notifyTaskNow, sendMeetingReminderNow } from "@/lib/tasks.functions";
 import { cn } from "@/lib/utils";
 
 /** الوقت المتبقي حتى الرسالة القادمة بصيغة عربية مختصرة. */
@@ -76,6 +77,16 @@ const emptyForm = {
   location_text: "",
   location_lat: "",
   location_lng: "",
+  meeting_enabled: false,
+  meeting_place: "",
+  meeting_notes: "",
+  meeting_owner_name: "",
+  meeting_owner_phone: "",
+  meeting_visitor_name: "",
+  meeting_visitor_phone: "",
+  meeting_agent_name: "",
+  meeting_agent_phone: "",
+  meeting_interval_hours: "auto",
 };
 
 type FormState = typeof emptyForm;
@@ -116,6 +127,21 @@ function TaskFormPage() {
   const [uploading, setUploading] = useState(false);
   const [mapLink, setMapLink] = useState("");
   const [resolvingMap, setResolvingMap] = useState(false);
+  const [sendingMeeting, setSendingMeeting] = useState(false);
+  const sendMeetingNow = async () => {
+    if (!id) return;
+    setSendingMeeting(true);
+    try {
+      const r = await sendMeetingReminderNow({ data: { taskId: id } });
+      if (r.sent) toast.success(`تم إرسال التذكير لـ ${r.sent} شخص`);
+      if (r.failed) toast.error(`تعذّر الإرسال لـ ${r.failed} — تأكد من ربط واتساب`);
+      if (!r.sent && !r.failed) toast.error("احفظ المهمة أولًا مع تفعيل الموعد وإضافة الأرقام");
+    } catch {
+      toast.error("تعذّر إرسال التذكير");
+    } finally {
+      setSendingMeeting(false);
+    }
+  };
 
   const set = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
 
@@ -226,6 +252,16 @@ function TaskFormPage() {
       location_text: (row as Record<string, unknown>)["location_text"]?.toString() ?? "",
       location_lat: (row as Record<string, unknown>)["location_lat"]?.toString() ?? "",
       location_lng: (row as Record<string, unknown>)["location_lng"]?.toString() ?? "",
+      meeting_enabled: row.meeting_enabled ?? false,
+      meeting_place: row.meeting_place ?? "",
+      meeting_notes: row.meeting_notes ?? "",
+      meeting_owner_name: row.meeting_owner_name ?? "",
+      meeting_owner_phone: row.meeting_owner_phone ?? "",
+      meeting_visitor_name: row.meeting_visitor_name ?? "",
+      meeting_visitor_phone: row.meeting_visitor_phone ?? "",
+      meeting_agent_name: row.meeting_agent_name ?? "",
+      meeting_agent_phone: row.meeting_agent_phone ?? "",
+      meeting_interval_hours: String(row.meeting_interval_hours ?? 12),
     });
     const lat = (row as Record<string, unknown>)["location_lat"];
     const lng = (row as Record<string, unknown>)["location_lng"];
@@ -251,7 +287,22 @@ function TaskFormPage() {
         location_text: form.location_text.trim() || null,
         location_lat: form.location_lat ? Number(form.location_lat) : null,
         location_lng: form.location_lng ? Number(form.location_lng) : null,
+        meeting_enabled: form.meeting_enabled,
+        meeting_place: form.meeting_place.trim() || null,
+        meeting_notes: form.meeting_notes.trim() || null,
+        meeting_owner_name: form.meeting_owner_name.trim() || null,
+        meeting_owner_phone: form.meeting_owner_phone.trim() || null,
+        meeting_visitor_name: form.meeting_visitor_name.trim() || null,
+        meeting_visitor_phone: form.meeting_visitor_phone.trim() || null,
+        meeting_agent_name: form.meeting_agent_name.trim() || null,
+        meeting_agent_phone: form.meeting_agent_phone.trim() || null,
+        meeting_interval_hours:
+          form.meeting_interval_hours === "auto"
+            ? form.priority === "urgent" ? 12 : form.priority === "high" ? 24 : 72
+            : Number(form.meeting_interval_hours),
       };
+      if (form.meeting_enabled && !form.meeting_owner_phone.trim() && !form.meeting_visitor_phone.trim() && !form.meeting_agent_phone.trim())
+        throw new Error("أدخل رقم جوال واحد على الأقل لموعد المعاينة");
       let taskId = id;
       if (taskId) {
         const { error } = await supabase.from("tasks").update(payload).eq("id", taskId);
@@ -630,6 +681,75 @@ function TaskFormPage() {
             loading="lazy"
             src={`https://www.google.com/maps?q=${form.location_lat},${form.location_lng}&z=15&output=embed`}
           />
+        ) : null}
+      </SectionCard>
+
+      <SectionCard
+        title="موعد معاينة / اجتماع"
+        subtitle="موعد بين المالك والزائر والوسيط — كل واحد تصله رسالة تذكير خاصة به على واتساب."
+        icon={CalendarClock}
+      >
+        <label className="mb-4 flex items-center gap-2 text-[13.5px] font-semibold">
+          <input
+            type="checkbox"
+            checked={form.meeting_enabled}
+            onChange={(e) => set({ meeting_enabled: e.target.checked })}
+          />
+          هذه المهمة موعد معاينة وأريد إرسال تذكيرات
+        </label>
+        {form.meeting_enabled ? (
+          <div className="grid gap-4 sm:grid-cols-3">
+            <p className="sm:col-span-3 rounded-lg border border-border bg-accent/40 px-3 py-2 text-[12.5px] text-muted-foreground">
+              تاريخ ووقت الموعد = تاريخ ووقت المهمة أعلاه. تتوقف التذكيرات تلقائيًا بعد الموعد أو عند إنهاء المهمة.
+            </p>
+            <Field label="مكان الموعد" className="sm:col-span-3">
+              <input className={inputClass} value={form.meeting_place} onChange={(e) => set({ meeting_place: e.target.value })} placeholder="مثال: عمارة الملقا - شقة 4، أو رابط خرائط Google" />
+            </Field>
+            <Field label="ملاحظات الموعد (تظهر في الرسالة)" className="sm:col-span-3">
+              <textarea className={textareaClass} value={form.meeting_notes} onChange={(e) => set({ meeting_notes: e.target.value })} placeholder="مثال: إحضار الهوية، الموقف أمام البوابة الشمالية" />
+            </Field>
+            <Field label="اسم المالك">
+              <input className={inputClass} value={form.meeting_owner_name} onChange={(e) => set({ meeting_owner_name: e.target.value })} />
+            </Field>
+            <Field label="اسم الزائر (المعاين)">
+              <input className={inputClass} value={form.meeting_visitor_name} onChange={(e) => set({ meeting_visitor_name: e.target.value })} />
+            </Field>
+            <Field label="اسم الوسيط / الموظف">
+              <input className={inputClass} value={form.meeting_agent_name} onChange={(e) => set({ meeting_agent_name: e.target.value })} />
+            </Field>
+            <Field label="جوال المالك">
+              <input className={inputClass} dir="ltr" value={form.meeting_owner_phone} onChange={(e) => set({ meeting_owner_phone: e.target.value })} placeholder="05xxxxxxxx" />
+            </Field>
+            <Field label="جوال الزائر">
+              <input className={inputClass} dir="ltr" value={form.meeting_visitor_phone} onChange={(e) => set({ meeting_visitor_phone: e.target.value })} placeholder="05xxxxxxxx" />
+            </Field>
+            <Field label="جوال الوسيط">
+              <input className={inputClass} dir="ltr" value={form.meeting_agent_phone} onChange={(e) => set({ meeting_agent_phone: e.target.value })} placeholder="05xxxxxxxx" />
+            </Field>
+            <Field label="تكرار الرسالة" className="sm:col-span-3">
+              <select className={inputClass} value={form.meeting_interval_hours} onChange={(e) => set({ meeting_interval_hours: e.target.value })}>
+                <option value="auto">تلقائي حسب الأولوية ({intervalLabel(form.priority)})</option>
+                <option value="6">كل 6 ساعات</option>
+                <option value="12">كل 12 ساعة</option>
+                <option value="24">كل 24 ساعة</option>
+                <option value="48">كل يومين</option>
+                <option value="72">كل 3 أيام</option>
+              </select>
+            </Field>
+            {id ? (
+              <div className="sm:col-span-3">
+                <button
+                  type="button"
+                  disabled={sendingMeeting}
+                  onClick={sendMeetingNow}
+                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-60"
+                >
+                  {sendingMeeting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                  إرسال التذكير الآن للثلاثة
+                </button>
+              </div>
+            ) : null}
+          </div>
         ) : null}
       </SectionCard>
 
