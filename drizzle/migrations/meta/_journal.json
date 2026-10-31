@@ -169,6 +169,13 @@
       "when": 1793482965047,
       "tag": "0023_task_review_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793482982672,
+      "tag": "0024_task_review_notifications_link",
+      "breakpoints": true
     }
   ]
 }
