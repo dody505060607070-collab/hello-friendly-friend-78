@@ -213,10 +213,36 @@
 }
 
 @utility surface-card {
+  position: relative;
+  overflow: hidden;
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
   background-color: var(--color-card);
   box-shadow: var(--shadow-card);
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--color-primary) 70%, transparent) 30%, color-mix(in oklab, var(--color-primary) 35%, transparent) 70%, transparent);
+    pointer-events: none;
+  }
+}
+
+/* Decorative top accent for dashboard cards */
+.shadow-card.rounded-2xl,
+.shadow-card.rounded-xl {
+  position: relative;
+  overflow: hidden;
+}
+.shadow-card.rounded-2xl::before,
+.shadow-card.rounded-xl::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--color-primary) 65%, transparent) 30%, color-mix(in oklab, var(--color-primary) 30%, transparent) 70%, transparent);
+  pointer-events: none;
 }
 
 /* ── Liquid glass + motion layer ─────────────────────────────── */
