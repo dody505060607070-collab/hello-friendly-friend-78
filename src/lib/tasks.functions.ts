@@ -44,3 +44,14 @@ export const stopTaskWhatsapp = createServerFn({ method: "POST" })
     const { stopTaskReminders } = await import("@/lib/tasks.server");
     return stopTaskReminders(data.taskId);
   });
+
+/** يرسل تذكير موعد المعاينة للمالك والزائر والوسيط فورًا (ويبدأ عدّاد التكرار). */
+export const sendMeetingReminderNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ taskId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: staff } = await context.supabase.rpc("is_staff", { _user_id: context.userId });
+    if (!staff) throw new Error("Forbidden");
+    const { sendMeetingReminderForTask } = await import("@/lib/meeting-reminders.server");
+    return sendMeetingReminderForTask(data.taskId, context.userId);
+  });
