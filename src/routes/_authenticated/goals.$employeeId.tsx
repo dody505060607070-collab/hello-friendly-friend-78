@@ -374,7 +374,7 @@ function EmployeeGoalsPage() {
                         e.preventDefault();
                         const input = e.currentTarget.elements.namedItem("inc") as HTMLInputElement;
                         const n = Number(input.value);
-                        if (!Number.isFinite(n) || n <= 0) return toast.error("اكتب رقمًا أكبر من صفر");
+                        if (!Number.isFinite(n) || n <= 0) { toast.error("اكتب رقمًا أكبر من صفر"); return; }
                         patch.mutate({ id: goal.id, values: { achieved_value: achieved + n, auto_track: false } });
                         input.value = "";
                       }}

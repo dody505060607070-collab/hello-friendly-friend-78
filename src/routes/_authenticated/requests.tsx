@@ -71,7 +71,7 @@ function RequestsPage() {
       <PageHero title="كل الطلبات" subtitle="كل الطلبات الواردة وسجلها في مكان واحد، مع الفرز حسب النوع والحالة." icon={Inbox}
         stats={[{ value: String(openCount), label: "طلبات مفتوحة" }, { value: String(all.length - openCount), label: "مغلقة" }, { value: String(all.length), label: "الإجمالي" }]} />
       <Pills variant="card" defaultKey="all" onChange={setKind} items={[
-        { key: "all", label: "الكل", count: counts.all ?? 0 },
+        { key: "all", label: "الكل", count: counts["all"] ?? 0 },
         ...(Object.keys(kindLabels) as Kind[]).map((k) => ({ key: k, label: kindLabels[k], count: counts[k] ?? 0 })),
       ]} />
       <Pills defaultKey="open" onChange={setState} items={[{ key: "open", label: "مفتوحة" }, { key: "closed", label: "مغلقة / السجل" }, { key: "all", label: "الكل" }]} />
