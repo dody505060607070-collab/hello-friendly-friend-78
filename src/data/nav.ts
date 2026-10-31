@@ -41,6 +41,7 @@ export const navGroups: NavGroup[] = [
       { label: "ملاك البيع", to: "/sale-owners", module: "owners" },
       { label: "ملاك الإيجار", to: "/rent-owners", module: "owners" },
       { label: "العمارات", to: "/buildings", module: "properties" },
+      { label: "كل الطلبات", to: "/requests", module: "requests" },
       { label: "طلبات توفير العقار", to: "/supply-requests", countKey: "supplyRequests", module: "requests" },
       { label: "طلبات عرض العقار", to: "/listing-requests", countKey: "listingRequests", module: "requests" },
       { label: "إدارة الحجوزات", to: "/reservations", countKey: "reservations", module: "reservations" },

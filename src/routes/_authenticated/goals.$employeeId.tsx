@@ -354,6 +354,36 @@ function EmployeeGoalsPage() {
                     style={{ width: `${pct}%` }}
                   />
                 </div>
+                {canManage ? (
+                  <div className="mb-3 flex flex-wrap items-center gap-1.5 rounded-xl bg-muted/50 p-2">
+                    <span className="text-[11.5px] font-semibold text-muted-foreground">إضافة إنجاز:</span>
+                    {[1, 2, 3].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        disabled={patch.isPending}
+                        onClick={() => patch.mutate({ id: goal.id, values: { achieved_value: achieved + n, auto_track: false } })}
+                        className="rounded-lg border border-primary/30 bg-card px-2.5 py-1 text-[12px] font-bold text-primary hover:bg-primary/10"
+                      >
+                        +{n}
+                      </button>
+                    ))}
+                    <form
+                      className="flex items-center gap-1"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const input = e.currentTarget.elements.namedItem("inc") as HTMLInputElement;
+                        const n = Number(input.value);
+                        if (!Number.isFinite(n) || n <= 0) { toast.error("اكتب رقمًا أكبر من صفر"); return; }
+                        patch.mutate({ id: goal.id, values: { achieved_value: achieved + n, auto_track: false } });
+                        input.value = "";
+                      }}
+                    >
+                      <input name="inc" type="number" min="1" step="any" placeholder="رقم" aria-label="زيادة الإنجاز برقم" className={`${inputClass} h-8 w-20 text-[12px]`} />
+                      <button type="submit" className="rounded-lg bg-primary px-2.5 py-1 text-[12px] font-bold text-primary-foreground">إضافة</button>
+                    </form>
+                  </div>
+                ) : null}
                 {goal.notes ? (
                   <p className="mb-3 text-[12px] text-muted-foreground">{goal.notes}</p>
                 ) : null}

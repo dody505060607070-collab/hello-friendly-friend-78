@@ -46,7 +46,7 @@ export const taskStatusLabels: Record<string, string> = {
   in_progress: "قيد التنفيذ",
   submitted: "بانتظار الاعتماد",
   approved: "معتمدة",
-  rejected: "مرفوضة",
+  rejected: "مُرجعة للموظف",
   done: "منجزة",
   cancelled: "ملغاة",
 };

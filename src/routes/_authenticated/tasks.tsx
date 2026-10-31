@@ -185,10 +185,10 @@ function TasksPage() {
   });
 
   const changeStatus = useMutation({
-    mutationFn: async (input: { id: string; status: string }) => {
+    mutationFn: async (input: { id: string; status: string; note?: string }) => {
       const { error } = await supabase
         .from("tasks")
-        .update({ status: input.status })
+        .update(input.status === "rejected" ? { status: input.status, rejection_note: input.note ?? null } : { status: input.status })
         .eq("id", input.id);
       if (error) throw error;
     },
@@ -484,6 +484,15 @@ function TasksPage() {
             {
               header: "إجراءات",
               cell: (r) => (
+                <div className="flex flex-wrap items-center gap-2">
+                {r.status === "submitted" ? (
+                  <>
+                    <button type="button" onClick={() => changeStatus.mutate({ id: r.id, status: "approved" })} className="rounded-lg bg-success/15 px-2.5 py-1 text-[12px] font-bold text-success">اعتماد واكتمال</button>
+                    <button type="button" onClick={() => { const note = window.prompt("اكتب ملاحظة للموظف بما يلزم تعديله:"); if (note !== null) changeStatus.mutate({ id: r.id, status: "rejected", note }); }} className="rounded-lg bg-warning/15 px-2.5 py-1 text-[12px] font-bold text-warning">إرجاع للموظف</button>
+                  </>
+                ) : !["approved", "done", "cancelled"].includes(r.status) ? (
+                  <button type="button" onClick={() => changeStatus.mutate({ id: r.id, status: "submitted" })} className="rounded-lg bg-primary/10 px-2.5 py-1 text-[12px] font-bold text-primary">إنهاء وإرسال للاعتماد</button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => {
@@ -494,6 +503,7 @@ function TasksPage() {
                   <Trash2 className="size-4" />
                   حذف
                 </button>
+                </div>
               ),
             },
           ]}
